@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{AnyConnector, AnyError, AnyOptions, AnyPool, Connector};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workers: Option<usize>,
@@ -12,14 +12,14 @@ pub struct Config {
     pub kind: DatabaseConfig,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum DatabaseConfig {
     Sqlite(SqliteConfig),
     LibSql(LibSqlConfig),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SqliteConfig {
     Memory,
@@ -45,7 +45,7 @@ impl From<SqliteConfig> for AnyOptions {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum LibSqlConfig {
     Memory,

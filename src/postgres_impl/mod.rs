@@ -3,6 +3,7 @@ mod connector;
 mod pool;
 mod row;
 mod trans;
+mod value;
 
 pub use self::connector::{Postgres, PostgresInfo};
 pub use deadpool_postgres::{Config as PgConfig, Object as PgConn, Pool as PgPool};

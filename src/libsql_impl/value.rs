@@ -1,10 +1,12 @@
+use std::string::ToString;
+
 use libsql::params::IntoValue;
 
 use crate::Value;
 
 impl IntoValue for Value {
     fn into_value(self) -> libsql::Result<libsql::Value> {
-        match value {
+        let ret = match self {
             Value::Bool(b) => libsql::Value::Integer((b).into()),
             Value::Text(s) => libsql::Value::Text(s),
             Value::Array(list) => {
@@ -26,6 +28,8 @@ impl IntoValue for Value {
                 libsql::Value::Text(string)
             }
             Value::Null => libsql::Value::Null,
-        }
+        };
+
+        Ok(ret)
     }
 }

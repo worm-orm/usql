@@ -7,6 +7,8 @@ extern crate alloc;
 extern crate std;
 
 mod any_connector;
+#[cfg(feature = "std")]
+pub mod config;
 mod system;
 mod traits;
 pub mod value;

@@ -508,6 +508,7 @@ pub enum AnyError {
     Sqlite(SqliteError),
     #[cfg(feature = "libsql")]
     LibSql(LibSqlError),
+    Message(&'static str),
 }
 
 impl core::fmt::Display for AnyError {
@@ -519,6 +520,7 @@ impl core::fmt::Display for AnyError {
             AnyError::Sqlite(err) => write!(f, "{}", err),
             #[cfg(feature = "libsql")]
             AnyError::LibSql(err) => write!(f, "{}", err),
+            AnyError::Message(msg) => msg.fmt(f),
             _ => missing_db!(),
         }
     }

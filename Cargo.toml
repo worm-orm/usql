@@ -5,10 +5,10 @@ edition = "2024"
 
 
 [features]
-# default = ["postgres"]
-std = []
+# default = ["postgres", "sqlite", "libsql"]
+std = ["serde/std", "chrono/std", "bytes/std"]
 
-postgres = ["deadpool-postgres", "tokio-postgres"]
+postgres = ["deadpool-postgres", "tokio-postgres", "std"]
 libsql = ["dep:libsql", "deadpool", "std", "async-lock", "async-stream"]
 sqlite = [
     "async-lock",
@@ -54,7 +54,11 @@ futures-channel = { version = "0.3", default-features = false, features = [
 
 # Postgres
 deadpool-postgres = { version = "0.14", optional = true }
-tokio-postgres = { version = "0.7", optional = true }
+tokio-postgres = { version = "0.7", features = [
+    "with-chrono-0_4",
+    "with-serde_json-1",
+    "with-uuid-1",
+], optional = true }
 
 ## Libsql and sqlite
 deadpool = { version = "0.12", optional = true }

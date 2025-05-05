@@ -52,7 +52,7 @@ pub enum LibSqlConfig {
     Path(PathBuf),
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "libsql")]
 impl From<LibSqlConfig> for AnyOptions {
     fn from(value: LibSqlConfig) -> Self {
         use crate::LibSqlOptions;

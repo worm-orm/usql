@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use alloc::{boxed::Box, vec::Vec};
 use core::task::{Poll, ready};
 

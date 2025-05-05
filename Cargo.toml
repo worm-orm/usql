@@ -1,0 +1,74 @@
+[package]
+name = "usql"
+version = "0.1.0"
+edition = "2024"
+
+
+[features]
+# default = ["postgres"]
+std = []
+
+postgres = ["deadpool-postgres", "tokio-postgres"]
+libsql = ["dep:libsql", "deadpool", "std", "async-lock", "async-stream"]
+sqlite = [
+    "async-lock",
+    "deadpool",
+    "std",
+    "async-stream",
+    "flume",
+    "rusqlite",
+    "futures-channel",
+]
+
+
+[dependencies]
+futures-core = { version = "0.3", default-features = false, features = [
+    "alloc",
+] }
+pin-project-lite = { version = "0.2" }
+
+# Value
+ordered-float = { version = "5", default-features = false, features = [
+    "serde",
+] }
+chrono = { version = "0.4", default-features = false, features = [
+    "alloc",
+    "serde",
+] }
+bytes = { version = "1", default-features = false, features = ["serde"] }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+
+# Libsql
+libsql = { version = "0.9", default-features = false, features = [
+    "core",
+], optional = true }
+
+# Sqlite
+rusqlite = { version = "0.35", optional = true }
+flume = { version = "0.11", optional = true }
+futures-channel = { version = "0.3", default-features = false, features = [
+    "alloc",
+], optional = true }
+
+# Postgres
+deadpool-postgres = { version = "0.14", optional = true }
+tokio-postgres = { version = "0.7", optional = true }
+
+## Libsql and sqlite
+deadpool = { version = "0.12", optional = true }
+async-lock = { version = "3", optional = true }
+
+async-stream = { version = "0.3", optional = true }
+serde = { version = "1", default-features = false, features = ["derive"] }
+
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+
+
+[[example]]
+path = "./examples/usql.rs"
+name = "usql"
+required-features = ["sqlite"]

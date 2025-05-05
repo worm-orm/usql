@@ -14,7 +14,7 @@ async fn main() {
 
     let conn = sqlite.get().await.unwrap();
 
-    let mut stmt = conn.prepare("CREATE TABLE test(name TEST)").await.unwrap();
+    let mut stmt = conn.prepare("CREATE TABLE test(name TEXT)").await.unwrap();
 
     conn.exec(&mut stmt, vec![]).await.unwrap();
 }

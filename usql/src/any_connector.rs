@@ -326,6 +326,17 @@ impl Row for AnyRow {
             _ => missing_db!(),
         }
     }
+
+    fn column_name(&self, idx: usize) -> Option<&str> {
+        #[allow(unreachable_patterns)]
+        match self {
+            #[cfg(feature = "sqlite")]
+            AnyRow::Sqlite(row) => row.column_name(idx),
+            #[cfg(feature = "libsql")]
+            AnyRow::Libsql(row) => <LibSqlRow as Row>::column_name(row, idx),
+            _ => missing_db!(),
+        }
+    }
 }
 
 #[cfg(feature = "sqlite")]

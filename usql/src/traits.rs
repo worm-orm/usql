@@ -130,4 +130,6 @@ pub trait Row: Send {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    fn column_name(&self, idx: usize) -> Option<&str>;
 }

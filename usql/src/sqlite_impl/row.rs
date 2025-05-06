@@ -93,4 +93,14 @@ impl crate::Row for Row {
     fn len(&self) -> usize {
         self.len()
     }
+
+    fn column_name(&self, idx: usize) -> Option<&str> {
+        for (k, v) in &*self.columns {
+            if v == &idx {
+                return Some(k);
+            }
+        }
+
+        None
+    }
 }

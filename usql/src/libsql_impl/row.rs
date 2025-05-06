@@ -49,4 +49,8 @@ impl Row for libsql::Row {
     fn len(&self) -> usize {
         self.column_count() as usize
     }
+
+    fn column_name(&self, idx: usize) -> Option<&str> {
+        self.column_name(idx as i32)
+    }
 }

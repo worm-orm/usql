@@ -60,7 +60,7 @@ impl Transaction<'_> {
     pub async fn query_one<P: Params>(&self, sql: impl ToString, values: P) -> Result<Row, Error> {
         let mut stream = self.query(sql, values).await?;
 
-        let Some(first) = super::util::next(&mut stream).await else {
+        let Some(first) = crate::util::next(&mut stream).await else {
             return Err(Error::NotFound);
         };
 
@@ -146,7 +146,7 @@ impl<'conn> crate::Transaction<'conn> for Transaction<'conn> {
         let stream = async_stream::try_stream! {
             let mut stream = self.query(&stmt.sql, params).await?;
 
-            while let Some(next) = super::util::next(&mut stream).await.transpose()? {
+            while let Some(next) = crate::util::next(&mut stream).await.transpose()? {
                 yield next
             }
         };

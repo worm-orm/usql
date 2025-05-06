@@ -148,7 +148,7 @@ pin_project! {
 
 impl QueryStream {
     pub async fn next(&mut self) -> Result<Option<Row>, Error> {
-        Ok(super::util::next(&mut self.rx).await.transpose()?)
+        Ok(crate::util::next(&mut self.rx).await.transpose()?)
     }
 }
 
@@ -201,7 +201,7 @@ impl Connection for Conn {
         let stream = async_stream::try_stream! {
             let mut stream = self.query(&stmt.sql, params).await?;
 
-            while let Some(next) = super::util::next(&mut stream).await.transpose()? {
+            while let Some(next) = crate::util::next(&mut stream).await.transpose()? {
                 yield next
             }
         };

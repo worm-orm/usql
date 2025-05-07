@@ -1,12 +1,11 @@
-use futures::TryStreamExt;
-use rquickjs::{Ctx, JsLifetime, class::Trace};
+use rquickjs::{Ctx, JsLifetime, class::Trace, prelude::Opt};
 use rquickjs_util::{StringRef, throw, throw_if};
 use usql::{AnyTransaction, prelude::*};
 
 use crate::{JsRow, JsStatement, Val, statement::StatementOrQuery};
 
 #[derive(JsLifetime)]
-#[rquickjs::class]
+#[rquickjs::class(rename = "Trans")]
 pub struct JsTrans {
     pub i: Option<AnyTransaction<'static>>,
 }
@@ -39,46 +38,19 @@ impl JsTrans {
         &self,
         ctx: Ctx<'js>,
         stmt: StatementOrQuery<'js>,
-        params: Vec<Val>,
+        params: Opt<Vec<Val>>,
     ) -> rquickjs::Result<Vec<JsRow>> {
-        match stmt {
-            StatementOrQuery::Query(query) => {
-                let mut stmt = throw_if!(ctx, self.get_conn(&ctx)?.prepare(query.as_str()).await);
-                let stream = self.get_conn(&ctx)?.query(
-                    &mut stmt,
-                    params.into_iter().map(|m| m.0).collect::<Vec<_>>(),
-                );
+        let conn = self.get_conn(&ctx)?;
+        stmt.query(ctx, conn, params.0.unwrap_or_default()).await
+    }
 
-                let rows = stream
-                    .map_ok(|row| JsRow { inner: row })
-                    .try_collect::<Vec<_>>()
-                    .await;
-
-                let rows = throw_if!(ctx, rows);
-
-                Ok(rows)
-            }
-            StatementOrQuery::Statement(stmt) => {
-                let mut guard = stmt.borrow_mut();
-
-                let Some(stmt) = &mut guard.inner else {
-                    throw!(ctx, "Statement is finalized")
-                };
-
-                let stream = self
-                    .get_conn(&ctx)?
-                    .query(stmt, params.into_iter().map(|m| m.0).collect::<Vec<_>>());
-
-                let rows = stream
-                    .map_ok(|row| JsRow { inner: row })
-                    .try_collect::<Vec<_>>()
-                    .await;
-
-                drop(guard);
-                let rows = throw_if!(ctx, rows);
-
-                Ok(rows)
-            }
-        }
+    async fn exec<'js>(
+        &self,
+        ctx: Ctx<'js>,
+        stmt: StatementOrQuery<'js>,
+        params: Opt<Vec<Val>>,
+    ) -> rquickjs::Result<()> {
+        let conn = self.get_conn(&ctx)?;
+        stmt.exec(ctx, conn, params.0.unwrap_or_default()).await
     }
 }

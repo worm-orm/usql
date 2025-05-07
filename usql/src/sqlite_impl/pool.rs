@@ -6,7 +6,7 @@ use std::{
 use async_lock::Mutex;
 use uuid::Uuid;
 
-use crate::Connection;
+use crate::{Connection, Executor};
 
 use super::{
     conn::Conn,
@@ -129,12 +129,23 @@ impl crate::Pool for Pool {
 }
 
 impl Connection for PooledConn {
-    type Connector = Sqlite;
     type Transaction<'conn> = Transaction<'conn>;
 
     fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
         SqliteDatabaseInfo
     }
+
+    fn begin(
+        &mut self,
+    ) -> impl Future<
+        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
+    > + Send {
+        async move { <Conn as Connection>::begin(self.as_mut()).await }
+    }
+}
+
+impl Executor for PooledConn {
+    type Connector = Sqlite;
 
     fn prepare<'a>(
         &'a self,
@@ -154,7 +165,7 @@ impl Connection for PooledConn {
         stmt: &'a mut <Self::Connector as crate::Connector>::Statement,
         params: std::vec::Vec<crate::Value>,
     ) -> crate::QueryStream<'a, Self::Connector> {
-        <Conn as Connection>::query(self.as_ref(), stmt, params)
+        <Conn as Executor>::query(self.as_ref(), stmt, params)
     }
 
     fn exec<'a>(
@@ -163,14 +174,6 @@ impl Connection for PooledConn {
         params: std::vec::Vec<crate::Value>,
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send + 'a
     {
-        <Conn as Connection>::exec(self.as_ref(), stmt, params)
-    }
-
-    fn begin(
-        &mut self,
-    ) -> impl Future<
-        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
-    > + Send {
-        async move { <Conn as Connection>::begin(self.as_mut()).await }
+        <Conn as Executor>::exec(self.as_ref(), stmt, params)
     }
 }

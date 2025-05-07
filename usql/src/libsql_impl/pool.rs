@@ -3,7 +3,7 @@ use libsql::Connection;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
-use crate::Pool;
+use crate::{Executor, Pool};
 
 use super::{LibSqlInfo, connector::LibSql};
 
@@ -141,12 +141,23 @@ impl Pool for LibSqlPool {
 }
 
 impl crate::Connection for PooledConn {
-    type Connector = LibSql;
     type Transaction<'conn> = libsql::Transaction;
 
     fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
         LibSqlInfo
     }
+
+    fn begin(
+        &mut self,
+    ) -> impl Future<
+        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
+    > + Send {
+        async move { <libsql::Connection as crate::Connection>::begin(self.as_mut()).await }
+    }
+}
+
+impl Executor for PooledConn {
+    type Connector = LibSql;
 
     fn prepare<'a>(
         &'a self,
@@ -166,7 +177,7 @@ impl crate::Connection for PooledConn {
         stmt: &'a mut <Self::Connector as crate::Connector>::Statement,
         params: std::vec::Vec<crate::Value>,
     ) -> crate::QueryStream<'a, Self::Connector> {
-        <libsql::Connection as crate::Connection>::query(self.as_ref(), stmt, params)
+        <libsql::Connection as crate::Executor>::query(self.as_ref(), stmt, params)
     }
 
     fn exec<'a>(
@@ -175,14 +186,6 @@ impl crate::Connection for PooledConn {
         params: std::vec::Vec<crate::Value>,
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send + 'a
     {
-        <libsql::Connection as crate::Connection>::exec(self.as_ref(), stmt, params)
-    }
-
-    fn begin(
-        &mut self,
-    ) -> impl Future<
-        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
-    > + Send {
-        async move { <libsql::Connection as crate::Connection>::begin(self.as_mut()).await }
+        <libsql::Connection as crate::Executor>::exec(self.as_ref(), stmt, params)
     }
 }

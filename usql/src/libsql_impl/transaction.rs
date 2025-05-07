@@ -1,12 +1,10 @@
 use core::ops::Deref;
 
-use crate::{Connection, Transaction};
+use crate::{Executor, Transaction};
 
 use super::LibSql;
 
 impl Transaction<'_> for libsql::Transaction {
-    type Connector = LibSql;
-
     fn commit(
         self,
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send {
@@ -18,6 +16,10 @@ impl Transaction<'_> for libsql::Transaction {
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send {
         async move { Ok(self.rollback().await?) }
     }
+}
+
+impl Executor for libsql::Transaction {
+    type Connector = LibSql;
 
     fn prepare<'a>(
         &'a self,
@@ -37,7 +39,7 @@ impl Transaction<'_> for libsql::Transaction {
         stmt: &'a mut <Self::Connector as crate::Connector>::Statement,
         params: std::vec::Vec<crate::Value>,
     ) -> crate::QueryStream<'a, Self::Connector> {
-        <libsql::Connection as Connection>::query(self, stmt, params)
+        <libsql::Connection as Executor>::query(self, stmt, params)
     }
 
     fn exec<'a>(
@@ -46,6 +48,6 @@ impl Transaction<'_> for libsql::Transaction {
         params: std::vec::Vec<crate::Value>,
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send + 'a
     {
-        <libsql::Connection as Connection>::exec(self, stmt, params)
+        <libsql::Connection as Executor>::exec(self, stmt, params)
     }
 }

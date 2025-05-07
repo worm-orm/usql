@@ -1,4 +1,4 @@
-use crate::Connection;
+use crate::{Connection, Executor};
 
 use super::{
     SqliteDatabaseInfo, SqliteStatement,
@@ -169,12 +169,23 @@ impl Stream for QueryStream {
 }
 
 impl Connection for Conn {
-    type Connector = Sqlite;
     type Transaction<'conn> = Transaction<'conn>;
 
     fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
         SqliteDatabaseInfo
     }
+
+    fn begin(
+        &mut self,
+    ) -> impl Future<
+        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
+    > + Send {
+        async move { self.begin_transaction().await }
+    }
+}
+
+impl Executor for Conn {
+    type Connector = Sqlite;
 
     fn prepare<'a>(
         &'a self,
@@ -219,13 +230,5 @@ impl Connection for Conn {
             self.exec(&stmt.sql, params).await?;
             Ok(())
         }
-    }
-
-    fn begin(
-        &mut self,
-    ) -> impl Future<
-        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
-    > + Send {
-        async move { self.begin_transaction().await }
     }
 }

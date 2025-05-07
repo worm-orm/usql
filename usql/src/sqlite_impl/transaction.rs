@@ -4,6 +4,8 @@ use std::string::ToString;
 
 use futures_channel::oneshot;
 
+use crate::Executor;
+
 use super::{Sqlite, SqliteStatement};
 use super::{conn::QueryStream, query_result::QueryResult, row::Row, traits::Params};
 use super::{error::Error, worker::TransRequest};
@@ -107,8 +109,6 @@ impl Drop for Transaction<'_> {
 }
 
 impl<'conn> crate::Transaction<'conn> for Transaction<'conn> {
-    type Connector = Sqlite;
-
     fn commit(
         self,
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send {
@@ -120,6 +120,10 @@ impl<'conn> crate::Transaction<'conn> for Transaction<'conn> {
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send {
         async move { Ok(self.rollback().await?) }
     }
+}
+
+impl Executor for Transaction<'_> {
+    type Connector = Sqlite;
 
     fn prepare<'a>(
         &'a self,

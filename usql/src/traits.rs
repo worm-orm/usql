@@ -36,15 +36,8 @@ pub trait DatabaseInfo {
 
 pub type QueryStream<'a, P> = BoxStream<'a, Result<<P as Connector>::Row, <P as Connector>::Error>>;
 
-pub trait Connection: Send + Sync {
+pub trait Executor {
     type Connector: Connector;
-
-    type Transaction<'conn>: Transaction<'conn, Connector = Self::Connector>
-    where
-        Self: 'conn;
-
-    fn db_info(&self) -> <Self::Connector as Connector>::Info;
-
     fn prepare<'a>(
         &'a self,
         query: &'a str,
@@ -67,15 +60,44 @@ pub trait Connection: Send + Sync {
         stmt: &'a mut <Self::Connector as Connector>::Statement,
         params: Vec<Value>,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a;
+}
+
+pub trait Connection: Executor + Send + Sync {
+    type Transaction<'conn>: Transaction<'conn, Connector = Self::Connector>
+    where
+        Self: 'conn;
+
+    fn db_info(&self) -> <Self::Connector as Connector>::Info;
+
+    // fn prepare<'a>(
+    //     &'a self,
+    //     query: &'a str,
+    // ) -> impl Future<
+    //     Output = Result<
+    //         <Self::Connector as Connector>::Statement,
+    //         <Self::Connector as Connector>::Error,
+    //     >,
+    // > + Send
+    // + 'a;
+
+    // fn query<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<Value>,
+    // ) -> QueryStream<'a, Self::Connector>;
+
+    // fn exec<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<Value>,
+    // ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a;
 
     fn begin(
         &mut self,
     ) -> impl Future<Output = Result<Self::Transaction<'_>, <Self::Connector as Connector>::Error>> + Send;
 }
 
-pub trait Transaction<'conn> {
-    type Connector: Connector;
-
+pub trait Transaction<'conn>: Executor {
     fn commit(
         self,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send;
@@ -84,28 +106,28 @@ pub trait Transaction<'conn> {
         self,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send;
 
-    fn prepare<'a>(
-        &'a self,
-        query: &'a str,
-    ) -> impl Future<
-        Output = Result<
-            <Self::Connector as Connector>::Statement,
-            <Self::Connector as Connector>::Error,
-        >,
-    > + Send
-    + 'a;
+    // fn prepare<'a>(
+    //     &'a self,
+    //     query: &'a str,
+    // ) -> impl Future<
+    //     Output = Result<
+    //         <Self::Connector as Connector>::Statement,
+    //         <Self::Connector as Connector>::Error,
+    //     >,
+    // > + Send
+    // + 'a;
 
-    fn query<'a>(
-        &'a self,
-        stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<Value>,
-    ) -> QueryStream<'a, Self::Connector>;
+    // fn query<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<Value>,
+    // ) -> QueryStream<'a, Self::Connector>;
 
-    fn exec<'a>(
-        &'a self,
-        stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<Value>,
-    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a;
+    // fn exec<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<Value>,
+    // ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a;
 }
 
 pub trait Statement: Send + Sync {

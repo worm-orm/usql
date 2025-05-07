@@ -6,7 +6,7 @@ use crate::{JsConn, JsPool, JsStatement};
 pub struct Module;
 
 impl rquickjs::module::ModuleDef for Module {
-    fn declare<'js>(decl: &rquickjs::module::Declarations<'js>) -> rquickjs::Result<()> {
+    fn declare(decl: &rquickjs::module::Declarations<'_>) -> rquickjs::Result<()> {
         decl.declare("Statement")?;
         decl.declare("Conn")?;
         decl.declare("Pool")?;

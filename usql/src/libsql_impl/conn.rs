@@ -1,17 +1,27 @@
 use std::boxed::Box;
 
-use crate::Connection;
+use crate::{Connection, Executor};
 
 use super::{LibSqlInfo, connector::LibSql};
 
 impl Connection for libsql::Connection {
-    type Connector = LibSql;
-
     type Transaction<'conn> = libsql::Transaction;
 
     fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
         LibSqlInfo {}
     }
+
+    fn begin(
+        &mut self,
+    ) -> impl Future<
+        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
+    > + Send {
+        async move { Ok(self.transaction().await?) }
+    }
+}
+
+impl Executor for libsql::Connection {
+    type Connector = LibSql;
 
     fn prepare<'a>(
         &'a self,
@@ -52,13 +62,5 @@ impl Connection for libsql::Connection {
             stmt.execute(params).await?;
             Ok(())
         }
-    }
-
-    fn begin(
-        &mut self,
-    ) -> impl Future<
-        Output = Result<Self::Transaction<'_>, <Self::Connector as crate::Connector>::Error>,
-    > + Send {
-        async move { Ok(self.transaction().await?) }
     }
 }

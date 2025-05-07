@@ -5,7 +5,7 @@ use core::task::{Poll, ready};
 use futures_core::{Stream, stream::BoxStream};
 use pin_project_lite::pin_project;
 
-use crate::{ColumnIndex, Connector, QueryStream, Transaction};
+use crate::{ColumnIndex, Connector, Executor, QueryStream, Transaction};
 
 #[cfg(feature = "libsql")]
 use super::libsql_impl::{
@@ -158,7 +158,6 @@ pub enum AnyConn {
 }
 
 impl Connection for AnyConn {
-    type Connector = AnyConnector;
     type Transaction<'conn> = AnyTransaction<'conn>;
 
     fn db_info(&self) -> <Self::Connector as Connector>::Info {
@@ -171,6 +170,127 @@ impl Connection for AnyConn {
             _ => missing_db!(),
         }
     }
+
+    // #[allow(unused_variables)]
+    // fn prepare<'a>(
+    //     &'a self,
+    //     query: &'a str,
+    // ) -> impl Future<
+    //     Output = Result<
+    //         <Self::Connector as Connector>::Statement,
+    //         <Self::Connector as Connector>::Error,
+    //     >,
+    // > + Send
+    // + 'a {
+    //     async move {
+    //         #[allow(unreachable_patterns)]
+    //         match self {
+    //             #[cfg(feature = "sqlite")]
+    //             Self::Sqlite(conn) => conn
+    //                 .prepare(query)
+    //                 .await
+    //                 .map(AnyStatement::Sqlite)
+    //                 .map_err(AnyError::Sqlite),
+    //             #[cfg(feature = "libsql")]
+    //             Self::Libsql(conn) => conn
+    //                 .prepare(query)
+    //                 .await
+    //                 .map(AnyStatement::LibSql)
+    //                 .map_err(AnyError::LibSql),
+    //             _ => missing_db!(),
+    //         }
+    //     }
+    // }
+
+    // #[allow(unused_variables)]
+    // fn query<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<crate::Value>,
+    // ) -> QueryStream<'a, Self::Connector> {
+    //     #[allow(unreachable_patterns, irrefutable_let_patterns)]
+    //     match self {
+    //         #[cfg(feature = "sqlite")]
+    //         Self::Sqlite(sqlite) => {
+    //             let AnyStatement::Sqlite(stmt) = stmt else {
+    //                 panic!("Statement mismatch")
+    //             };
+    //             Box::pin(AnyQueryStream::<Sqlite> {
+    //                 stream: <SqliteConn as Connection>::query(sqlite, stmt, params),
+    //             })
+    //         }
+    //         #[cfg(feature = "libsql")]
+    //         Self::Libsql(libsql) => {
+    //             let AnyStatement::LibSql(stmt) = stmt else {
+    //                 panic!("Statement mismatch")
+    //             };
+    //             Box::pin(AnyQueryStream::<LibSql> {
+    //                 stream: <LibSqlConnection as Connection>::query(libsql, stmt, params),
+    //             })
+    //         }
+    //         _ => missing_db!(),
+    //     }
+    // }
+
+    // #[allow(unused_variables)]
+    // fn exec<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<crate::Value>,
+    // ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+    //     async move {
+    //         #[allow(unreachable_patterns, irrefutable_let_patterns)]
+    //         match self {
+    //             #[cfg(feature = "sqlite")]
+    //             Self::Sqlite(sqlite) => {
+    //                 let AnyStatement::Sqlite(stmt) = stmt else {
+    //                     panic!("Statement mismatch")
+    //                 };
+    //                 <SqliteConn as Connection>::exec(sqlite, stmt, params)
+    //                     .await
+    //                     .map_err(Into::into)
+    //             }
+    //             #[cfg(feature = "libsql")]
+    //             Self::Libsql(libsql) => {
+    //                 let AnyStatement::LibSql(stmt) = stmt else {
+    //                     panic!("Statement mismatch")
+    //                 };
+    //                 <LibSqlConnection as Connection>::exec(libsql, stmt, params)
+    //                     .await
+    //                     .map_err(Into::into)
+    //             }
+    //             _ => missing_db!(),
+    //         }
+    //     }
+    // }
+
+    fn begin(
+        &mut self,
+    ) -> impl Future<Output = Result<Self::Transaction<'_>, <Self::Connector as Connector>::Error>> + Send
+    {
+        async move {
+            #[allow(unreachable_patterns)]
+            match self {
+                #[cfg(feature = "sqlite")]
+                Self::Sqlite(conn) => conn
+                    .begin()
+                    .await
+                    .map(AnyTransaction::Sqlite)
+                    .map_err(AnyError::Sqlite),
+                #[cfg(feature = "libsql")]
+                Self::Libsql(conn) => conn
+                    .begin()
+                    .await
+                    .map(AnyTransaction::LibSql)
+                    .map_err(AnyError::LibSql),
+                _ => missing_db!(),
+            }
+        }
+    }
+}
+
+impl Executor for AnyConn {
+    type Connector = AnyConnector;
 
     #[allow(unused_variables)]
     fn prepare<'a>(
@@ -217,7 +337,7 @@ impl Connection for AnyConn {
                     panic!("Statement mismatch")
                 };
                 Box::pin(AnyQueryStream::<Sqlite> {
-                    stream: <SqliteConn as Connection>::query(sqlite, stmt, params),
+                    stream: <SqliteConn as Executor>::query(sqlite, stmt, params),
                 })
             }
             #[cfg(feature = "libsql")]
@@ -226,7 +346,7 @@ impl Connection for AnyConn {
                     panic!("Statement mismatch")
                 };
                 Box::pin(AnyQueryStream::<LibSql> {
-                    stream: <LibSqlConnection as Connection>::query(libsql, stmt, params),
+                    stream: <LibSqlConnection as Executor>::query(libsql, stmt, params),
                 })
             }
             _ => missing_db!(),
@@ -247,7 +367,7 @@ impl Connection for AnyConn {
                     let AnyStatement::Sqlite(stmt) = stmt else {
                         panic!("Statement mismatch")
                     };
-                    <SqliteConn as Connection>::exec(sqlite, stmt, params)
+                    <SqliteConn as Executor>::exec(sqlite, stmt, params)
                         .await
                         .map_err(Into::into)
                 }
@@ -256,34 +376,10 @@ impl Connection for AnyConn {
                     let AnyStatement::LibSql(stmt) = stmt else {
                         panic!("Statement mismatch")
                     };
-                    <LibSqlConnection as Connection>::exec(libsql, stmt, params)
+                    <LibSqlConnection as Executor>::exec(libsql, stmt, params)
                         .await
                         .map_err(Into::into)
                 }
-                _ => missing_db!(),
-            }
-        }
-    }
-
-    fn begin(
-        &mut self,
-    ) -> impl Future<Output = Result<Self::Transaction<'_>, <Self::Connector as Connector>::Error>> + Send
-    {
-        async move {
-            #[allow(unreachable_patterns)]
-            match self {
-                #[cfg(feature = "sqlite")]
-                Self::Sqlite(conn) => conn
-                    .begin()
-                    .await
-                    .map(AnyTransaction::Sqlite)
-                    .map_err(AnyError::Sqlite),
-                #[cfg(feature = "libsql")]
-                Self::Libsql(conn) => conn
-                    .begin()
-                    .await
-                    .map(AnyTransaction::LibSql)
-                    .map_err(AnyError::LibSql),
                 _ => missing_db!(),
             }
         }
@@ -378,8 +474,6 @@ pub enum AnyTransaction<'conn> {
 }
 
 impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
-    type Connector = AnyConnector;
-
     fn commit(
         self,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send {
@@ -417,6 +511,103 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
             }
         }
     }
+
+    // #[allow(unused_variables)]
+    // fn prepare<'a>(
+    //     &'a self,
+    //     query: &'a str,
+    // ) -> impl Future<
+    //     Output = Result<
+    //         <Self::Connector as Connector>::Statement,
+    //         <Self::Connector as Connector>::Error,
+    //     >,
+    // > + Send
+    // + 'a {
+    //     async move {
+    //         #[allow(unreachable_patterns)]
+    //         match self {
+    //             #[cfg(feature = "sqlite")]
+    //             Self::Sqlite(conn) => conn
+    //                 .prepare(query)
+    //                 .await
+    //                 .map(AnyStatement::Sqlite)
+    //                 .map_err(AnyError::Sqlite),
+    //             #[cfg(feature = "libsql")]
+    //             Self::LibSql(conn) => conn
+    //                 .prepare(query)
+    //                 .await
+    //                 .map(AnyStatement::LibSql)
+    //                 .map_err(AnyError::LibSql),
+    //             _ => missing_db!(),
+    //         }
+    //     }
+    // }
+
+    // #[allow(unused_variables)]
+    // fn query<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<crate::Value>,
+    // ) -> QueryStream<'a, Self::Connector> {
+    //     #[allow(unreachable_patterns, irrefutable_let_patterns)]
+    //     match self {
+    //         #[cfg(feature = "sqlite")]
+    //         Self::Sqlite(sqlite) => {
+    //             let AnyStatement::Sqlite(stmt) = stmt else {
+    //                 panic!("Statement mismatch")
+    //             };
+    //             Box::pin(AnyQueryStream::<Sqlite> {
+    //                 stream: <SqliteTransaction as Transaction>::query(sqlite, stmt, params),
+    //             })
+    //         }
+    //         #[cfg(feature = "libsql")]
+    //         Self::LibSql(libsql) => {
+    //             let AnyStatement::LibSql(stmt) = stmt else {
+    //                 panic!("Statement mismatch")
+    //             };
+    //             Box::pin(AnyQueryStream::<LibSql> {
+    //                 stream: <LibSqlTransaction as Transaction>::query(libsql, stmt, params),
+    //             })
+    //         }
+    //         _ => missing_db!(),
+    //     }
+    // }
+
+    // #[allow(unused_variables)]
+    // fn exec<'a>(
+    //     &'a self,
+    //     stmt: &'a mut <Self::Connector as Connector>::Statement,
+    //     params: Vec<crate::Value>,
+    // ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+    //     async move {
+    //         #[allow(unreachable_patterns, irrefutable_let_patterns)]
+    //         match self {
+    //             #[cfg(feature = "sqlite")]
+    //             Self::Sqlite(sqlite) => {
+    //                 let AnyStatement::Sqlite(stmt) = stmt else {
+    //                     panic!("Statement mismatch")
+    //                 };
+    //                 <SqliteTransaction as Transaction>::exec(sqlite, stmt, params)
+    //                     .await
+    //                     .map_err(Into::into)
+    //             }
+    //             #[cfg(feature = "libsql")]
+    //             Self::LibSql(libsql) => {
+    //                 let AnyStatement::LibSql(stmt) = stmt else {
+    //                     panic!("Statement mismatch")
+    //                 };
+    //                 <LibSqlTransaction as Transaction>::exec(libsql, stmt, params)
+    //                     .await
+    //                     .map_err(Into::into)
+    //             }
+    //             _ => missing_db!(),
+    //         }
+    //     }
+    // }
+}
+
+impl Executor for AnyTransaction<'_> {
+    type Connector = AnyConnector;
 
     #[allow(unused_variables)]
     fn prepare<'a>(
@@ -463,7 +654,7 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                     panic!("Statement mismatch")
                 };
                 Box::pin(AnyQueryStream::<Sqlite> {
-                    stream: <SqliteTransaction as Transaction>::query(sqlite, stmt, params),
+                    stream: <SqliteTransaction as Executor>::query(sqlite, stmt, params),
                 })
             }
             #[cfg(feature = "libsql")]
@@ -472,7 +663,7 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                     panic!("Statement mismatch")
                 };
                 Box::pin(AnyQueryStream::<LibSql> {
-                    stream: <LibSqlTransaction as Transaction>::query(libsql, stmt, params),
+                    stream: <LibSqlTransaction as Executor>::query(libsql, stmt, params),
                 })
             }
             _ => missing_db!(),
@@ -493,7 +684,7 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                     let AnyStatement::Sqlite(stmt) = stmt else {
                         panic!("Statement mismatch")
                     };
-                    <SqliteTransaction as Transaction>::exec(sqlite, stmt, params)
+                    <SqliteTransaction as Executor>::exec(sqlite, stmt, params)
                         .await
                         .map_err(Into::into)
                 }
@@ -502,7 +693,7 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                     let AnyStatement::LibSql(stmt) = stmt else {
                         panic!("Statement mismatch")
                     };
-                    <LibSqlTransaction as Transaction>::exec(libsql, stmt, params)
+                    <LibSqlTransaction as Executor>::exec(libsql, stmt, params)
                         .await
                         .map_err(Into::into)
                 }

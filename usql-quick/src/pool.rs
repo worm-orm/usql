@@ -41,7 +41,7 @@ impl JsPool {
     }
 }
 
-pub struct Config(usql::config::Config);
+pub struct Config(pub usql::config::Config);
 
 impl<'js> FromJs<'js> for Config {
     fn from_js(ctx: &rquickjs::Ctx<'js>, value: rquickjs::Value<'js>) -> rquickjs::Result<Self> {

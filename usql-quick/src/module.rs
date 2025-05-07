@@ -25,4 +25,4 @@ impl rquickjs::module::ModuleDef for Module {
     }
 }
 
-module_info!("usql" => Module);
+module_info!("usql" @types: include_str!("../usql.d.ts") => Module);

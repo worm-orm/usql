@@ -131,10 +131,6 @@ impl crate::Pool for Pool {
 impl Connection for PooledConn {
     type Transaction<'conn> = Transaction<'conn>;
 
-    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
-        SqliteDatabaseInfo
-    }
-
     fn begin(
         &mut self,
     ) -> impl Future<
@@ -146,6 +142,10 @@ impl Connection for PooledConn {
 
 impl Executor for PooledConn {
     type Connector = Sqlite;
+
+    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
+        SqliteDatabaseInfo
+    }
 
     fn prepare<'a>(
         &'a self,

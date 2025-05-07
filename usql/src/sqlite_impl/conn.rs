@@ -171,10 +171,6 @@ impl Stream for QueryStream {
 impl Connection for Conn {
     type Transaction<'conn> = Transaction<'conn>;
 
-    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
-        SqliteDatabaseInfo
-    }
-
     fn begin(
         &mut self,
     ) -> impl Future<
@@ -186,6 +182,10 @@ impl Connection for Conn {
 
 impl Executor for Conn {
     type Connector = Sqlite;
+
+    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
+        SqliteDatabaseInfo
+    }
 
     fn prepare<'a>(
         &'a self,

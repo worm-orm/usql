@@ -6,7 +6,7 @@ use futures_channel::oneshot;
 
 use crate::Executor;
 
-use super::{Sqlite, SqliteStatement};
+use super::{Sqlite, SqliteDatabaseInfo, SqliteStatement};
 use super::{conn::QueryStream, query_result::QueryResult, row::Row, traits::Params};
 use super::{error::Error, worker::TransRequest};
 
@@ -124,6 +124,10 @@ impl<'conn> crate::Transaction<'conn> for Transaction<'conn> {
 
 impl Executor for Transaction<'_> {
     type Connector = Sqlite;
+
+    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
+        SqliteDatabaseInfo
+    }
 
     fn prepare<'a>(
         &'a self,

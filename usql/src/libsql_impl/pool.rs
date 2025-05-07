@@ -143,10 +143,6 @@ impl Pool for LibSqlPool {
 impl crate::Connection for PooledConn {
     type Transaction<'conn> = libsql::Transaction;
 
-    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
-        LibSqlInfo
-    }
-
     fn begin(
         &mut self,
     ) -> impl Future<
@@ -158,6 +154,10 @@ impl crate::Connection for PooledConn {
 
 impl Executor for PooledConn {
     type Connector = LibSql;
+
+    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
+        LibSqlInfo
+    }
 
     fn prepare<'a>(
         &'a self,

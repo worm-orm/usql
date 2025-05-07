@@ -2,7 +2,7 @@ use core::ops::Deref;
 
 use crate::{Executor, Transaction};
 
-use super::LibSql;
+use super::{LibSql, LibSqlInfo};
 
 impl Transaction<'_> for libsql::Transaction {
     fn commit(
@@ -20,6 +20,10 @@ impl Transaction<'_> for libsql::Transaction {
 
 impl Executor for libsql::Transaction {
     type Connector = LibSql;
+
+    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
+        LibSqlInfo {}
+    }
 
     fn prepare<'a>(
         &'a self,

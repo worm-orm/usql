@@ -7,10 +7,6 @@ use super::{LibSqlInfo, connector::LibSql};
 impl Connection for libsql::Connection {
     type Transaction<'conn> = libsql::Transaction;
 
-    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
-        LibSqlInfo {}
-    }
-
     fn begin(
         &mut self,
     ) -> impl Future<
@@ -22,6 +18,10 @@ impl Connection for libsql::Connection {
 
 impl Executor for libsql::Connection {
     type Connector = LibSql;
+
+    fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
+        LibSqlInfo {}
+    }
 
     fn prepare<'a>(
         &'a self,

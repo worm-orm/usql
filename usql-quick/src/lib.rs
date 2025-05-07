@@ -7,6 +7,11 @@ mod trans;
 mod value;
 
 pub use self::{
-    conn::JsConn, module::Module, pool::JsPool, row::JsRow, statement::JsStatement, trans::JsTrans,
+    conn::JsConn,
+    module::Module,
+    pool::{Config, JsPool},
+    row::JsRow,
+    statement::JsStatement,
+    trans::JsTrans,
     value::Val,
 };

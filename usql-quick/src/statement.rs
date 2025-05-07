@@ -1,14 +1,14 @@
-use rquickjs::{Class, FromJs, JsLifetime, class::Trace};
-use rquickjs_util::StringRef;
+use rquickjs::{Class, Ctx, FromJs, JsLifetime, class::Trace};
+use rquickjs_util::{StringRef, throw};
 use usql::AnyStatement;
 
-#[rquickjs::class]
+#[rquickjs::class(rename = "Statement")]
 pub struct JsStatement {
     pub inner: Option<AnyStatement>,
 }
 
 impl<'js> Trace<'js> for JsStatement {
-    fn trace<'a>(&self, tracer: rquickjs::class::Tracer<'a, 'js>) {}
+    fn trace<'a>(&self, _tracer: rquickjs::class::Tracer<'a, 'js>) {}
 }
 
 unsafe impl JsLifetime<'_> for JsStatement {
@@ -17,6 +17,11 @@ unsafe impl JsLifetime<'_> for JsStatement {
 
 #[rquickjs::methods]
 impl JsStatement {
+    #[qjs(constructor)]
+    pub fn new(ctx: Ctx<'_>) -> rquickjs::Result<JsStatement> {
+        throw!(ctx, "Statement cannot be constructed directly")
+    }
+
     fn finalize(&mut self) -> rquickjs::Result<()> {
         self.inner = None;
         Ok(())

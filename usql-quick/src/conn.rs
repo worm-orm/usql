@@ -1,7 +1,7 @@
 use std::mem::transmute;
 
-use futures::{StreamExt, TryStreamExt};
-use rquickjs::{Class, Ctx, Function, JsLifetime, class::Trace};
+use futures::TryStreamExt;
+use rquickjs::{Class, Ctx, Function, JsLifetime, class::Trace, prelude::Opt};
 use rquickjs_util::{StringRef, throw, throw_if};
 use usql::{AnyConn, Connection};
 
@@ -9,13 +9,13 @@ use crate::{row::JsRow, statement::StatementOrQuery, value::Val};
 
 use super::{statement::JsStatement, trans::JsTrans};
 
-#[rquickjs::class]
+#[rquickjs::class(rename = "Conn")]
 pub struct JsConn {
-    conn: AnyConn,
+    pub conn: AnyConn,
 }
 
 impl<'js> Trace<'js> for JsConn {
-    fn trace<'a>(&self, tracer: rquickjs::class::Tracer<'a, 'js>) {}
+    fn trace<'a>(&self, _tracer: rquickjs::class::Tracer<'a, 'js>) {}
 }
 
 unsafe impl JsLifetime<'_> for JsConn {
@@ -24,6 +24,11 @@ unsafe impl JsLifetime<'_> for JsConn {
 
 #[rquickjs::methods]
 impl JsConn {
+    #[qjs(constructor)]
+    pub fn new(ctx: Ctx<'_>) -> rquickjs::Result<JsConn> {
+        throw!(ctx, "Conn cannot be constructed directly")
+    }
+
     async fn prepare<'js>(
         &self,
         ctx: Ctx<'js>,
@@ -37,8 +42,10 @@ impl JsConn {
         &self,
         ctx: Ctx<'js>,
         stmt: StatementOrQuery<'js>,
-        params: Vec<Val>,
+        params: Opt<Vec<Val>>,
     ) -> rquickjs::Result<Vec<JsRow>> {
+        let params = params.0.unwrap_or_default();
+
         match stmt {
             StatementOrQuery::Query(query) => {
                 let mut stmt = throw_if!(ctx, self.conn.prepare(query.as_str()).await);
@@ -51,8 +58,6 @@ impl JsConn {
                     .map_ok(|row| JsRow { inner: row })
                     .try_collect::<Vec<_>>()
                     .await;
-
-                drop(stmt);
 
                 let rows = throw_if!(ctx, rows);
 
@@ -95,7 +100,9 @@ impl JsConn {
                 // Safety: We are only using the transaction for the duration of this call
                 // making sure to release it before return
                 // Also the we have mutable exclusive access to jsconn
-                i: Some(unsafe { transmute(trans) }),
+                i: Some(unsafe {
+                    transmute::<usql::AnyTransaction<'_>, usql::AnyTransaction<'_>>(trans)
+                }),
             },
         )?;
 

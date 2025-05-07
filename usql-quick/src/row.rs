@@ -1,4 +1,4 @@
-use rquickjs::{Ctx, FromJs, JsLifetime, class::Trace};
+use rquickjs::{FromJs, JsLifetime, class::Trace};
 use rquickjs_util::StringRef;
 use usql::{AnyRow, ColumnIndex, Row, Value};
 
@@ -10,7 +10,7 @@ pub struct JsRow {
 }
 
 impl<'js> Trace<'js> for JsRow {
-    fn trace<'a>(&self, tracer: rquickjs::class::Tracer<'a, 'js>) {}
+    fn trace<'a>(&self, _tracer: rquickjs::class::Tracer<'a, 'js>) {}
 }
 
 unsafe impl JsLifetime<'_> for JsRow {
@@ -19,7 +19,7 @@ unsafe impl JsLifetime<'_> for JsRow {
 
 #[rquickjs::methods]
 impl JsRow {
-    fn get<'js>(&self, column: Column<'js>) -> rquickjs::Result<Val> {
+    fn get(&self, column: Column<'_>) -> rquickjs::Result<Val> {
         let value = self.inner.get((&column).into());
         match value {
             Ok(value) => Ok(Val(value.to_owned())),

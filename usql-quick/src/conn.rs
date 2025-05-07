@@ -65,7 +65,7 @@ impl JsConn {
         let trans = throw_if!(ctx, self.conn.begin().await);
 
         let trans = Class::instance(
-            ctx,
+            ctx.clone(),
             JsTrans {
                 // Safety: We are only using the transaction for the duration of this call
                 // making sure to release it before return
@@ -89,7 +89,15 @@ impl JsConn {
             Err(val) => Ok(val),
         };
 
-        trans.borrow_mut().i = None;
+        let trans = trans.borrow_mut().i.take().expect("transaction");
+
+        if ret.is_err() {
+            throw_if!(ctx, trans.rollback().await);
+        } else {
+            throw_if!(ctx, trans.commit().await);
+        }
+
+        // trans.borrow_mut().i = None;
 
         ret
     }

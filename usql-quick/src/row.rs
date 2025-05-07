@@ -1,4 +1,4 @@
-use rquickjs::{FromJs, JsLifetime, class::Trace};
+use rquickjs::{Ctx, FromJs, JsLifetime, Object, atom::PredefinedAtom, class::Trace};
 use rquickjs_util::StringRef;
 use usql::{AnyRow, ColumnIndex, Row, Value};
 
@@ -27,8 +27,26 @@ impl JsRow {
         }
     }
 
-    fn len(&self) -> usize {
+    #[qjs(rename = "columnName")]
+    fn column_name(&self, idx: usize) -> rquickjs::Result<Option<String>> {
+        Ok(self.inner.column_name(idx).map(|m| m.to_string()))
+    }
+
+    fn length(&self) -> usize {
         self.inner.len()
+    }
+
+    #[qjs(rename = PredefinedAtom::ToJSON)]
+    fn to_json<'js>(&self, ctx: Ctx<'js>) -> rquickjs::Result<Object<'js>> {
+        let output = Object::new(ctx)?;
+
+        for idx in 0..self.inner.len() {
+            let name = self.inner.column_name(idx).expect("column name");
+            let value = self.inner.get(ColumnIndex::Index(idx)).expect("column");
+            output.set(name, Val(value.to_owned()))?;
+        }
+
+        Ok(output)
     }
 }
 

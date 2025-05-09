@@ -1,9 +1,10 @@
-use std::path::PathBuf;
+use std::{borrow::ToOwned, boxed::Box, path::PathBuf, vec};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{AnyConnector, AnyError, AnyOptions, AnyPool, Connector};
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12,6 +13,7 @@ pub struct Config {
     pub kind: DatabaseConfig,
 }
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum DatabaseConfig {
@@ -19,6 +21,7 @@ pub enum DatabaseConfig {
     LibSql(LibSqlConfig),
 }
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SqliteConfig {
@@ -45,6 +48,7 @@ impl From<SqliteConfig> for AnyOptions {
     }
 }
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum LibSqlConfig {

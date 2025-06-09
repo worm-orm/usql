@@ -2677,6 +2677,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "usql-builder"
+version = "0.1.0"
+dependencies = [
+ "usql",
+]
+
+[[package]]
 name = "usql-quick"
 version = "0.1.0"
 dependencies = [

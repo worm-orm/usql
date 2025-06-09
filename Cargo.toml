@@ -2,4 +2,4 @@
 
 resolver = "2"
 
-members = ["usql", "usql-quick"]
+members = ["usql", "usql-builder", "usql-quick"]

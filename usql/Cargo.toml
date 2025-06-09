@@ -5,7 +5,7 @@ edition = "2024"
 
 
 [features]
-default = ["sqlite", "libsql", "postgres"]
+# default = ["sqlite", "libsql", "postgres"]
 std = ["serde/std", "chrono/std", "bytes/std"]
 
 postgres = ["deadpool-postgres", "tokio-postgres", "std"]
@@ -50,7 +50,7 @@ libsql = { version = "0.9", default-features = false, features = [
 ], optional = true }
 
 # Sqlite
-rusqlite = { version = "0.35", optional = true }
+rusqlite = { version = "0.36", optional = true }
 flume = { version = "0.11", optional = true }
 futures-channel = { version = "0.3", default-features = false, features = [
     "alloc",

@@ -13,4 +13,4 @@ futures = { version = "0.3" }
 [dev-dependencies]
 klaver = { git = "https://github.com/fairy-render/klaver" }
 tokio = { version = "1", features = ["rt", "macros"] }
-usql = { path = "../usql", features = ["std", "sqlite"] }
+usql = { path = "../usql", features = ["std"] }

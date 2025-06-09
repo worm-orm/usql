@@ -76,6 +76,7 @@ impl From<LibSqlConfig> for AnyOptions {
 }
 
 impl Config {
+    #[allow(unused)]
     pub async fn crate_pool(self) -> Result<AnyPool, AnyError> {
         match self.kind {
             DatabaseConfig::Sqlite(sqlite_config) => {

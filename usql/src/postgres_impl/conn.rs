@@ -1,14 +1,9 @@
-use crate::Connection;
+use crate::{Connection, Executor};
 
 use super::connector::Postgres;
 
-impl Connection for deadpool_postgres::Object {
+impl Executor for deadpool_postgres::Object {
     type Connector = Postgres;
-
-    type Transaction<'conn>
-        = tokio_postgres::Transaction<'conn>
-    where
-        Self: 'conn;
 
     fn db_info(&self) -> <Self::Connector as crate::Connector>::Info {
         todo!()
@@ -43,6 +38,13 @@ impl Connection for deadpool_postgres::Object {
     {
         async move { todo!() }
     }
+}
+
+impl Connection for deadpool_postgres::Object {
+    type Transaction<'conn>
+        = tokio_postgres::Transaction<'conn>
+    where
+        Self: 'conn;
 
     fn begin(
         &mut self,

@@ -5,7 +5,7 @@ edition = "2024"
 
 
 [features]
-# default = ["sqlite", "libsql"]
+default = ["sqlite", "libsql", "postgres"]
 std = ["serde/std", "chrono/std", "bytes/std"]
 
 postgres = ["deadpool-postgres", "tokio-postgres", "std"]

@@ -15,4 +15,8 @@ impl Row for tokio_postgres::Row {
     fn len(&self) -> usize {
         todo!()
     }
+
+    fn column_name(&self, idx: usize) -> Option<&str> {
+        todo!()
+    }
 }

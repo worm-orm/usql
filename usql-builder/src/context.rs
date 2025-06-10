@@ -27,20 +27,19 @@ impl<'a> Context<'a> {
         self.system
     }
     pub fn push<S: Into<ValueCow<'a>>>(&mut self, value: S) -> Result<(), Error> {
-        // let value = value.into();
+        let value = value.into();
 
-        // if !value.is_null() {
-        //     self.bindings.push(value);
-        //     match self.system {
-        //         System::Mysql => self.write_str("?"),
-        //         System::Sqlite => self.write_str("?"),
-        //         System::Postgres => {
-        //             write!(self.writer, "${}", self.values.len())
-        //         }
-        //     }?;
-        // } else {
-        //     self.write_str("NULL")?;
-        // }
+        if !value.as_ref().is_null() {
+            self.bindings.push(value);
+            match self.system {
+                System::Mysql | System::LibSql | System::Sqlite => self.write_str("?"),
+                System::Postgres => {
+                    write!(self.output, "${}", self.output.len())
+                }
+            }?;
+        } else {
+            self.write_str("NULL")?;
+        }
 
         Ok(())
     }

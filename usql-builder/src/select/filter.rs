@@ -3,6 +3,7 @@ use crate::{
 };
 use core::fmt::Write;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FilterSelect<S, E> {
     select: S,
     expression: E,

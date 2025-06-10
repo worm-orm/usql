@@ -9,8 +9,9 @@ use crate::{
     },
     statement::Statement,
 };
-use alloc::fmt::Write;
+use core::fmt::Write;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Select<T, S> {
     target: T,
     selection: S,
@@ -48,16 +49,6 @@ where
     T: Target<'a>,
     S: Selection<'a>,
 {
-}
-
-impl<'a, T, S> Statement<'a> for Select<T, S>
-where
-    T: Target<'a>,
-    S: Selection<'a>,
-{
-    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
-        <Self as Query<'a>>::build(self, ctx)
-    }
 }
 
 #[cfg(test)]
@@ -105,7 +96,7 @@ mod tests {
 
         let mut ctx = Context::new(System::Sqlite);
 
-        Statement::build(select, &mut ctx).expect("build");
+        Query::build(select, &mut ctx).expect("build");
 
         assert_eq!(ctx.to_string(), "SELECT mock_selection FROM mock_target");
     }

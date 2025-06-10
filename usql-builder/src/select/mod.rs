@@ -4,6 +4,9 @@ mod join;
 mod query;
 mod select;
 mod selection;
+mod sort;
 mod target;
 
-pub use self::{alias::*, filter::*, join::*, query::*, select::*, selection::*, target::*};
+pub use self::{
+    alias::*, filter::*, join::*, query::*, select::*, selection::*, sort::*, target::*,
+};

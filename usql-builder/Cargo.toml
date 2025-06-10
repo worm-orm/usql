@@ -5,3 +5,6 @@ edition = "2024"
 
 [dependencies]
 usql = { path = "../usql" }
+
+[dev-dependencies]
+sqlformat = { version = "*" }

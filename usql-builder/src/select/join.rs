@@ -7,6 +7,7 @@ use super::target::Target;
 use alloc::vec::Vec;
 use core::fmt::Write;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct JoinSelect<S, J> {
     select: S,
     joinable: J,

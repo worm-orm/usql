@@ -1,4 +1,4 @@
-use alloc::fmt;
+use core::fmt;
 
 use crate::{context::Context, error::Error};
 

@@ -7,6 +7,16 @@ use core::fmt;
 
 use super::Type;
 
+macro_rules! impl_is {
+    ($($name: ident => $variant: ident),+) => {
+        $(
+            pub fn $name(&self) -> bool {
+                matches!(self, Self::$variant(_))
+            }
+        )*
+    };
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ValueRef<'a> {
     Null,
@@ -51,6 +61,27 @@ impl ValueRef<'_> {
                 }
             }
         }
+    }
+
+    impl_is!(
+        is_bool => Bool,
+        is_smallint => SmallInt,
+        is_int => Int,
+        is_bigint => BigInt,
+        is_float => Float,
+        is_double => Double,
+        is_text => Text,
+        is_binary => ByteArray,
+        is_date => Date,
+        is_datetime => Timestamp,
+        is_time => Time,
+        is_uuid => Uuid,
+        is_json => Json,
+        is_array => Array
+    );
+
+    pub fn is_null(&self) -> bool {
+        matches!(self, Self::Null)
     }
 }
 

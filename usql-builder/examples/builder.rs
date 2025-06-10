@@ -5,7 +5,7 @@ use usql_builder::{Context, expr::*};
 fn main() {
     let select = Select::new("users", "rasmus")
         .join(Join::left("blogs").on("user_id".eql("id")))
-        .filter("name".like(val("%rasmus%")));
+        .filter("name".like(val("%rasmus%")).or("id".eql(val(20))));
 
     let mut ctx = Context::new(System::Sqlite);
 

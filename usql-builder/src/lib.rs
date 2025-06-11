@@ -6,6 +6,7 @@ mod context;
 mod either;
 mod error;
 pub mod expr;
+pub mod mutate;
 pub mod schema;
 pub mod select;
 mod sql;

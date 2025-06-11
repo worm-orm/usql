@@ -2,6 +2,7 @@ use usql::System;
 use usql_builder::{
     StatementExt,
     expr::*,
+    mutate::{Set, insert},
     schema::{Column, ColumnType, CreateIndex, CreateTable},
     select::{
         FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt, Select,
@@ -22,6 +23,14 @@ fn main() {
 
     let sql = CreateIndex::new("users", "users_name_index", vec!["name".into()])
         .unique(true)
+        .to_sql(System::Sqlite)
+        .unwrap();
+
+    println!("{sql}");
+
+    let sql = insert("users")
+        .with("name", "Rasmus")
+        .returning("id")
         .to_sql(System::Sqlite)
         .unwrap();
 

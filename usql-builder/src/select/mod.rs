@@ -1,6 +1,7 @@
 mod alias;
 mod filter;
 mod group;
+mod having;
 mod join;
 mod limit;
 mod query;
@@ -10,5 +11,6 @@ mod sort;
 mod target;
 
 pub use self::{
-    alias::*, filter::*, join::*, query::*, select::*, selection::*, sort::*, target::*,
+    alias::*, filter::*, group::*, having::*, join::*, limit::*, query::*, select::*, selection::*,
+    sort::*, target::*,
 };

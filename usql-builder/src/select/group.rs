@@ -1,6 +1,9 @@
 use core::fmt::Write;
 
-use crate::{expr::Expression, select::Query};
+use crate::{
+    expr::Expression,
+    select::{HavingSelect, Query},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GroupSelect<S, G> {
@@ -11,6 +14,10 @@ pub struct GroupSelect<S, G> {
 impl<S, G> GroupSelect<S, G> {
     pub fn new(select: S, group: G) -> GroupSelect<S, G> {
         GroupSelect { select, group }
+    }
+
+    pub fn having<E>(self, expression: E) -> HavingSelect<Self, E> {
+        HavingSelect::new(self, expression)
     }
 }
 

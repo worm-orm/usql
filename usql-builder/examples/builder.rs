@@ -1,4 +1,5 @@
 use usql::{System, ValueRef};
+use usql_builder::expr::BinaryOperator;
 use usql_builder::select::{
     FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, Query, QueryExt,
     QueryStmt, Select, SortQuery, TargetExt, table,
@@ -32,6 +33,7 @@ fn main() {
             .and(user_id.has(subselect)),
     )
     .group_by(user_name)
+    .having(user_id.eql(val(20)))
     .order_by((
         (user_name, Order::Asc),
         (call("count", (user_id,)), Order::Desc),

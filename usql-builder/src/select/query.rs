@@ -5,7 +5,7 @@ use crate::{
     error::Error,
     expr::{Expression, Ident},
     select::{
-        Select, Selection, SortKey, SortSelect, Target,
+        HavingSelect, Select, Selection, SortKey, SortSelect, Target,
         filter::FilterSelect,
         group::GroupSelect,
         join::{JoinSelect, Joinable},
@@ -170,6 +170,20 @@ where
 }
 
 impl<'a, S, G> SortQuery<'a> for GroupSelect<S, G>
+where
+    S: Query<'a>,
+    G: Expression<'a>,
+{
+}
+
+impl<'a, S, G> LimitQuery<'a> for HavingSelect<S, G>
+where
+    S: Query<'a>,
+    G: Expression<'a>,
+{
+}
+
+impl<'a, S, G> SortQuery<'a> for HavingSelect<S, G>
 where
     S: Query<'a>,
     G: Expression<'a>,

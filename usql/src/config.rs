@@ -1,8 +1,6 @@
-use std::{borrow::ToOwned, boxed::Box, path::PathBuf, vec};
-
-use serde::{Deserialize, Serialize};
-
 use crate::{AnyConnector, AnyError, AnyOptions, AnyPool, Connector};
+use serde::{Deserialize, Serialize};
+use std::{borrow::ToOwned, boxed::Box, path::PathBuf, vec};
 
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,7 +1,7 @@
 use usql::{System, ValueRef};
 use usql_builder::select::{
-    FilterQuery, IdentExt, Join, JoinQuery, Order, Query, QueryStmt, Select, SortQuery, TargetExt,
-    table,
+    FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, Query, QueryExt,
+    QueryStmt, Select, SortQuery, TargetExt, table,
 };
 use usql_builder::{Context, expr::*};
 
@@ -13,7 +13,7 @@ fn main() {
 
     let test = call("max", (val(20), val(10)));
 
-    let subselect = QueryStmt::new(Select::new("test", ("id", "age")));
+    let subselect = Select::new("test", ("id", "age")).into_stmt();
 
     let select = Select::new(
         users,
@@ -31,9 +31,14 @@ fn main() {
             .or(user_id.eql(val(20)))
             .and(user_id.has(subselect)),
     )
-    .order_by(((user_name, Order::Asc), (user_id, Order::Desc)));
+    .group_by(user_name)
+    .order_by((
+        (user_name, Order::Asc),
+        (call("count", (user_id,)), Order::Desc),
+    ))
+    .limit(0, 100);
 
-    let mut ctx = Context::new(System::Sqlite);
+    let mut ctx = Context::new(System::Mysql);
 
     select.build(&mut ctx).expect("build");
 

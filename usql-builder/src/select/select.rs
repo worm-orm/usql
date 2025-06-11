@@ -1,13 +1,7 @@
 use crate::{
     context::Context,
     error::Error,
-    expr::Expression,
-    select::{
-        query::{FilterQuery, JoinQuery, Query},
-        selection::Selection,
-        target::Target,
-    },
-    statement::Statement,
+    select::{query::Query, selection::Selection, target::Target},
 };
 use core::fmt::Write;
 
@@ -37,20 +31,6 @@ where
     }
 }
 
-impl<'a, T, S> FilterQuery<'a> for Select<T, S>
-where
-    T: Target<'a>,
-    S: Selection<'a>,
-{
-}
-
-impl<'a, T, S> JoinQuery<'a> for Select<T, S>
-where
-    T: Target<'a>,
-    S: Selection<'a>,
-{
-}
-
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;
@@ -60,6 +40,7 @@ mod tests {
     use crate::{
         context::Context,
         error::Error,
+        expr::Expression,
         select::{selection::Selection, target::Target},
     };
 

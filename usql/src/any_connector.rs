@@ -330,6 +330,7 @@ impl Row for AnyRow {
         }
     }
 
+    #[allow(unused_variables)]
     fn column_name(&self, idx: usize) -> Option<&str> {
         #[allow(unreachable_patterns)]
         match self {

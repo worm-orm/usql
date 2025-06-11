@@ -87,16 +87,16 @@ where
     }
 }
 
-pub fn write_identifier_escape<W>(dialect: &System, out: &mut W) -> fmt::Result
-where
-    W: Write + ?Sized,
-{
-    match dialect {
-        &System::Mysql => {
-            write!(out, "`")
-        }
-        &System::Sqlite | &System::LibSql | &System::Postgres => {
-            write!(out, "\"")
-        }
-    }
-}
+// pub fn write_identifier_escape<W>(dialect: &System, out: &mut W) -> fmt::Result
+// where
+//     W: Write + ?Sized,
+// {
+//     match dialect {
+//         &System::Mysql => {
+//             write!(out, "`")
+//         }
+//         &System::Sqlite | &System::LibSql | &System::Postgres => {
+//             write!(out, "\"")
+//         }
+//     }
+// }

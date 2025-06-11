@@ -1,5 +1,4 @@
-use crate::{Context, Error, expr::Ident, select::Query};
-
+use crate::{Context, Error, expr::Expression, select::Query};
 use alloc::vec::Vec;
 use core::fmt::{self, Write};
 
@@ -49,10 +48,10 @@ pub trait SortKey<'val> {
 
 impl<'val, C> SortKey<'val> for (C, Order)
 where
-    C: Ident<'val>,
+    C: Expression<'val>,
 {
     fn build(self, ctx: &mut Context<'val>) -> Result<(), Error> {
-        <C as Ident<'_>>::build(self.0, ctx)?;
+        <C as Expression<'_>>::build(self.0, ctx)?;
         write!(ctx, " {}", self.1)?;
         Ok(())
     }

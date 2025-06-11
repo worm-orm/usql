@@ -2,7 +2,7 @@ use usql::System;
 use usql_builder::{
     StatementExt,
     expr::*,
-    mutate::{Set, insert},
+    mutate::{Set, insert, update},
     schema::{Column, ColumnType, CreateIndex, CreateTable},
     select::{
         FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt, Select,
@@ -31,6 +31,14 @@ fn main() {
     let sql = insert("users")
         .with("name", "Rasmus")
         .returning("id")
+        .to_sql(System::Sqlite)
+        .unwrap();
+
+    println!("{sql}");
+
+    let sql = update("user")
+        .with("status", val("FAIL"))
+        .filter("name".eql(val("Rasmus")))
         .to_sql(System::Sqlite)
         .unwrap();
 

@@ -23,6 +23,14 @@ fn main() {
             user_id,
             test.alias("max"),
             subselect.alias("sub"),
+            Switch::new(
+                user_id,
+                (When::new(val(20), val("Hello, Friend!")),),
+                val("Stranger"),
+            )
+            .alias("status"),
+            IfElse::new((When::new(user_id.lte(val(10)), val("Yo")),), val("No"))
+                .alias("yay_or_nay"),
         ),
     )
     .join(Join::left("blogs".alias("blogs")).on("blogs".alias("blogs").col("user_id").eql(user_id)))

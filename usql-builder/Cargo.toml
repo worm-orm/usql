@@ -4,10 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
+default = ["std"]
+std = ["sqlformat"]
 
 
 [dependencies]
 usql = { path = "../usql" }
+sqlformat = { version = "0.3", optional = true }
+dyn-clone = { version = "1" }
 
 [dev-dependencies]
 sqlformat = { version = "*" }

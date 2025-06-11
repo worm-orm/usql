@@ -6,7 +6,7 @@ use alloc::{
 
 use usql::{System, ValueCow};
 
-use crate::error::Error;
+use crate::{error::Error, sql::SqlStmt};
 
 pub struct Context<'a> {
     system: System,
@@ -50,6 +50,10 @@ impl<'a> Context<'a> {
     {
         write_identifier(identifier, &self.system, &mut self.output)?;
         Ok(())
+    }
+
+    pub fn build(self) -> SqlStmt<'a> {
+        SqlStmt::new(self.output, self.bindings)
     }
 }
 

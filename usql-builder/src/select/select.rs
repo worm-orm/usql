@@ -5,6 +5,10 @@ use crate::{
 };
 use core::fmt::Write;
 
+pub fn select<T, S>(target: T, selection: S) -> Select<T, S> {
+    Select::new(target, selection)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Select<T, S> {
     target: T,

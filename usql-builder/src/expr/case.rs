@@ -5,6 +5,18 @@ use crate::{
     expr::{Expression, Ident},
 };
 
+pub fn switch<E, C, T>(expression: E, cases: C, default: T) -> Switch<E, C, T> {
+    Switch::new(expression, cases, default)
+}
+
+pub fn when<E, T>(condition: E, value: T) -> When<E, T> {
+    When::new(condition, value)
+}
+
+pub fn ifelse<C, T>(cases: C, default: T) -> IfElse<C, T> {
+    IfElse::new(cases, default)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Switch<E, C, T> {
     expression: E,

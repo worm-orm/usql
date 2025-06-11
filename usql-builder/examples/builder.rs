@@ -1,12 +1,32 @@
-use usql::{System, ValueRef};
-use usql_builder::expr::BinaryOperator;
-use usql_builder::select::{
-    FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, Query, QueryExt,
-    QueryStmt, Select, SortQuery, TargetExt, table,
+use usql::System;
+use usql_builder::{
+    StatementExt,
+    expr::*,
+    schema::{Column, ColumnType, CreateIndex, CreateTable},
+    select::{
+        FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt, Select,
+        SortQuery, TargetExt, select,
+    },
 };
-use usql_builder::{Context, expr::*};
 
 fn main() {
+    let sql = CreateTable::new("users")
+        .column(Column::new("id", ColumnType::Int).auto(true).primary_key())
+        .column(Column::new("name", ColumnType::VarChar(100)).required(true))
+        .column(Column::new("status", ColumnType::VarChar(4)).default(val("OK")))
+        .force()
+        .to_sql(System::Sqlite)
+        .unwrap();
+
+    println!("{sql}");
+
+    let sql = CreateIndex::new("users", "users_name_index", vec!["name".into()])
+        .unique(true)
+        .to_sql(System::Sqlite)
+        .unwrap();
+
+    println!("{sql}");
+
     let users = "users".alias("users");
 
     let user_name = users.col("name").alias("user__name");
@@ -14,23 +34,22 @@ fn main() {
 
     let test = call("max", (val(20), val(10)));
 
-    let subselect = Select::new("test", ("id", "age")).into_stmt();
+    let subselect = select("test", ("id", "age")).into_stmt();
 
-    let select = Select::new(
+    let select = select(
         users,
         (
             user_name,
             user_id,
             test.alias("max"),
             subselect.alias("sub"),
-            Switch::new(
+            switch(
                 user_id,
-                (When::new(val(20), val("Hello, Friend!")),),
+                (when(val(20), val("Hello, Friend!")),),
                 val("Stranger"),
             )
             .alias("status"),
-            IfElse::new((When::new(user_id.lte(val(10)), val("Yo")),), val("No"))
-                .alias("yay_or_nay"),
+            ifelse((when(user_id.lte(val(10)), val("Yo")),), val("No")).alias("yay_or_nay"),
         ),
     )
     .join(Join::left("blogs".alias("blogs")).on("blogs".alias("blogs").col("user_id").eql(user_id)))
@@ -46,13 +65,10 @@ fn main() {
         (user_name, Order::Asc),
         (call("count", (user_id,)), Order::Desc),
     ))
-    .limit(0, 100);
+    .limit(0, 100)
+    .into_stmt()
+    .to_sql(System::Sqlite)
+    .unwrap();
 
-    let mut ctx = Context::new(System::Mysql);
-
-    select.build(&mut ctx).expect("build");
-
-    let form = sqlformat::format(&ctx.to_string(), &Default::default(), &Default::default());
-
-    println!("{form}");
+    println!("{select}");
 }

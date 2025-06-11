@@ -6,7 +6,11 @@ mod context;
 mod either;
 mod error;
 pub mod expr;
+pub mod schema;
 pub mod select;
+mod sql;
 mod statement;
 
-pub use self::{context::Context, either::Either, error::Error};
+pub use self::{
+    context::Context, either::Either, error::Error, sql::SqlStmt, statement::StatementExt,
+};

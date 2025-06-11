@@ -2696,6 +2696,7 @@ dependencies = [
 name = "usql-builder"
 version = "0.1.0"
 dependencies = [
+ "dyn-clone",
  "sqlformat",
  "usql",
 ]

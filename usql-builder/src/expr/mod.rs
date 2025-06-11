@@ -2,11 +2,12 @@ use crate::{context::Context, error::Error};
 
 mod binary;
 mod call;
+mod case;
 mod ext;
 mod ident;
 mod value;
 
-pub use self::{binary::*, call::*, ext::*, ident::Ident, value::val};
+pub use self::{binary::*, call::*, case::*, ext::*, ident::Ident, value::val};
 
 pub trait Expression<'a> {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error>;

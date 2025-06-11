@@ -8,6 +8,10 @@ use crate::{
     statement::Statement,
 };
 
+pub fn create_table<'a>(name: impl Into<Cow<'a, str>>) -> CreateTable<'a> {
+    CreateTable::new(name)
+}
+
 #[derive(Clone)]
 pub struct CreateTable<'a> {
     pub name: Cow<'a, str>,

@@ -3,7 +3,7 @@ use usql_builder::{
     StatementExt,
     expr::*,
     mutate::{Set, insert, update},
-    schema::{Column, ColumnType, CreateIndex, CreateTable},
+    schema::{Column, ColumnType, CreateIndex, create_table},
     select::{
         FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt, Select,
         SortQuery, TargetExt, select,
@@ -11,7 +11,7 @@ use usql_builder::{
 };
 
 fn main() {
-    let sql = CreateTable::new("users")
+    let sql = create_table("users")
         .column(Column::new("id", ColumnType::Int).auto(true).primary_key())
         .column(Column::new("name", ColumnType::VarChar(100)).required(true))
         .column(Column::new("status", ColumnType::VarChar(4)).default(val("OK")))
@@ -39,6 +39,7 @@ fn main() {
     let sql = update("user")
         .with("status", val("FAIL"))
         .filter("name".eql(val("Rasmus")))
+        .returning("id")
         .to_sql(System::Sqlite)
         .unwrap();
 

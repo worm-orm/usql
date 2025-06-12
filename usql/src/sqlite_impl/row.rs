@@ -1,28 +1,28 @@
-use rusqlite::types::{FromSql, FromSqlError, ValueRef as SqliteValue};
+use rusqlite::types::{FromSql, FromSqlError, Value as SqliteValue, ValueRef as SqliteValueRef};
 use std::{collections::HashMap, string::String, sync::Arc, vec::Vec};
 
-use crate::{Value, ValueCow, ValueRef};
+use crate::{JsonValue, Value, ValueCow, ValueRef};
 
 use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
 
 pub trait ColumnIndex {
-    fn get<'a>(&self, row: &'a Row) -> Option<&'a Value>;
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue>;
 }
 
 impl ColumnIndex for usize {
-    fn get<'a>(&self, row: &'a Row) -> Option<&'a Value> {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
         row.values.get(*self)
     }
 }
 
 impl ColumnIndex for &str {
-    fn get<'a>(&self, row: &'a Row) -> Option<&'a Value> {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
         row.columns.get(*self).and_then(|m| row.values.get(*m))
     }
 }
 
 impl ColumnIndex for crate::ColumnIndex<'_> {
-    fn get<'a>(&self, row: &'a Row) -> Option<&'a Value> {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
         match self {
             Self::Index(idx) => idx.get(row),
             Self::Named(name) => name.get(row),
@@ -37,11 +37,11 @@ pub struct Row {
 }
 
 impl Row {
-    pub fn get_ref<T: ColumnIndex>(&self, name: T) -> Option<SqliteValue<'_>> {
+    pub fn get_ref<T: ColumnIndex>(&self, name: T) -> Option<SqliteValueRef<'_>> {
         name.get(self).map(|m| m.into())
     }
 
-    pub fn get_raw<T: ColumnIndex>(&self, name: T) -> Option<&Value> {
+    pub fn get_raw<T: ColumnIndex>(&self, name: T) -> Option<&SqliteValue> {
         name.get(self)
     }
 
@@ -117,7 +117,7 @@ impl crate::Row for Row {
             crate::Type::BigInt => match value.as_ref() {
                 ValueRef::BigInt(i) => Value::BigInt(i).into(),
                 ValueRef::Int(i) => Value::BigInt(i as _).into(),
-                ValueRef::SmallInt(i) => Value::BigInt(i).into(),
+                ValueRef::SmallInt(i) => Value::BigInt(i as _).into(),
                 _ => {
                     panic!("type error")
                 }
@@ -131,19 +131,84 @@ impl crate::Row for Row {
                 }
             },
             crate::Type::Blob => {
-                todo!()
+                if !value.as_ref().is_binary() {
+                    panic!("type error")
+                }
+                value
             }
-            crate::Type::Time => {
-                todo!()
+            crate::Type::Time => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let time = chrono::NaiveTime::parse_from_str(text, "%T%.f").unwrap();
+                    Value::Time(time).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            crate::Type::Date => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let date = chrono::NaiveDate::parse_from_str(text, "%F").unwrap();
+                    Value::Date(date).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            crate::Type::DateTime => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let date = chrono::NaiveDateTime::parse_from_str(text, "%+").unwrap();
+                    Value::Timestamp(date).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            crate::Type::Json => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let json: JsonValue = serde_json::from_str(text).unwrap();
+                    Value::Json(json).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            crate::Type::Real => match value.as_ref() {
+                ValueRef::Float(f) => Value::Double((*f as f64).into()).into(),
+                ValueRef::Double(f) => Value::Double(f).into(),
+                _ => {
+                    panic!("typ error")
+                }
+            },
+            crate::Type::Double => match value.as_ref() {
+                ValueRef::Float(f) => Value::Float((*f as f32).into()).into(),
+                ValueRef::Double(f) => Value::Float((*f as f32).into()).into(),
+                _ => {
+                    panic!("typ error")
+                }
+            },
+            crate::Type::Uuid => match value.as_ref() {
+                ValueRef::ByteArray(bs) => {
+                    let id = uuid::Uuid::from_slice(&*bs).unwrap();
+                    Value::Uuid(id).into()
+                }
+                _ => {
+                    panic!("typ error")
+                }
+            },
+            crate::Type::Bool => {
+                let b = match value.as_ref() {
+                    ValueRef::Bool(b) => return Ok(Value::Bool(b).into()),
+                    ValueRef::BigInt(b) => b as u8,
+                    ValueRef::SmallInt(b) => b as _,
+                    ValueRef::Int(b) => b as _,
+                    _ => {
+                        panic!("type error")
+                    }
+                };
+
+                Value::Bool(if b == 0 { false } else { true }).into()
             }
-            crate::Type::Date => todo!(),
-            crate::Type::DateTime => todo!(),
-            crate::Type::Json => todo!(),
-            crate::Type::Real => todo!(),
-            crate::Type::Double => todo!(),
-            crate::Type::Uuid => todo!(),
-            crate::Type::Bool => todo!(),
-            crate::Type::Array(_) => todo!(),
+            crate::Type::Array(value) => todo!(),
             crate::Type::Any => value,
         };
 

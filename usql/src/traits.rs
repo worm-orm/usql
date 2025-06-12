@@ -8,7 +8,7 @@ pub trait Connector: Send + Sync {
     type Statement: Statement<Connector = Self>;
     type Row: Row<Connector = Self>;
     type Info: DatabaseInfo;
-    type Pool: Pool;
+    type Pool: Pool<Connector = Self>;
     type Error;
     type Options;
 

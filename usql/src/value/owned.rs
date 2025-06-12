@@ -150,6 +150,7 @@ pub enum ValueConversionError {
     NotTime,
     NotTimestamp,
     NotUuid,
+    NotJson,
 }
 
 impl TryFrom<Value> for bool {
@@ -283,6 +284,19 @@ impl TryFrom<Value> for uuid::Uuid {
         }
     }
 }
+
+impl TryFrom<Value> for JsonValue {
+    type Error = ValueConversionError;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        if let Value::Json(v) = value {
+            Ok(v)
+        } else {
+            Err(ValueConversionError::NotJson)
+        }
+    }
+}
+
 impl core::fmt::Display for ValueConversionError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -297,6 +311,7 @@ impl core::fmt::Display for ValueConversionError {
             ValueConversionError::NotTime => write!(f, "Value is not a Time"),
             ValueConversionError::NotTimestamp => write!(f, "Value is not a Timestamp"),
             ValueConversionError::NotUuid => write!(f, "Value is not a Uuid"),
+            ValueConversionError::NotJson => write!(f, "Value is not a json value"),
         }
     }
 }

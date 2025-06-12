@@ -1,8 +1,7 @@
+use rusqlite::types::{FromSql, FromSqlError, ValueRef as SqliteValue};
 use std::{collections::HashMap, string::String, sync::Arc, vec::Vec};
 
-use rusqlite::types::{FromSql, FromSqlError, Value, ValueRef};
-
-use crate::ValueCow;
+use crate::{Value, ValueCow, ValueRef};
 
 use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
 
@@ -34,11 +33,11 @@ impl ColumnIndex for crate::ColumnIndex<'_> {
 #[derive(Debug, Clone)]
 pub struct Row {
     pub(crate) columns: Arc<HashMap<String, usize>>,
-    pub(crate) values: Vec<Value>,
+    pub(crate) values: Vec<rusqlite::types::Value>,
 }
 
 impl Row {
-    pub fn get_ref<T: ColumnIndex>(&self, name: T) -> Option<ValueRef<'_>> {
+    pub fn get_ref<T: ColumnIndex>(&self, name: T) -> Option<SqliteValue<'_>> {
         name.get(self).map(|m| m.into())
     }
 
@@ -69,11 +68,11 @@ impl Row {
         self.columns.keys()
     }
 
-    pub fn values(&self) -> &[Value] {
+    pub fn values(&self) -> &[rusqlite::types::Value] {
         &self.values
     }
 
-    pub fn into_values(self) -> Vec<Value> {
+    pub fn into_values(self) -> Vec<rusqlite::types::Value> {
         self.values
     }
 }
@@ -105,14 +104,32 @@ impl crate::Row for Row {
                 value
             }
             crate::Type::SmallInt => {
-                todo!()
+                //
+                match value.as_ref() {
+                    ValueRef::BigInt(i) => Value::SmallInt(i as _).into(),
+                    ValueRef::Int(i) => Value::SmallInt(i as _).into(),
+                    ValueRef::SmallInt(i) => Value::SmallInt(i).into(),
+                    _ => {
+                        panic!("type error")
+                    }
+                }
             }
-            crate::Type::BigInt => {
-                todo!()
-            }
-            crate::Type::Int => {
-                todo!()
-            }
+            crate::Type::BigInt => match value.as_ref() {
+                ValueRef::BigInt(i) => Value::BigInt(i).into(),
+                ValueRef::Int(i) => Value::BigInt(i as _).into(),
+                ValueRef::SmallInt(i) => Value::BigInt(i).into(),
+                _ => {
+                    panic!("type error")
+                }
+            },
+            crate::Type::Int => match value.as_ref() {
+                ValueRef::BigInt(i) => Value::Int(i as _).into(),
+                ValueRef::Int(i) => Value::Int(i).into(),
+                ValueRef::SmallInt(i) => Value::Int(i as _).into(),
+                _ => {
+                    panic!("type error")
+                }
+            },
             crate::Type::Blob => {
                 todo!()
             }
@@ -127,7 +144,7 @@ impl crate::Row for Row {
             crate::Type::Uuid => todo!(),
             crate::Type::Bool => todo!(),
             crate::Type::Array(_) => todo!(),
-            crate::Type::Any => todo!(),
+            crate::Type::Any => value,
         };
 
         Ok(value)

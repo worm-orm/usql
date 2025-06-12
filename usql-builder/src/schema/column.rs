@@ -1,7 +1,7 @@
 use core::fmt::Write;
 
 use alloc::{borrow::Cow, format};
-use usql::{System, ValueCow};
+use usql_core::{System, ValueCow};
 
 use crate::{
     Context, Error,

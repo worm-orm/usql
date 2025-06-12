@@ -1,4 +1,4 @@
-use usql::{Connection, Connector, Executor};
+use usql_core::{Connection, Connector, Executor};
 
 pub struct Exec<'a, B: Connector>
 where
@@ -44,15 +44,15 @@ where
     fn query<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<usql::Value>,
-    ) -> usql::QueryStream<'a, Self::Connector> {
+        params: Vec<usql_core::Value>,
+    ) -> usql_core::QueryStream<'a, Self::Connector> {
         self.conn.query(stmt, params)
     }
 
     fn exec<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<usql::Value>,
+        params: Vec<usql_core::Value>,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
         async move { self.conn.exec(stmt, params).await }
     }

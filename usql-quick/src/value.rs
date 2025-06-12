@@ -5,13 +5,13 @@ use rquickjs::{
 };
 
 use rquickjs_util::{Map as JsMap, Set as JsSet, date::Date};
-use usql::Value;
+use usql_core::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Val(pub usql::Value);
+pub struct Val(pub usql_core::Value);
 
 impl core::ops::Deref for Val {
-    type Target = usql::Value;
+    type Target = usql_core::Value;
     fn deref(&self) -> &Self::Target {
         &self.0
     }

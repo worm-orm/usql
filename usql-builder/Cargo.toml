@@ -9,7 +9,7 @@ std = ["sqlformat"]
 
 
 [dependencies]
-usql = { path = "../usql" }
+usql-core = { path = "../usql-core" }
 sqlformat = { version = "0.3", optional = true }
 dyn-clone = { version = "1" }
 

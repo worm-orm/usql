@@ -1,15 +1,15 @@
 use std::alloc::System;
 
-use usql::{
-    ColumnIndex, Connector, DatabaseInfo, Executor, JsonValue, Row, Type, chrono::NaiveDateTime,
-    util::next,
-};
 use usql_builder::{
     StatementExt,
     expr::val,
     mutate::{Set, insert},
     schema::{Column, ColumnType, create_table},
     select::{Order, QueryExt, SortQuery, select},
+};
+use usql_core::{
+    ColumnIndex, Connector, DatabaseInfo, Executor, JsonValue, Row, Type, chrono::NaiveDateTime,
+    util::next,
 };
 
 use crate::{error::Error, migration::Migration};

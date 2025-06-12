@@ -1,6 +1,6 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use usql::{Connection, Connector, Executor, Pool, Transaction, chrono::Utc};
+use usql_core::{Connection, Connector, Executor, Pool, Transaction, chrono::Utc};
 
 use crate::{
     data::{Entry, insert_migration, list_entries},

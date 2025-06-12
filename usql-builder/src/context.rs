@@ -4,7 +4,7 @@ use alloc::{
     vec::Vec,
 };
 
-use usql::{System, ValueCow};
+use usql_core::{System, ValueCow};
 
 use crate::{error::Error, sql::SqlStmt};
 

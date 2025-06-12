@@ -1,5 +1,5 @@
 use futures_core::future::BoxFuture;
-use usql::{Connection, Connector, Executor};
+use usql_core::{Connection, Connector, Executor};
 
 use crate::{error::Error, exec::Exec, loader::MigrationLoader};
 

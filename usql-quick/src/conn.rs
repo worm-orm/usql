@@ -2,7 +2,7 @@ use std::mem::transmute;
 
 use rquickjs::{Class, Ctx, Function, JsLifetime, class::Trace, prelude::Opt};
 use rquickjs_util::{StringRef, throw, throw_if};
-use usql::{AnyConn, prelude::*};
+use usql_core::{AnyConn, prelude::*};
 
 use crate::{row::JsRow, statement::StatementOrQuery, value::Val};
 
@@ -71,7 +71,7 @@ impl JsConn {
                 // making sure to release it before return
                 // Also the we have mutable exclusive access to jsconn
                 i: Some(unsafe {
-                    transmute::<usql::AnyTransaction<'_>, usql::AnyTransaction<'_>>(trans)
+                    transmute::<usql_core::AnyTransaction<'_>, usql_core::AnyTransaction<'_>>(trans)
                 }),
             },
         )?;

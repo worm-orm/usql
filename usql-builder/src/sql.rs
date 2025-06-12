@@ -3,7 +3,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use usql::{System, ValueCow};
+use usql_core::{System, ValueCow};
 
 use crate::{
     Context, Error,

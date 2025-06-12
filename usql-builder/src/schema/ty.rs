@@ -1,7 +1,7 @@
 use core::fmt::{self, Write};
 
 use alloc::{borrow::Cow, string::ToString};
-use usql::System;
+use usql_core::System;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ColumnType<'a> {

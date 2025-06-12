@@ -1,13 +1,13 @@
 [package]
-name = "usql"
+name = "usql-core"
 version = "0.1.0"
 edition = "2024"
 
 
 [features]
-default = ["sqlite"]
+# default = ["sqlite"]
 # default = ["sqlite", "libsql", "postgres"]
-std = ["serde/std", "chrono/std", "bytes/std"]
+std = ["serde/std", "chrono/std", "chrono/now", "bytes/std"]
 
 postgres = ["deadpool-postgres", "tokio-postgres", "std"]
 libsql = ["dep:libsql", "deadpool", "std", "async-lock", "async-stream"]

@@ -38,7 +38,7 @@ where
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;
-    use usql::System;
+    use usql_core::System;
 
     use super::*;
     use crate::{

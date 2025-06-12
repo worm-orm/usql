@@ -1,4 +1,3 @@
-use usql::System;
 use usql_builder::{
     StatementExt,
     expr::*,
@@ -9,6 +8,7 @@ use usql_builder::{
         SortQuery, TargetExt, select,
     },
 };
+use usql_core::System;
 
 fn main() {
     let sql = create_table("users")

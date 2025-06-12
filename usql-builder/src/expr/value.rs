@@ -1,4 +1,4 @@
-use usql::{Value, ValueRef};
+use usql_core::{Value, ValueRef};
 
 use crate::expr::Expression;
 

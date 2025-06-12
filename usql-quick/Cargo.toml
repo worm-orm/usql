@@ -7,10 +7,10 @@ edition = "2024"
 rquickjs = { version = "0.8", features = ["full"] }
 rquickjs-util = { git = "https://github.com/fairy-render/klaver" }
 rquickjs-modules = { git = " https://github.com/fairy-render/klaver" }
-usql = { path = "../usql", features = ["std"] }
+usql-core = { path = "../usql-core", features = ["std"] }
 futures = { version = "0.3" }
 
 [dev-dependencies]
 klaver = { git = "https://github.com/fairy-render/klaver" }
 tokio = { version = "1", features = ["rt", "macros"] }
-usql = { path = "../usql", features = ["std"] }
+usql-core = { path = "../usql-core", features = ["std"] }

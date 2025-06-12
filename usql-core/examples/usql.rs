@@ -1,9 +1,9 @@
-use usql::prelude::*;
+use usql_core::prelude::*;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let sqlite = usql::AnyConnector::create_pool(
-        usql::SqliteOptions {
+    let sqlite = usql_core::AnyConnector::create_pool(
+        usql_core::SqliteOptions {
             path: None,
             flags: Default::default(),
         }

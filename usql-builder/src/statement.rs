@@ -1,4 +1,4 @@
-use usql::System;
+use usql_core::System;
 
 use crate::{context::Context, error::Error, sql::SqlStmt};
 

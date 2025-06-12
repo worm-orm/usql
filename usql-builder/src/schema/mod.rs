@@ -1,8 +1,8 @@
 mod column;
 mod constraint;
-mod create;
 mod fk;
 mod index;
+mod table;
 mod ty;
 
-pub use self::{column::Column, constraint::*, create::*, fk::*, index::*, ty::ColumnType};
+pub use self::{column::Column, constraint::*, fk::*, index::*, table::*, ty::ColumnType};

@@ -108,3 +108,17 @@ impl<'val> Statement<'val> for CreateTable<'val> {
         Ok(())
     }
 }
+
+pub struct DropTable<'a> {
+    pub name: Cow<'a, str>,
+}
+
+impl<'a> Statement<'a> for DropTable<'a> {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.write_str("DROP TABLE ")?;
+
+        ctx.push_identifier(&self.name)?;
+
+        Ok(())
+    }
+}

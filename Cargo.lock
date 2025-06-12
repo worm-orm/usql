@@ -2702,6 +2702,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "usql-migrate"
+version = "0.1.0"
+dependencies = [
+ "futures-core",
+ "usql",
+ "usql-builder",
+]
+
+[[package]]
 name = "usql-quick"
 version = "0.1.0"
 dependencies = [

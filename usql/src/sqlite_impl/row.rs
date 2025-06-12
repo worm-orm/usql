@@ -90,6 +90,49 @@ impl crate::Row for Row {
             .ok_or_else(|| Error::NotFound)
     }
 
+    fn get_typed<'a>(
+        &'a self,
+        index: crate::ColumnIndex<'_>,
+        ty: crate::Type,
+    ) -> Result<ValueCow<'a>, <Self::Connector as crate::Connector>::Error> {
+        let value = crate::Row::get(self, index)?;
+
+        let value = match ty {
+            crate::Type::Text => {
+                if !value.as_ref().is_text() {
+                    panic!("type error")
+                }
+                value
+            }
+            crate::Type::SmallInt => {
+                todo!()
+            }
+            crate::Type::BigInt => {
+                todo!()
+            }
+            crate::Type::Int => {
+                todo!()
+            }
+            crate::Type::Blob => {
+                todo!()
+            }
+            crate::Type::Time => {
+                todo!()
+            }
+            crate::Type::Date => todo!(),
+            crate::Type::DateTime => todo!(),
+            crate::Type::Json => todo!(),
+            crate::Type::Real => todo!(),
+            crate::Type::Double => todo!(),
+            crate::Type::Uuid => todo!(),
+            crate::Type::Bool => todo!(),
+            crate::Type::Array(_) => todo!(),
+            crate::Type::Any => todo!(),
+        };
+
+        Ok(value)
+    }
+
     fn len(&self) -> usize {
         self.len()
     }

@@ -301,20 +301,37 @@ pub enum AnyRow {
     Libsql(LibSqlRow),
 }
 
+#[allow(unused_variables, unreachable_patterns)]
 impl Row for AnyRow {
     type Connector = AnyConnector;
 
-    #[allow(unused_variables)]
     fn get<'a>(
         &'a self,
         index: ColumnIndex<'_>,
     ) -> Result<crate::ValueCow<'a>, <Self::Connector as Connector>::Error> {
-        #[allow(unreachable_patterns)]
         match self {
             #[cfg(feature = "sqlite")]
             AnyRow::Sqlite(row) => <SqliteRow as Row>::get(row, index).map_err(AnyError::Sqlite),
             #[cfg(feature = "libsql")]
             AnyRow::Libsql(row) => <LibSqlRow as Row>::get(row, index).map_err(AnyError::LibSql),
+            _ => missing_db!(),
+        }
+    }
+
+    fn get_typed<'a>(
+        &'a self,
+        index: ColumnIndex<'_>,
+        ty: crate::Type,
+    ) -> Result<crate::ValueCow<'a>, <Self::Connector as Connector>::Error> {
+        match self {
+            #[cfg(feature = "sqlite")]
+            AnyRow::Sqlite(row) => {
+                <SqliteRow as Row>::get_typed(row, index, ty).map_err(AnyError::Sqlite)
+            }
+            #[cfg(feature = "libsql")]
+            AnyRow::Libsql(row) => {
+                <LibSqlRow as Row>::get_typed(row, index, ty).map_err(AnyError::LibSql)
+            }
             _ => missing_db!(),
         }
     }

@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 use futures_core::stream::BoxStream;
 
-use crate::{ValueCow, system::System, value::Value};
+use crate::{Type, ValueCow, system::System, value::Value};
 
 pub trait Connector: Send + Sync {
     type Connection: Connection<Connector = Self>;
@@ -100,6 +100,12 @@ pub trait Row: Send {
     fn get<'a>(
         &'a self,
         index: ColumnIndex<'_>,
+    ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error>;
+
+    fn get_typed<'a>(
+        &'a self,
+        index: ColumnIndex<'_>,
+        ty: Type,
     ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error>;
 
     fn len(&self) -> usize;

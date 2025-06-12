@@ -11,7 +11,7 @@ mod any_connector;
 pub mod config;
 mod system;
 mod traits;
-mod util;
+pub mod util;
 pub mod value;
 
 pub use self::{any_connector::*, system::*, traits::*, value::*};
@@ -34,3 +34,5 @@ pub use postgres_impl::*;
 pub mod prelude {
     pub use super::traits::*;
 }
+
+pub use chrono;

@@ -1,0 +1,53 @@
+use usql_core::{Connector, Executor, util::next};
+
+use crate::{error::Error, query::IntoQuery, row::Row, stream::QueryStream};
+
+pub struct Conn<B>
+where
+    B: Connector,
+{
+    conn: B::Connection,
+}
+
+impl<B: Connector> Conn<B> {
+    pub fn new(conn: B::Connection) -> Conn<B> {
+        Conn { conn }
+    }
+}
+
+impl<B> Conn<B>
+where
+    B: Connector,
+    B::Error: core::error::Error + Send + Sync,
+    B::Statement: 'static,
+{
+    pub async fn fetch<'a, Q>(&'a self, query: Q) -> Result<QueryStream<'a, B>, Error<B>>
+    where
+        Q: IntoQuery<'a, B>,
+    {
+        let mut query = query.into_query(&self.conn).await.map_err(Error::query)?;
+
+        let stream = async_stream::stream! {
+          let mut stream = self.conn.query(query.stmt.as_mut(), query.bindings);
+
+          while let Some(row) = next(&mut stream).await {
+            yield row
+          }
+        };
+
+        Ok(QueryStream {
+            stream: Box::pin(stream),
+        })
+    }
+
+    pub async fn fetch_one<'a, Q>(&'a self, query: Q) -> Result<Row<B>, Error<B>>
+    where
+        Q: IntoQuery<'a, B>,
+    {
+        let mut stream = self.fetch(query).await?;
+        match next(&mut stream).await {
+            Some(ret) => ret,
+            None => Err(Error::NotFound),
+        }
+    }
+}

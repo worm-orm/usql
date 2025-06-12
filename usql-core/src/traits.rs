@@ -55,13 +55,13 @@ pub trait Executor {
     fn query<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<Value>,
+        params: Vec<ValueCow<'a>>,
     ) -> QueryStream<'a, Self::Connector>;
 
     fn exec<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<Value>,
+        params: Vec<ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a;
 }
 

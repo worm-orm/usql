@@ -207,7 +207,7 @@ impl Executor for Conn {
     fn query<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as crate::Connector>::Statement,
-        params: std::vec::Vec<crate::Value>,
+        params: std::vec::Vec<crate::ValueCow<'a>>,
     ) -> crate::QueryStream<'a, Self::Connector> {
         let stream = async_stream::try_stream! {
             let mut stream = self.query(&stmt.sql, params).await?;
@@ -223,7 +223,7 @@ impl Executor for Conn {
     fn exec<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as crate::Connector>::Statement,
-        params: std::vec::Vec<crate::Value>,
+        params: std::vec::Vec<crate::ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send + 'a
     {
         async move {

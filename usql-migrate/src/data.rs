@@ -38,13 +38,7 @@ where
 
     let mut stmt = executor.prepare(&sql.sql).await.unwrap();
 
-    let params = sql
-        .bindings
-        .into_iter()
-        .map(|m| m.to_owned())
-        .collect::<Vec<_>>();
-
-    executor.exec(&mut stmt, params).await.unwrap();
+    executor.exec(&mut stmt, sql.bindings).await.unwrap();
 
     Ok(())
 }
@@ -61,13 +55,7 @@ where
 
     let mut stmt = executor.prepare(&sql.sql).await.unwrap();
 
-    let params = sql
-        .bindings
-        .into_iter()
-        .map(|m| m.to_owned())
-        .collect::<Vec<_>>();
-
-    let mut stream = executor.query(&mut stmt, params);
+    let mut stream = executor.query(&mut stmt, sql.bindings);
 
     let mut output = Vec::new();
 
@@ -116,13 +104,7 @@ where
 
     let mut stmt = executor.prepare(&sql.sql).await.unwrap();
 
-    let params = sql
-        .bindings
-        .into_iter()
-        .map(|m| m.to_owned())
-        .collect::<Vec<_>>();
-
-    executor.exec(&mut stmt, params).await.unwrap();
+    executor.exec(&mut stmt, sql.bindings).await.unwrap();
 
     Ok(())
 }

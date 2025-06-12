@@ -60,7 +60,7 @@ impl<'js> StatementOrQuery<'js> {
                 let mut stmt = throw_if!(ctx, executor.prepare(query.as_str()).await);
                 let stream = executor.query(
                     &mut stmt,
-                    params.into_iter().map(|m| m.0).collect::<Vec<_>>(),
+                    params.into_iter().map(|m| m.0.into()).collect::<Vec<_>>(),
                 );
 
                 let rows = stream
@@ -79,8 +79,10 @@ impl<'js> StatementOrQuery<'js> {
                     throw!(ctx, "Statement is finalized")
                 };
 
-                let stream =
-                    executor.query(stmt, params.into_iter().map(|m| m.0).collect::<Vec<_>>());
+                let stream = executor.query(
+                    stmt,
+                    params.into_iter().map(|m| m.0.into()).collect::<Vec<_>>(),
+                );
 
                 let rows = stream
                     .map_ok(|row| JsRow { inner: row })
@@ -107,7 +109,7 @@ impl<'js> StatementOrQuery<'js> {
                 let ret = executor
                     .exec(
                         &mut stmt,
-                        params.into_iter().map(|m| m.0).collect::<Vec<_>>(),
+                        params.into_iter().map(|m| m.0.into()).collect::<Vec<_>>(),
                     )
                     .await;
 
@@ -123,7 +125,10 @@ impl<'js> StatementOrQuery<'js> {
                 };
 
                 let ret = executor
-                    .exec(stmt, params.into_iter().map(|m| m.0).collect::<Vec<_>>())
+                    .exec(
+                        stmt,
+                        params.into_iter().map(|m| m.0.into()).collect::<Vec<_>>(),
+                    )
                     .await;
 
                 drop(guard);

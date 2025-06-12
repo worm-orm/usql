@@ -234,7 +234,7 @@ impl Executor for AnyConn {
     fn query<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<crate::Value>,
+        params: Vec<crate::ValueCow<'a>>,
     ) -> QueryStream<'a, Self::Connector> {
         #[allow(unreachable_patterns, irrefutable_let_patterns)]
         match self {
@@ -264,7 +264,7 @@ impl Executor for AnyConn {
     fn exec<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<crate::Value>,
+        params: Vec<crate::ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
         async move {
             #[allow(unreachable_patterns, irrefutable_let_patterns)]
@@ -487,7 +487,7 @@ impl Executor for AnyTransaction<'_> {
     fn query<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<crate::Value>,
+        params: Vec<crate::ValueCow<'a>>,
     ) -> QueryStream<'a, Self::Connector> {
         #[allow(unreachable_patterns, irrefutable_let_patterns)]
         match self {
@@ -517,7 +517,7 @@ impl Executor for AnyTransaction<'_> {
     fn exec<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
-        params: Vec<crate::Value>,
+        params: Vec<crate::ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
         async move {
             #[allow(unreachable_patterns, irrefutable_let_patterns)]

@@ -96,6 +96,10 @@ impl crate::Row for Row {
     ) -> Result<ValueCow<'a>, <Self::Connector as crate::Connector>::Error> {
         let value = crate::Row::get(self, index)?;
 
+        if value.is_null() {
+            return Ok(value);
+        }
+
         let value = match ty {
             crate::Type::Text => {
                 if !value.as_ref().is_text() {

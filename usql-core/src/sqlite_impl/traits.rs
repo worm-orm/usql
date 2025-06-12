@@ -1,4 +1,4 @@
-use std::vec::Vec;
+use std::{borrow::ToOwned, vec::Vec};
 
 use rusqlite::types::Value;
 
@@ -21,5 +21,14 @@ impl Params for () {
 impl Params for Vec<crate::Value> {
     fn into_params(self) -> Vec<Value> {
         self.into_iter().map(super::util::usql_to_sqlite).collect()
+    }
+}
+
+impl<'a> Params for Vec<crate::ValueCow<'a>> {
+    fn into_params(self) -> Vec<Value> {
+        self.into_iter()
+            .map(|m| m.to_owned())
+            .map(super::util::usql_to_sqlite)
+            .collect()
     }
 }

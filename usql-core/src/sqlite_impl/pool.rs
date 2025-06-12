@@ -163,7 +163,7 @@ impl Executor for PooledConn {
     fn query<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as crate::Connector>::Statement,
-        params: std::vec::Vec<crate::Value>,
+        params: std::vec::Vec<crate::ValueCow<'a>>,
     ) -> crate::QueryStream<'a, Self::Connector> {
         <Conn as Executor>::query(self.as_ref(), stmt, params)
     }
@@ -171,7 +171,7 @@ impl Executor for PooledConn {
     fn exec<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as crate::Connector>::Statement,
-        params: std::vec::Vec<crate::Value>,
+        params: std::vec::Vec<crate::ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send + 'a
     {
         <Conn as Executor>::exec(self.as_ref(), stmt, params)

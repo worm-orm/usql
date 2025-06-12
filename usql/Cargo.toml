@@ -1,0 +1,16 @@
+[package]
+name = "usql"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["derive"]
+derive = ["usql-macros"]
+
+[dependencies]
+usql-core = { path = "../usql-core" }
+usql-builder = { path = "../usql-builder" }
+usql-macros = { path = "../usql-macros", optional = true }
+futures-core = { version = "0.3" }
+pin-project-lite = { version = "0.2" }
+async-stream = { version = "0.3" }

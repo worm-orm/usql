@@ -1,0 +1,10 @@
+[package]
+name = "usql-migrate"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+usql = { path = "../usql" }
+usql-builder = { path = "../usql-builder" }
+
+futures-core = { version = "0.3" }

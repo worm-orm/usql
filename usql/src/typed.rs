@@ -1,3 +1,4 @@
+use alloc::string::String;
 use usql_core::Type;
 use usql_core::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 

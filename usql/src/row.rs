@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use usql_core::{ColumnIndex, Connector, Row as _, Value};
 
 use crate::{error::Error, typed::Typed};

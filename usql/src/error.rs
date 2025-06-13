@@ -1,5 +1,5 @@
+use alloc::boxed::Box;
 use core::fmt;
-
 use usql_core::Connector;
 
 pub enum Error<B: Connector> {
@@ -12,7 +12,7 @@ impl<B: Connector> fmt::Debug for Error<B>
 where
     B::Error: core::error::Error,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::Connector(e) => write!(f, "{:?}", e),
             Error::Query(err) => write!(f, "{:?}", err),
@@ -25,7 +25,7 @@ impl<B: Connector> fmt::Display for Error<B>
 where
     B::Error: core::error::Error,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::Connector(e) => write!(f, "Connector error: {}", e),
             Error::Query(err) => write!(f, "Query error: {}", err),
@@ -38,7 +38,7 @@ impl<B: Connector> core::error::Error for Error<B>
 where
     B::Error: core::error::Error + 'static,
 {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Error::Connector(e) => Some(e),
             Error::Query(err) => Some(&**err),

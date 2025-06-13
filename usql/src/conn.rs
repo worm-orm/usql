@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use usql_core::{Connection, Connector, Executor, util::next};
 
 use crate::{error::Error, query::IntoQuery, row::Row, stream::QueryStream, trans::Trans};
@@ -33,9 +34,10 @@ where
         let mut query = query.into_query(&self.conn).await?;
 
         let stream = async_stream::stream! {
-          let mut stream = self.conn.query(query.stmt.as_mut(), query.bindings);
+          let mut stream = self.conn.query(query.stmt.as_mut()?, query.bindings);
+
           while let Some(row) = next(&mut stream).await {
-            yield row
+            yield row.map(|row| Row {row}).map_err(Error::connector)
           }
         };
 
@@ -62,7 +64,7 @@ where
         let mut query = query.into_query(&self.conn).await?;
 
         self.conn
-            .exec(query.stmt.as_mut(), query.bindings)
+            .exec(query.stmt.as_mut()?, query.bindings)
             .await
             .map_err(Error::connector)?;
 

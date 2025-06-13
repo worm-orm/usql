@@ -1,3 +1,7 @@
+#![no_std]
+
+extern crate alloc;
+
 mod conn;
 mod error;
 mod from_row;

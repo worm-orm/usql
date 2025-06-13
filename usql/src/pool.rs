@@ -7,6 +7,12 @@ pub struct Pool<B: Connector> {
 }
 
 impl<B: Connector> Pool<B> {
+    pub fn new(pool: B::Pool) -> Pool<B> {
+        Pool { pool }
+    }
+}
+
+impl<B: Connector> Pool<B> {
     pub async fn conn(&self) -> Result<Conn<B>, Error<B>> {
         self.pool
             .get()

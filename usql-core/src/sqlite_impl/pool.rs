@@ -23,6 +23,7 @@ enum Source {
     Path(PathBuf),
 }
 
+#[derive(Default)]
 pub struct ManagerOptions {
     pub path: Option<PathBuf>,
     pub flags: rusqlite::OpenFlags,

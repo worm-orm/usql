@@ -7,6 +7,8 @@ edition = "2024"
 default = ["derive"]
 derive = ["usql-macros"]
 
+sqlite = ["usql-core/sqlite"]
+
 [dependencies]
 usql-core = { path = "../usql-core" }
 usql-builder = { path = "../usql-builder" }
@@ -14,3 +16,12 @@ usql-macros = { path = "../usql-macros", optional = true }
 futures-core = { version = "0.3" }
 pin-project-lite = { version = "0.2" }
 async-stream = { version = "0.3" }
+
+
+[dev-dependencies]
+smol = { version = "*" }
+
+[[example]]
+name = "usql"
+path = "examples/usql.rs"
+required-features = ["sqlite"]

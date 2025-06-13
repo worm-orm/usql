@@ -50,4 +50,18 @@ where
             None => Err(Error::NotFound),
         }
     }
+
+    pub async fn exec<'a, Q>(&'a self, query: Q) -> Result<(), Error<B>>
+    where
+        Q: IntoQuery<'a, B>,
+    {
+        let mut query = query.into_query(&self.conn).await.map_err(Error::query)?;
+
+        self.conn
+            .exec(query.stmt.as_mut(), query.bindings)
+            .await
+            .map_err(Error::connector)?;
+
+        Ok(())
+    }
 }

@@ -96,7 +96,7 @@ impl crate::Row for Row {
     ) -> Result<ValueCow<'a>, <Self::Connector as crate::Connector>::Error> {
         let value = crate::Row::get(self, index)?;
 
-        if value.is_null() {
+        if value.as_ref().is_null() {
             return Ok(value);
         }
 

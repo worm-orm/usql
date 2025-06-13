@@ -1,6 +1,5 @@
+use alloc::boxed::Box;
 use core::fmt;
-use std::fmt::Pointer;
-
 use usql_core::Connector;
 
 pub enum Error<B: Connector> {
@@ -13,7 +12,7 @@ impl<B: Connector> fmt::Debug for Error<B>
 where
     B::Error: core::error::Error,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::Connector(e) => write!(f, "{:?}", e),
             Error::Query(err) => write!(f, "{:?}", err),

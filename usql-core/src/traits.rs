@@ -1,7 +1,6 @@
+use crate::{Type, ValueCow, system::System};
 use alloc::vec::Vec;
 use futures_core::stream::BoxStream;
-
-use crate::{Type, ValueCow, system::System, value::Value};
 
 pub trait Connector: Send + Sync {
     type Connection: Connection<Connector = Self>;
@@ -87,6 +86,8 @@ pub trait Transaction<'conn>: Executor {
 
 pub trait Statement: Send + Sync {
     type Connector: Connector;
+
+    fn finalize(self) -> Result<(), <Self::Connector as Connector>::Error>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

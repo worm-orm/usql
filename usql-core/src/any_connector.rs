@@ -384,6 +384,17 @@ pub enum AnyStatement {
 
 impl Statement for AnyStatement {
     type Connector = AnyConnector;
+
+    fn finalize(self) -> Result<(), <Self::Connector as Connector>::Error> {
+        #[allow(unreachable_patterns)]
+        match self {
+            #[cfg(feature = "sqlite")]
+            Self::Sqlite(stmt) => stmt.finalize().map_err(AnyError::Sqlite),
+            #[cfg(feature = "libsql")]
+            Self::Libsql(stmt) => stmt.finalize().map_err(AnyError::LibSql),
+            _ => missing_db!(),
+        }
+    }
 }
 
 #[non_exhaustive]

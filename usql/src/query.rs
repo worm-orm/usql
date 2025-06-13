@@ -1,23 +1,39 @@
+use alloc::vec::Vec;
 use usql_builder::{
     SqlStmt, StatementExt,
     mutate::{Insert, InsertReturning},
     schema::CreateTable,
     select::{QueryStmt, Selection},
 };
-use usql_core::{Connector, DatabaseInfo, Executor, ValueCow};
+use usql_core::{Connector, DatabaseInfo, Executor, Statement, ValueCow};
 
 use crate::error::Error;
 
 pub(crate) enum StmtRef<'a, B: Connector> {
     Borrow(&'a mut B::Statement),
-    Owned(B::Statement),
+    Owned(Option<B::Statement>),
 }
 
 impl<'a, B: Connector> StmtRef<'a, B> {
-    pub fn as_mut(&mut self) -> &mut B::Statement {
+    pub fn as_mut(&mut self) -> Result<&mut B::Statement, Error<B>> {
         match self {
-            StmtRef::Borrow(stmt) => stmt,
-            StmtRef::Owned(stmt) => stmt,
+            StmtRef::Borrow(stmt) => Ok(stmt),
+            StmtRef::Owned(stmt) => stmt
+                .as_mut()
+                .ok_or_else(|| Error::query("Statement already used")),
+        }
+    }
+}
+
+impl<'a, B: Connector> Drop for StmtRef<'a, B> {
+    fn drop(&mut self) {
+        match self {
+            Self::Owned(stmt) => {
+                if let Some(stmt) = stmt.take() {
+                    stmt.finalize();
+                }
+            }
+            _ => {}
         }
     }
 }
@@ -69,7 +85,7 @@ where
         async move {
             let stmt = executor.prepare(&self.sql).await.unwrap();
             Ok(Query {
-                stmt: StmtRef::Owned(stmt),
+                stmt: StmtRef::Owned(Some(stmt)),
                 bindings: self.bindings,
             })
         }
@@ -91,7 +107,7 @@ where
         async move {
             let stmt = executor.prepare(self).await.map_err(Error::connector)?;
             Ok(Query {
-                stmt: StmtRef::Owned(stmt),
+                stmt: StmtRef::Owned(Some(stmt)),
                 bindings: Default::default(),
             })
         }

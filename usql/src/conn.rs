@@ -25,7 +25,7 @@ where
     where
         Q: IntoQuery<'a, B>,
     {
-        let mut query = query.into_query(&self.conn).await.map_err(Error::query)?;
+        let mut query = query.into_query(&self.conn).await?;
 
         let stream = async_stream::stream! {
           let mut stream = self.conn.query(query.stmt.as_mut(), query.bindings);
@@ -55,7 +55,7 @@ where
     where
         Q: IntoQuery<'a, B>,
     {
-        let mut query = query.into_query(&self.conn).await.map_err(Error::query)?;
+        let mut query = query.into_query(&self.conn).await?;
 
         self.conn
             .exec(query.stmt.as_mut(), query.bindings)

@@ -27,6 +27,7 @@ impl<B: Connector> Row<B> {
     where
         I: IntoColumnIndex<'a>,
         T: TryFrom<Value> + Typed,
+        T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
     {
         let value = self
             .row

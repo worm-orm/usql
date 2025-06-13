@@ -1,5 +1,10 @@
-use usql_builder::SqlStmt;
-use usql_core::{Connector, Executor, ValueCow};
+use usql_builder::{
+    SqlStmt, StatementExt,
+    mutate::{Insert, InsertReturning},
+    schema::CreateTable,
+    select::{QueryStmt, Selection},
+};
+use usql_core::{Connector, DatabaseInfo, Executor, ValueCow};
 
 use crate::error::Error;
 
@@ -89,6 +94,96 @@ where
                 stmt: StmtRef::Owned(stmt),
                 bindings: Default::default(),
             })
+        }
+    }
+}
+
+impl<'a, B: Connector> IntoQuery<'a, B> for CreateTable<'a>
+where
+    B::Statement: 'static,
+    B::Error: core::error::Error,
+{
+    fn into_query<E>(
+        self,
+        executor: &E,
+    ) -> impl Future<Output = Result<Query<'a, B>, Error<B>>> + Send
+    where
+        E: Executor<Connector = B> + Send + Sync,
+    {
+        async move {
+            let stmt = self
+                .to_sql(executor.db_info().variant())
+                .map_err(Error::query)?;
+
+            stmt.into_query(executor).await
+        }
+    }
+}
+
+impl<'a, B: Connector> IntoQuery<'a, B> for Insert<'a>
+where
+    B::Statement: 'static,
+    B::Error: core::error::Error,
+{
+    fn into_query<E>(
+        self,
+        executor: &E,
+    ) -> impl Future<Output = Result<Query<'a, B>, Error<B>>> + Send
+    where
+        E: Executor<Connector = B> + Send + Sync,
+    {
+        async move {
+            let stmt = self
+                .to_sql(executor.db_info().variant())
+                .map_err(Error::query)?;
+
+            stmt.into_query(executor).await
+        }
+    }
+}
+
+impl<'a, B: Connector, S> IntoQuery<'a, B> for InsertReturning<'a, S>
+where
+    B::Statement: 'static,
+    B::Error: core::error::Error,
+    S: Selection<'a> + Send,
+{
+    fn into_query<E>(
+        self,
+        executor: &E,
+    ) -> impl Future<Output = Result<Query<'a, B>, Error<B>>> + Send
+    where
+        E: Executor<Connector = B> + Send + Sync,
+    {
+        async move {
+            let stmt = self
+                .to_sql(executor.db_info().variant())
+                .map_err(Error::query)?;
+
+            stmt.into_query(executor).await
+        }
+    }
+}
+
+impl<'a, B: Connector, T> IntoQuery<'a, B> for QueryStmt<T>
+where
+    T: usql_builder::select::Query<'a> + Send,
+    B::Statement: 'static,
+    B::Error: core::error::Error,
+{
+    fn into_query<E>(
+        self,
+        executor: &E,
+    ) -> impl Future<Output = Result<Query<'a, B>, Error<B>>> + Send
+    where
+        E: Executor<Connector = B> + Send + Sync,
+    {
+        async move {
+            let stmt = self
+                .to_sql(executor.db_info().variant())
+                .map_err(Error::query)?;
+
+            stmt.into_query(executor).await
         }
     }
 }

@@ -1,9 +1,18 @@
-use usql::{FromRow, core::Connector};
+use usql::{Error, FromRow, core::Connector};
+use usql_builder::{
+    StatementExt,
+    expr::val,
+    mutate::{Set, insert},
+    schema::{Column, ColumnType, create_table},
+    select::{QueryExt, select},
+};
+use usql_core::System;
 
 #[derive(Debug, FromRow)]
 struct User {
     id: i32,
     name: String,
+    email: String,
 }
 
 fn main() {
@@ -16,8 +25,30 @@ fn main() {
 
         let conn = core.conn().await.unwrap();
 
-        let row = conn.fetch_one("SELECT * FROM users").await.unwrap();
+        conn.exec(
+            create_table("user")
+                .column(Column::new("id", ColumnType::Int).auto(true).primary_key())
+                .column(Column::new("name", ColumnType::Text).required(true))
+                .column(Column::new("email", ColumnType::Text).required(true)),
+        )
+        .await?;
 
-        let user = User::from_row(row).unwrap();
-    });
+        conn.exec(
+            insert("user")
+                .with("name", val("Rasmus"))
+                .with("email", val("rasmus@email.com")),
+        )
+        .await?;
+
+        let row = conn
+            .fetch_one(select("user", ("id", "name", "email")).into_stmt())
+            .await?;
+
+        let user = User::from_row(row)?;
+
+        println!("User {:?}", user);
+
+        Result::<_, Error<usql_core::Sqlite>>::Ok(())
+    })
+    .unwrap();
 }

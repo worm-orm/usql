@@ -17,8 +17,7 @@ impl From<rusqlite::Error> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Sqlite(err) => err.fmt(f),
-
+            Self::Sqlite(err) => write!(f, "{}", err),
             Self::Channel => write!(f, "channel"),
             Self::NotFound => write!(f, "not found"),
             Self::Pool => write!(f, "pool"),

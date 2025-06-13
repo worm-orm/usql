@@ -1,3 +1,4 @@
+use futures::TryStreamExt;
 use usql::{Error, FromRow, core::Connector};
 use usql_builder::{
     StatementExt,
@@ -40,13 +41,14 @@ fn main() {
         )
         .await?;
 
-        let row = conn
-            .fetch_one(select("user", ("id", "name", "email")).into_stmt())
-            .await?;
+        let mut stream = conn
+            .fetch(select("user", ("id", "name", "email")).into_stmt())
+            .await?
+            .into::<User>();
 
-        let user = User::from_row(row)?;
-
-        println!("User {:?}", user);
+        while let Some(row) = stream.try_next().await? {
+            println!("{:?}", row);
+        }
 
         Result::<_, Error<usql_core::Sqlite>>::Ok(())
     })

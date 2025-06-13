@@ -56,4 +56,11 @@ where
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
         async move { self.conn.exec(stmt, params).await }
     }
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+        async move { self.conn.exec_batch(stmt).await }
+    }
 }

@@ -63,6 +63,11 @@ pub trait Executor {
         stmt: &'a mut <Self::Connector as Connector>::Statement,
         params: Vec<ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a;
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a;
 }
 
 pub trait Connection: Executor + Send + Sync {

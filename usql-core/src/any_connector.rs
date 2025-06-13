@@ -291,6 +291,26 @@ impl Executor for AnyConn {
             }
         }
     }
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+        async move {
+            #[allow(unreachable_patterns, irrefutable_let_patterns)]
+            match self {
+                #[cfg(feature = "sqlite")]
+                Self::Sqlite(sqlite) => <SqliteConn as Executor>::exec_batch(sqlite, stmt)
+                    .await
+                    .map_err(Into::into),
+                #[cfg(feature = "libsql")]
+                Self::LibSql(libsql) => <LibSqlConn as Executor>::exec(libsql, stmt)
+                    .await
+                    .map_err(Into::into),
+                _ => missing_db!(),
+            }
+        }
+    }
 }
 
 #[non_exhaustive]
@@ -438,11 +458,11 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
     }
 }
 
+#[allow(unused_variables, unreachable_patterns)]
 impl Executor for AnyTransaction<'_> {
     type Connector = AnyConnector;
 
     fn db_info(&self) -> <Self::Connector as Connector>::Info {
-        #[allow(unreachable_patterns)]
         match self {
             #[cfg(feature = "sqlite")]
             Self::Sqlite(info) => AnyInfo::Sqlite(info.db_info()),
@@ -452,7 +472,6 @@ impl Executor for AnyTransaction<'_> {
         }
     }
 
-    #[allow(unused_variables)]
     fn prepare<'a>(
         &'a self,
         query: &'a str,
@@ -464,7 +483,6 @@ impl Executor for AnyTransaction<'_> {
     > + Send
     + 'a {
         async move {
-            #[allow(unreachable_patterns)]
             match self {
                 #[cfg(feature = "sqlite")]
                 Self::Sqlite(conn) => conn
@@ -483,13 +501,11 @@ impl Executor for AnyTransaction<'_> {
         }
     }
 
-    #[allow(unused_variables)]
     fn query<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
         params: Vec<crate::ValueCow<'a>>,
     ) -> QueryStream<'a, Self::Connector> {
-        #[allow(unreachable_patterns, irrefutable_let_patterns)]
         match self {
             #[cfg(feature = "sqlite")]
             Self::Sqlite(sqlite) => {
@@ -513,7 +529,6 @@ impl Executor for AnyTransaction<'_> {
         }
     }
 
-    #[allow(unused_variables)]
     fn exec<'a>(
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
@@ -540,6 +555,26 @@ impl Executor for AnyTransaction<'_> {
                         .await
                         .map_err(Into::into)
                 }
+                _ => missing_db!(),
+            }
+        }
+    }
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+        async move {
+            #[allow(unreachable_patterns, irrefutable_let_patterns)]
+            match self {
+                #[cfg(feature = "sqlite")]
+                Self::Sqlite(sqlite) => <SqliteTransaction as Executor>::exec_batch(sqlite, stmt)
+                    .await
+                    .map_err(Into::into),
+                #[cfg(feature = "libsql")]
+                Self::LibSql(libsql) => <LibSqlTransaction as Executor>::exec(libsql, stmt)
+                    .await
+                    .map_err(Into::into),
                 _ => missing_db!(),
             }
         }

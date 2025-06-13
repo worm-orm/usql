@@ -173,4 +173,15 @@ impl Executor for Transaction<'_> {
             Ok(())
         }
     }
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send + 'a
+    {
+        async move {
+            self.exec_batch(stmt).await?;
+            Ok(())
+        }
+    }
 }

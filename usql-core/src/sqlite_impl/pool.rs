@@ -177,4 +177,12 @@ impl Executor for PooledConn {
     {
         <Conn as Executor>::exec(self.as_ref(), stmt, params)
     }
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as crate::Connector>::Error>> + Send + 'a
+    {
+        <Conn as Executor>::exec_batch(self.as_ref(), stmt)
+    }
 }

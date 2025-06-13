@@ -1,6 +1,6 @@
-use usql_core::{Connector, Executor, util::next};
+use usql_core::{Connection, Connector, Executor, util::next};
 
-use crate::{error::Error, query::IntoQuery, row::Row, stream::QueryStream};
+use crate::{error::Error, query::IntoQuery, row::Row, stream::QueryStream, trans::Trans};
 
 pub struct Conn<B>
 where
@@ -21,6 +21,11 @@ where
     B::Error: core::error::Error + Send + Sync,
     B::Statement: 'static,
 {
+    pub async fn begin<'a>(&'a mut self) -> Result<Trans<'a, B>, Error<B>> {
+        let trans = self.conn.begin().await.map_err(Error::connector)?;
+        Ok(Trans::new(trans))
+    }
+
     pub async fn fetch<'a, Q>(&'a self, query: Q) -> Result<QueryStream<'a, B>, Error<B>>
     where
         Q: IntoQuery<'a, B>,
@@ -29,7 +34,6 @@ where
 
         let stream = async_stream::stream! {
           let mut stream = self.conn.query(query.stmt.as_mut(), query.bindings);
-
           while let Some(row) = next(&mut stream).await {
             yield row
           }

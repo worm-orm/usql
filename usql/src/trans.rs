@@ -9,6 +9,12 @@ where
     trans: <B::Connection as Connection>::Transaction<'a>,
 }
 
+impl<'a, B: Connector> Trans<'a, B> {
+    pub fn new(trans: <B::Connection as Connection>::Transaction<'a>) -> Trans<'a, B> {
+        Trans { trans }
+    }
+}
+
 impl<'c, B: Connector> Trans<'c, B>
 where
     B::Connection: 'c,

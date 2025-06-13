@@ -20,6 +20,7 @@ async-stream = { version = "0.3" }
 
 [dev-dependencies]
 smol = { version = "*" }
+futures = { version = "0.3" }
 
 [[example]]
 name = "usql"

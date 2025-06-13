@@ -2866,6 +2866,7 @@ name = "usql"
 version = "0.1.0"
 dependencies = [
  "async-stream",
+ "futures",
  "futures-core",
  "pin-project-lite",
  "smol",

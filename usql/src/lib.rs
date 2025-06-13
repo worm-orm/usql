@@ -4,6 +4,7 @@ mod from_row;
 mod pool;
 mod query;
 mod row;
+mod stmt;
 mod stream;
 mod trans;
 mod typed;
@@ -13,7 +14,7 @@ pub use usql_core as core;
 
 pub use self::{
     conn::Conn, error::Error, from_row::FromRow, pool::Pool, query::IntoQuery, row::Row,
-    stream::QueryStream, typed::Typed,
+    stream::QueryStream, trans::Trans, typed::Typed,
 };
 
 #[cfg(feature = "derive")]

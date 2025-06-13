@@ -1,7 +1,9 @@
 use alloc::boxed::Box;
 use usql_core::{Connection, Connector, Executor, util::next};
 
-use crate::{error::Error, query::IntoQuery, row::Row, stream::QueryStream, trans::Trans};
+use crate::{
+    error::Error, query::IntoQuery, row::Row, stmt::Stmt, stream::QueryStream, trans::Trans,
+};
 
 pub struct Conn<B>
 where
@@ -22,6 +24,11 @@ where
     B::Error: core::error::Error + Send + Sync,
     B::Statement: 'static,
 {
+    pub async fn prepare(&self, sql: &str) -> Result<Stmt<B>, Error<B>> {
+        let stmt = self.conn.prepare(sql).await.map_err(Error::connector)?;
+        Ok(Stmt::new(stmt))
+    }
+
     pub async fn begin<'a>(&'a mut self) -> Result<Trans<'a, B>, Error<B>> {
         let trans = self.conn.begin().await.map_err(Error::connector)?;
         Ok(Trans::new(trans))

@@ -7,7 +7,7 @@ use usql_builder::{
 };
 use usql_core::{Connector, DatabaseInfo, Executor, Statement, ValueCow};
 
-use crate::error::Error;
+use crate::{error::Error, stmt::Stmt};
 
 pub(crate) enum StmtRef<'a, B: Connector> {
     Borrow(&'a mut B::Statement),
@@ -30,7 +30,7 @@ impl<'a, B: Connector> Drop for StmtRef<'a, B> {
         match self {
             Self::Owned(stmt) => {
                 if let Some(stmt) = stmt.take() {
-                    stmt.finalize();
+                    stmt.finalize().ok();
                 }
             }
             _ => {}
@@ -108,6 +108,48 @@ where
             let stmt = executor.prepare(self).await.map_err(Error::connector)?;
             Ok(Query {
                 stmt: StmtRef::Owned(Some(stmt)),
+                bindings: Default::default(),
+            })
+        }
+    }
+}
+
+impl<'a, B: Connector> IntoQuery<'a, B> for &'a mut Stmt<B>
+where
+    B::Statement: 'static,
+    B::Error: core::error::Error,
+{
+    fn into_query<E>(
+        self,
+        _executor: &E,
+    ) -> impl Future<Output = Result<Query<'a, B>, Error<B>>> + Send
+    where
+        E: Executor<Connector = B> + Send + Sync,
+    {
+        async move {
+            Ok(Query {
+                stmt: StmtRef::Borrow(&mut self.0),
+                bindings: Default::default(),
+            })
+        }
+    }
+}
+
+impl<'a, B: Connector> IntoQuery<'a, B> for Stmt<B>
+where
+    B::Statement: 'static,
+    B::Error: core::error::Error,
+{
+    fn into_query<E>(
+        self,
+        _executor: &E,
+    ) -> impl Future<Output = Result<Query<'a, B>, Error<B>>> + Send
+    where
+        E: Executor<Connector = B> + Send + Sync,
+    {
+        async move {
+            Ok(Query {
+                stmt: StmtRef::Owned(Some(self.0)),
                 bindings: Default::default(),
             })
         }

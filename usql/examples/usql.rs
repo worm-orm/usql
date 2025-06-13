@@ -17,7 +17,7 @@ struct User {
 }
 
 fn main() {
-    smol::block_on(async move {
+    futures::executor::block_on(async move {
         let pool = usql_core::Sqlite::create_pool(usql_core::SqliteOptions::default())
             .await
             .unwrap();

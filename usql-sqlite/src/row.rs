@@ -1,7 +1,6 @@
+use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
 use rusqlite::types::{FromSql, FromSqlError, Value as SqliteValue, ValueRef as SqliteValueRef};
 use std::{collections::HashMap, string::String, sync::Arc, vec::Vec};
-
-use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
 use usql_core::Connector;
 use usql_value::{JsonValue, Type, Value, ValueCow, ValueRef};
 

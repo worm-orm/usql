@@ -1,0 +1,14 @@
+[package]
+name = "usql-libsql"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+usql-core = { path = "../usql-core" }
+usql-value = { path = "../usql-value", features = ["libsql"] }
+
+libsql = { version = "0.9", default-features = false, features = ["core"] }
+
+deadpool = { workspace = true }
+async-lock = { workspace = true }
+uuid = { workspace = true }

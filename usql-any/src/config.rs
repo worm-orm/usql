@@ -1,4 +1,4 @@
-use crate::{AnyConnector, AnyError, AnyOptions, AnyPool, Connector};
+use crate::{AnyConnector, AnyError, AnyOptions, AnyPool};
 use serde::{Deserialize, Serialize};
 use std::{borrow::ToOwned, boxed::Box, path::PathBuf, vec};
 

@@ -1,0 +1,24 @@
+[package]
+name = "usql-sqlite"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+usql-core = { path = "../usql-core" }
+usql-value = { path = "../usql-value", features = ["serde"] }
+
+rusqlite = { version = "0.36" }
+flume = { version = "0.11" }
+futures-channel = { version = "0.3", default-features = false, features = [
+  "alloc",
+] }
+futures-core = { workspace = true }
+pin-project-lite = { workspace = true }
+
+deadpool = { workspace = true }
+async-stream = { workspace = true }
+async-lock = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+serde_json = { workspace = true }

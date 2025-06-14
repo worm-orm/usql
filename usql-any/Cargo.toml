@@ -1,0 +1,26 @@
+[package]
+name = "usql-any"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+sqlite = ["usql-sqlite"]
+libsql = ["usql-libsql"]
+postgres = ["usql-postgres"]
+
+jsonschema = ["schemars"]
+
+[dependencies]
+usql-core = { path = "../usql-core" }
+
+usql-sqlite = { path = "../usql-sqlite", optional = true }
+usql-libsql = { path = "../usql-libsql", optional = true }
+usql-postgres = { path = "../usql-postgres", optional = true }
+
+pin-project-lite = { workspace = true }
+futures-core = { workspace = true }
+
+
+serde = { version = "1", features = ["derive"] }
+
+schemars = { version = "1.0.0-alpha.17", optional = true }

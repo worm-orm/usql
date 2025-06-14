@@ -1,0 +1,235 @@
+use rusqlite::types::{FromSql, FromSqlError, Value as SqliteValue, ValueRef as SqliteValueRef};
+use std::{collections::HashMap, string::String, sync::Arc, vec::Vec};
+
+use usql_core::{Connector, JsonValue, Value, ValueCow, ValueRef};
+
+use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
+
+pub trait ColumnIndex {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue>;
+}
+
+impl ColumnIndex for usize {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
+        row.values.get(*self)
+    }
+}
+
+impl ColumnIndex for &str {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
+        row.columns.get(*self).and_then(|m| row.values.get(*m))
+    }
+}
+
+impl ColumnIndex for usql_core::ColumnIndex<'_> {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
+        match self {
+            Self::Index(idx) => idx.get(row),
+            Self::Named(name) => name.get(row),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Row {
+    pub(crate) columns: Arc<HashMap<String, usize>>,
+    pub(crate) values: Vec<rusqlite::types::Value>,
+}
+
+impl Row {
+    pub fn get_ref<T: ColumnIndex>(&self, name: T) -> Option<SqliteValueRef<'_>> {
+        name.get(self).map(|m| m.into())
+    }
+
+    pub fn get_raw<T: ColumnIndex>(&self, name: T) -> Option<&SqliteValue> {
+        name.get(self)
+    }
+
+    pub fn get<T: FromSql, I: ColumnIndex>(
+        &self,
+        column: I,
+    ) -> Result<T, rusqlite::types::FromSqlError> {
+        let Some(value) = self.get_ref(column) else {
+            return Err(FromSqlError::Other("field not found".into()));
+        };
+
+        T::column_result(value)
+    }
+
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
+    pub fn column_names(&self) -> std::collections::hash_map::Keys<'_, String, usize> {
+        self.columns.keys()
+    }
+
+    pub fn values(&self) -> &[rusqlite::types::Value] {
+        &self.values
+    }
+
+    pub fn into_values(self) -> Vec<rusqlite::types::Value> {
+        self.values
+    }
+}
+
+impl usql_core::Row for Row {
+    type Connector = Sqlite;
+
+    fn get<'a>(
+        &'a self,
+        index: usql_core::ColumnIndex<'_>,
+    ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error> {
+        self.get_raw(index)
+            .map(|m| ValueCow::Ref(sqlite_ref_to_usql(m)))
+            .ok_or_else(|| Error::NotFound)
+    }
+
+    fn get_typed<'a>(
+        &'a self,
+        index: usql_core::ColumnIndex<'_>,
+        ty: usql_core::Type,
+    ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error> {
+        let value = usql_core::Row::get(self, index)?;
+
+        if value.as_ref().is_null() {
+            return Ok(value);
+        }
+
+        let value = match ty {
+            usql_core::Type::Text => {
+                if !value.as_ref().is_text() {
+                    panic!("type error")
+                }
+                value
+            }
+            usql_core::Type::SmallInt => {
+                //
+                match value.as_ref() {
+                    ValueRef::BigInt(i) => Value::SmallInt(i as _).into(),
+                    ValueRef::Int(i) => Value::SmallInt(i as _).into(),
+                    ValueRef::SmallInt(i) => Value::SmallInt(i).into(),
+                    _ => {
+                        panic!("type error")
+                    }
+                }
+            }
+            usql_core::Type::BigInt => match value.as_ref() {
+                ValueRef::BigInt(i) => Value::BigInt(i).into(),
+                ValueRef::Int(i) => Value::BigInt(i as _).into(),
+                ValueRef::SmallInt(i) => Value::BigInt(i as _).into(),
+                _ => {
+                    panic!("type error")
+                }
+            },
+            usql_core::Type::Int => match value.as_ref() {
+                ValueRef::BigInt(i) => Value::Int(i as _).into(),
+                ValueRef::Int(i) => Value::Int(i).into(),
+                ValueRef::SmallInt(i) => Value::Int(i as _).into(),
+                _ => {
+                    panic!("type error")
+                }
+            },
+            usql_core::Type::Blob => {
+                if !value.as_ref().is_binary() {
+                    panic!("type error")
+                }
+                value
+            }
+            usql_core::Type::Time => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let time = chrono::NaiveTime::parse_from_str(text, "%T%.f").unwrap();
+                    Value::Time(time).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            usql_core::Type::Date => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let date = chrono::NaiveDate::parse_from_str(text, "%F").unwrap();
+                    Value::Date(date).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            usql_core::Type::DateTime => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let date = chrono::NaiveDateTime::parse_from_str(text, "%+").unwrap();
+                    Value::Timestamp(date).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            usql_core::Type::Json => match value.as_ref() {
+                ValueRef::Text(text) => {
+                    let json: JsonValue = serde_json::from_str(text).unwrap();
+                    Value::Json(json).into()
+                }
+                _ => {
+                    panic!("type error")
+                }
+            },
+            usql_core::Type::Real => match value.as_ref() {
+                ValueRef::Float(f) => Value::Double((*f as f64).into()).into(),
+                ValueRef::Double(f) => Value::Double(f).into(),
+                _ => {
+                    panic!("typ error")
+                }
+            },
+            usql_core::Type::Double => match value.as_ref() {
+                ValueRef::Float(f) => Value::Float((*f as f32).into()).into(),
+                ValueRef::Double(f) => Value::Float((*f as f32).into()).into(),
+                _ => {
+                    panic!("typ error")
+                }
+            },
+            usql_core::Type::Uuid => match value.as_ref() {
+                ValueRef::ByteArray(bs) => {
+                    let id = uuid::Uuid::from_slice(&*bs).unwrap();
+                    Value::Uuid(id).into()
+                }
+                _ => {
+                    panic!("typ error")
+                }
+            },
+            usql_core::Type::Bool => {
+                let b = match value.as_ref() {
+                    ValueRef::Bool(b) => return Ok(Value::Bool(b).into()),
+                    ValueRef::BigInt(b) => b as u8,
+                    ValueRef::SmallInt(b) => b as _,
+                    ValueRef::Int(b) => b as _,
+                    _ => {
+                        panic!("type error")
+                    }
+                };
+
+                Value::Bool(if b == 0 { false } else { true }).into()
+            }
+            usql_core::Type::Array(value) => todo!(),
+            usql_core::Type::Any => value,
+        };
+
+        Ok(value)
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn column_name(&self, idx: usize) -> Option<&str> {
+        for (k, v) in &*self.columns {
+            if v == &idx {
+                return Some(k);
+            }
+        }
+
+        None
+    }
+}

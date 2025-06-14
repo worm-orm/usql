@@ -1,6 +1,6 @@
+use crate::{IntoQuery, QueryStream, conn::Conn, error::Error};
+use alloc::boxed::Box;
 use usql_core::{Connector, Pool as _};
-
-use crate::{conn::Conn, error::Error};
 
 pub struct Pool<B: Connector> {
     pool: B::Pool,

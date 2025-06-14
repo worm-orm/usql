@@ -14,6 +14,12 @@ pin_project! {
 }
 
 impl<'a, B: Connector> QueryStream<'a, B> {
+    pub fn new(stream: BoxStream<'a, Result<Row<B>, Error<B>>>) -> QueryStream<'a, B> {
+        QueryStream { stream }
+    }
+}
+
+impl<'a, B: Connector> QueryStream<'a, B> {
     pub fn into<T>(self) -> FromRowStream<'a, B, T>
     where
         T: FromRow,

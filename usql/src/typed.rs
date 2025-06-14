@@ -1,6 +1,6 @@
 use alloc::string::String;
-use usql_core::Type;
-use usql_core::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use usql_value::Type;
+use usql_value::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 pub trait Typed {
     const TYPE: Type;

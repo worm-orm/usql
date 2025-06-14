@@ -12,6 +12,8 @@ jsonschema = ["schemars"]
 
 [dependencies]
 usql-core = { path = "../usql-core" }
+usql-value = { path = "../usql-value" }
+
 
 usql-sqlite = { path = "../usql-sqlite", optional = true }
 usql-libsql = { path = "../usql-libsql", optional = true }

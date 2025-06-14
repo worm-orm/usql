@@ -1,3 +1,4 @@
+use crate::{error::Error, stmt::Stmt};
 use alloc::vec::Vec;
 use usql_builder::{
     SqlStmt, StatementExt,
@@ -5,9 +6,8 @@ use usql_builder::{
     schema::CreateTable,
     select::{QueryStmt, Selection},
 };
-use usql_core::{Connector, DatabaseInfo, Executor, Statement, ValueCow};
-
-use crate::{error::Error, stmt::Stmt};
+use usql_core::{Connector, DatabaseInfo, Executor, Statement};
+use usql_value::ValueCow;
 
 pub(crate) enum StmtRef<'a, B: Connector> {
     Borrow(&'a mut B::Statement),

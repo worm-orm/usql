@@ -3,10 +3,9 @@ use core::task::{Poll, ready};
 use futures_core::{Stream, stream::BoxStream};
 use pin_project_lite::pin_project;
 
-use usql_core::{ColumnIndex, Connector, Executor, QueryStream, Transaction, Type, ValueCow};
-
 #[cfg(feature = "postgres")]
 use super::postgres_impl::*;
+use usql_core::{ColumnIndex, Connector, Executor, QueryStream, Transaction};
 use usql_core::{Connection, DatabaseInfo, Pool, Row, Statement};
 #[cfg(feature = "libsql")]
 use usql_libsql::{
@@ -18,6 +17,7 @@ use usql_sqlite::{
     Sqlite, SqliteConn, SqliteDatabaseInfo, SqliteError, SqliteOptions, SqlitePool, SqliteRow,
     SqliteStatement, SqliteTransaction,
 };
+use usql_value::{Type, ValueCow};
 
 macro_rules! missing_db {
     () => {

@@ -1324,6 +1324,7 @@ dependencies = [
  "usql-core",
  "usql-macros",
  "usql-sqlite",
+ "usql-value",
 ]
 
 [[package]]
@@ -1338,6 +1339,7 @@ dependencies = [
  "usql-libsql",
  "usql-postgres",
  "usql-sqlite",
+ "usql-value",
 ]
 
 [[package]]

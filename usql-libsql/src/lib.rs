@@ -1,14 +1,17 @@
-mod conn;
+// mod conn;
 mod connector;
 mod error;
 mod pool;
 mod row;
+mod stmt;
 mod transaction;
 // mod value;
 
-pub use self::connector::*;
-pub use self::pool::{LibSqlPool, ManagerOptions as LibSqlOptions, PooledConn as LibSqlConnection};
-pub use error::Error as LibSqlError;
-pub use libsql::{
-    Row as LibSqlRow, Statement as LibSqlStatement, Transaction as LibSqlTransaction,
+pub use self::{
+    connector::*,
+    error::Error,
+    pool::{Conn, ManagerOptions as Options, Pool},
+    row::Row,
+    stmt::Stmt,
+    transaction::Trans,
 };

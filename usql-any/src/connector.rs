@@ -5,14 +5,14 @@ use pin_project_lite::pin_project;
 
 use usql_core::{ColumnIndex, Connector, Executor, QueryStream, Transaction, Type, ValueCow};
 
-#[cfg(feature = "libsql")]
-use super::libsql_impl::{
-    LibSql, LibSqlConnection, LibSqlError, LibSqlInfo, LibSqlOptions, LibSqlPool, LibSqlRow,
-    LibSqlStatement, LibSqlTransaction,
-};
 #[cfg(feature = "postgres")]
 use super::postgres_impl::*;
 use usql_core::{Connection, DatabaseInfo, Pool, Row, Statement};
+#[cfg(feature = "libsql")]
+use usql_libsql::{
+    Conn as LibSqlConn, Error as LibSqlError, LibSql, LibSqlInfo, Options as LibSqlOptions,
+    Pool as LibSqlPool, Row as LibSqlRow, Stmt as LibSqlStatement, Trans as LibSqlTransaction,
+};
 #[cfg(feature = "sqlite")]
 use usql_sqlite::{
     Sqlite, SqliteConn, SqliteDatabaseInfo, SqliteError, SqliteOptions, SqlitePool, SqliteRow,
@@ -152,7 +152,7 @@ pub enum AnyConn {
     #[cfg(feature = "sqlite")]
     Sqlite(SqliteConn),
     #[cfg(feature = "libsql")]
-    Libsql(LibSqlConnection),
+    Libsql(LibSqlConn),
 }
 
 impl Connection for AnyConn {
@@ -251,7 +251,7 @@ impl Executor for AnyConn {
                     panic!("Statement mismatch")
                 };
                 Box::pin(AnyQueryStream::<LibSql> {
-                    stream: <LibSqlConnection as Executor>::query(libsql, stmt, params),
+                    stream: <LibSqlConn as Executor>::query(libsql, stmt, params),
                 })
             }
             _ => missing_db!(),
@@ -281,7 +281,7 @@ impl Executor for AnyConn {
                     let AnyStatement::LibSql(stmt) = stmt else {
                         panic!("Statement mismatch")
                     };
-                    <LibSqlConnection as Executor>::exec(libsql, stmt, params)
+                    <LibSqlConn as Executor>::exec(libsql, stmt, params)
                         .await
                         .map_err(Into::into)
                 }
@@ -303,7 +303,7 @@ impl Executor for AnyConn {
                     .await
                     .map_err(Into::into),
                 #[cfg(feature = "libsql")]
-                Self::LibSql(libsql) => <LibSqlConn as Executor>::exec(libsql, stmt)
+                Self::Libsql(libsql) => <LibSqlConn as Executor>::exec_batch(libsql, stmt)
                     .await
                     .map_err(Into::into),
                 _ => missing_db!(),
@@ -410,7 +410,7 @@ impl Statement for AnyStatement {
             #[cfg(feature = "sqlite")]
             Self::Sqlite(stmt) => stmt.finalize().map_err(AnyError::Sqlite),
             #[cfg(feature = "libsql")]
-            Self::Libsql(stmt) => stmt.finalize().map_err(AnyError::LibSql),
+            Self::LibSql(stmt) => stmt.finalize().map_err(AnyError::LibSql),
             _ => missing_db!(),
         }
     }
@@ -582,7 +582,7 @@ impl Executor for AnyTransaction<'_> {
                     .await
                     .map_err(Into::into),
                 #[cfg(feature = "libsql")]
-                Self::LibSql(libsql) => <LibSqlTransaction as Executor>::exec(libsql, stmt)
+                Self::LibSql(libsql) => <LibSqlTransaction as Executor>::exec_batch(libsql, stmt)
                     .await
                     .map_err(Into::into),
                 _ => missing_db!(),

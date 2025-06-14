@@ -12,3 +12,4 @@ libsql = { version = "0.9", default-features = false, features = ["core"] }
 deadpool = { workspace = true }
 async-lock = { workspace = true }
 uuid = { workspace = true }
+async-stream = { workspace = true }

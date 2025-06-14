@@ -3,11 +3,13 @@ use libsql::Connection;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
-use usql_core::{Connector, Executor, Pool, QueryStream, ValueCow};
+use usql_core::{Connector, Executor, QueryStream, ValueCow};
+
+use crate::{row::Row, stmt::Stmt, transaction::Trans};
 
 use super::{LibSqlInfo, connector::LibSql};
 
-pub type PooledConn = deadpool::managed::Object<Manager>;
+// pub type PooledConn = deadpool::managed::Object<Manager>;
 
 #[derive(Debug)]
 enum Source {
@@ -76,7 +78,7 @@ impl deadpool::managed::Manager for Manager {
                     //     || Conn::open(format!("file:{}?mode=memory&cache=shared", id), self.flags);
 
                     let connection = || async move {
-                        let db = libsql::Builder::new_local(alloc::format!(
+                        let db = libsql::Builder::new_local(format!(
                             "file:{}?mode=memory&cache=shared",
                             id
                         ))
@@ -109,21 +111,15 @@ impl deadpool::managed::Manager for Manager {
 }
 
 #[derive(Clone)]
-pub struct LibSqlPool(deadpool::managed::Pool<Manager>);
+pub struct Pool(deadpool::managed::Pool<Manager>);
 
-impl LibSqlPool {
-    pub fn new(manager: Manager) -> LibSqlPool {
-        LibSqlPool(deadpool::managed::Pool::builder(manager).build().unwrap())
+impl Pool {
+    pub fn new(manager: Manager) -> Pool {
+        Pool(deadpool::managed::Pool::builder(manager).build().unwrap())
     }
-
-    // pub async fn get(
-    //     &self,
-    // ) -> Result<deadpool::managed::Object<Manager>, PoolError<libsql::Error>> {
-    //     self.0.get().await
-    // }
 }
 
-impl Pool for LibSqlPool {
+impl usql_core::Pool for Pool {
     type Connector = LibSql;
 
     fn get(
@@ -135,22 +131,27 @@ impl Pool for LibSqlPool {
         >,
     > + Send
     + '_ {
-        async move { Ok(self.0.get().await?) }
+        async move { Ok(Conn(self.0.get().await?)) }
     }
 }
 
-impl usql_core::Connection for PooledConn {
-    type Transaction<'conn> = libsql::Transaction;
+pub struct Conn(deadpool::managed::Object<Manager>);
+
+impl usql_core::Connection for Conn {
+    type Transaction<'conn> = Trans;
 
     fn begin(
         &mut self,
     ) -> impl Future<Output = Result<Self::Transaction<'_>, <Self::Connector as Connector>::Error>> + Send
     {
-        async move { <libsql::Connection as usql_core::Connection>::begin(self.as_mut()).await }
+        async move {
+            let conn = self.0.transaction().await?;
+            Ok(Trans(conn))
+        }
     }
 }
 
-impl Executor for PooledConn {
+impl Executor for Conn {
     type Connector = LibSql;
 
     fn db_info(&self) -> <Self::Connector as Connector>::Info {
@@ -167,7 +168,7 @@ impl Executor for PooledConn {
         >,
     > + Send
     + 'a {
-        async move { Ok(self.as_ref().prepare(query).await?) }
+        async move { Ok(Stmt(self.0.prepare(query).await?)) }
     }
 
     fn query<'a>(
@@ -175,7 +176,15 @@ impl Executor for PooledConn {
         stmt: &'a mut <Self::Connector as Connector>::Statement,
         params: std::vec::Vec<ValueCow<'a>>,
     ) -> QueryStream<'a, Self::Connector> {
-        <libsql::Connection as Executor>::query(self.as_ref(), stmt, params)
+        let stream = async_stream::try_stream! {
+            let mut rows = stmt.0.query(params).await?;
+
+            while let Some(next) = rows.next().await? {
+                yield Row(next);
+            }
+        };
+
+        Box::pin(stream)
     }
 
     fn exec<'a>(
@@ -183,6 +192,19 @@ impl Executor for PooledConn {
         stmt: &'a mut <Self::Connector as Connector>::Statement,
         params: std::vec::Vec<ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
-        <libsql::Connection as Executor>::exec(self.as_ref(), stmt, params)
+        async move {
+            stmt.0.execute(params).await?;
+            Ok(())
+        }
+    }
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+        async move {
+            self.0.execute_batch(stmt).await?;
+            Ok(())
+        }
     }
 }

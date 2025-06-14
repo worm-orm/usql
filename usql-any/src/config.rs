@@ -1,6 +1,7 @@
 use crate::{AnyConnector, AnyError, AnyOptions, AnyPool};
 use serde::{Deserialize, Serialize};
 use std::{borrow::ToOwned, boxed::Box, path::PathBuf, vec};
+use usql_core::Connector;
 
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,13 +58,13 @@ pub enum LibSqlConfig {
 #[cfg(feature = "libsql")]
 impl From<LibSqlConfig> for AnyOptions {
     fn from(value: LibSqlConfig) -> Self {
-        use crate::LibSqlOptions;
+        use usql_libsql::Options;
         let opts = match value {
-            LibSqlConfig::Memory => LibSqlOptions {
+            LibSqlConfig::Memory => Options {
                 path: None,
                 flags: Default::default(),
             },
-            LibSqlConfig::Path(path) => LibSqlOptions {
+            LibSqlConfig::Path(path) => Options {
                 path: Some(path),
                 flags: Default::default(),
             },

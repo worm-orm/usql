@@ -1,6 +1,6 @@
 use std::boxed::Box;
 
-use crate::{Connection, Executor};
+use usql_core::{Connection, Executor};
 
 use super::{LibSqlInfo, connector::LibSql};
 

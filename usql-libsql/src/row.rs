@@ -1,4 +1,4 @@
-use usql_core::{Row, Value, ValueCow};
+use usql_core::{Connector, Value, ValueCow};
 
 use super::connector::LibSql;
 
@@ -23,34 +23,44 @@ fn value_ref<'a>(value: libsql::Value) -> ValueCow<'a> {
     }
 }
 
-impl Row for libsql::Row {
+pub struct Row(pub libsql::Row);
+
+impl usql_core::Row for Row {
     type Connector = LibSql;
 
     fn get<'a>(
         &'a self,
-        index: crate::ColumnIndex<'_>,
-    ) -> Result<crate::ValueCow<'a>, <Self::Connector as crate::Connector>::Error> {
+        index: usql_core::ColumnIndex<'_>,
+    ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error> {
         match index {
-            crate::ColumnIndex::Named(named) => {
-                let Some(idx) = row_index(self, named) else {
+            usql_core::ColumnIndex::Named(named) => {
+                let Some(idx) = row_index(&self.0, named) else {
                     return Err(super::error::Error::NotFound);
                 };
 
-                let value = self.get_value(idx)?;
+                let value = self.0.get_value(idx)?;
                 Ok(value_ref(value))
             }
-            crate::ColumnIndex::Index(idx) => {
-                let value = self.get_value(idx as i32)?;
+            usql_core::ColumnIndex::Index(idx) => {
+                let value = self.0.get_value(idx as i32)?;
                 Ok(value_ref(value))
             }
         }
     }
 
+    fn get_typed<'a>(
+        &'a self,
+        index: usql_core::ColumnIndex<'_>,
+        ty: usql_core::Type,
+    ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error> {
+        todo!()
+    }
+
     fn len(&self) -> usize {
-        self.column_count() as usize
+        self.0.column_count() as usize
     }
 
     fn column_name(&self, idx: usize) -> Option<&str> {
-        self.column_name(idx as i32)
+        self.0.column_name(idx as i32)
     }
 }

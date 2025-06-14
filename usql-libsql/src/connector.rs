@@ -1,19 +1,21 @@
 use usql_core::{Connector, DatabaseInfo, Statement, System};
 
-use super::pool::{LibSqlPool, Manager, ManagerOptions, PooledConn};
+use crate::{row::Row, stmt::Stmt};
+
+use super::pool::{Conn, Manager, ManagerOptions, Pool};
 
 pub struct LibSql;
 
 impl Connector for LibSql {
-    type Connection = PooledConn;
+    type Connection = Conn;
 
-    type Statement = libsql::Statement;
+    type Statement = Stmt;
 
-    type Row = libsql::Row;
+    type Row = Row;
 
     type Info = LibSqlInfo;
 
-    type Pool = LibSqlPool;
+    type Pool = Pool;
 
     type Error = super::error::Error;
 
@@ -24,7 +26,7 @@ impl Connector for LibSql {
     ) -> impl Future<Output = Result<Self::Pool, Self::Error>> + Send {
         async move {
             let manager = Manager::new(options);
-            Ok(LibSqlPool::new(manager))
+            Ok(Pool::new(manager))
         }
     }
 }
@@ -32,11 +34,7 @@ impl Connector for LibSql {
 pub struct LibSqlInfo;
 
 impl DatabaseInfo for LibSqlInfo {
-    fn variant(&self) -> crate::system::System {
+    fn variant(&self) -> usql_core::System {
         System::LibSql
     }
-}
-
-impl Statement for libsql::Statement {
-    type Connector = LibSql;
 }

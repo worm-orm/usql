@@ -1350,6 +1350,7 @@ name = "usql-libsql"
 version = "0.1.0"
 dependencies = [
  "async-lock",
+ "async-stream",
  "deadpool",
  "libsql",
  "usql-core",

@@ -1,8 +1,8 @@
 use alloc::string::ToString;
 
-use libsql::params::IntoValue;
+use libsql::{ValueRef, params::IntoValue};
 
-use crate::Value;
+use crate::{Value, ValueCow};
 
 impl IntoValue for Value {
     fn into_value(self) -> libsql::Result<libsql::Value> {
@@ -31,5 +31,11 @@ impl IntoValue for Value {
         };
 
         Ok(ret)
+    }
+}
+
+impl<'a> IntoValue for ValueCow<'a> {
+    fn into_value(self) -> libsql::Result<libsql::Value> {
+        self.to_owned().into_value()
     }
 }

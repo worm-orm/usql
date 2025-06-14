@@ -1,20 +1,4 @@
-use core::pin::Pin;
-use std::string::ToString;
-
-use futures_core::Stream;
-use pin_project_lite::pin_project;
-
 use usql_core::{Value, ValueRef};
-
-// pub fn sqlite_to_usql(value: rusqlite::types::Value) -> Value {
-//     match value {
-//         rusqlite::types::Value::Null => Value::Null,
-//         rusqlite::types::Value::Integer(i) => Value::BigInt(i),
-//         rusqlite::types::Value::Real(i) => Value::Double(i),
-//         rusqlite::types::Value::Text(i) => Value::Text(i),
-//         rusqlite::types::Value::Blob(items) => Value::Bytes(items),
-//     }
-// }
 
 pub fn sqlite_ref_to_usql(value: &rusqlite::types::Value) -> ValueRef<'_> {
     match value {

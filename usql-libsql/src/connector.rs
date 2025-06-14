@@ -1,4 +1,4 @@
-use usql_core::{Connector, DatabaseInfo, Statement, System};
+use usql_core::{Connector, DatabaseInfo, System};
 
 use crate::{row::Row, stmt::Stmt};
 

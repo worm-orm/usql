@@ -1,8 +1,8 @@
 use alloc::string::ToString;
 
-use libsql::{ValueRef, params::IntoValue};
+use libsql::params::IntoValue;
 
-use crate::{Value, ValueCow};
+use crate::{Value, ValueCow, ValueRef};
 
 impl IntoValue for Value {
     fn into_value(self) -> libsql::Result<libsql::Value> {
@@ -37,5 +37,12 @@ impl IntoValue for Value {
 impl<'a> IntoValue for ValueCow<'a> {
     fn into_value(self) -> libsql::Result<libsql::Value> {
         self.to_owned().into_value()
+    }
+}
+
+impl<'a> IntoValue for ValueRef<'a> {
+    fn into_value(self) -> libsql::Result<libsql::Value> {
+        let value: Value = self.into();
+        value.into_value()
     }
 }

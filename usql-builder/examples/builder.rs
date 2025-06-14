@@ -4,7 +4,7 @@ use usql_builder::{
     mutate::{Set, insert, update},
     schema::{Column, ColumnType, CreateIndex, create_table},
     select::{
-        FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt, Select,
+        FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt,
         SortQuery, TargetExt, select,
     },
 };

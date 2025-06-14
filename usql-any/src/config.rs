@@ -1,7 +1,6 @@
-use crate::{AnyConnector, AnyError, AnyOptions, AnyPool};
+use crate::{AnyError, AnyPool};
 use serde::{Deserialize, Serialize};
-use std::{borrow::ToOwned, boxed::Box, path::PathBuf, vec};
-use usql_core::Connector;
+use std::path::PathBuf;
 
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]

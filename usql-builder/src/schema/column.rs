@@ -10,7 +10,6 @@ use crate::{
 };
 use alloc::{borrow::Cow, format};
 use usql_core::System;
-use usql_value::ValueCow;
 
 #[derive(Clone)]
 pub struct Column<'a> {

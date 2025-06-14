@@ -1,6 +1,6 @@
 use core::fmt::{self, Write};
 
-use alloc::{borrow::Cow, string::ToString};
+use alloc::borrow::Cow;
 use usql_core::System;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

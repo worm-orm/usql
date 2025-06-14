@@ -14,3 +14,5 @@ mod libsql;
 mod postgres;
 
 pub use self::{cow::*, json::*, owned::*, r#ref::*, ty::*};
+
+pub use chrono;

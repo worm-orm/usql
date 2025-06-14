@@ -7,7 +7,6 @@ edition = "2024"
 default = ["derive"]
 derive = ["usql-macros"]
 
-sqlite = ["usql-core/sqlite"]
 
 [dependencies]
 usql-core = { path = "../usql-core" }

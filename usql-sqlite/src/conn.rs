@@ -1,5 +1,3 @@
-use usql_core::{Connection, Connector, Executor, ValueCow};
-
 use super::{
     SqliteDatabaseInfo, SqliteStatement,
     connector::Sqlite,
@@ -15,7 +13,8 @@ use futures_core::{Stream, ready};
 use pin_project_lite::pin_project;
 use rusqlite::OpenFlags;
 use std::{any::Any, boxed::Box, marker::PhantomData, path::Path, string::ToString, task::Poll};
-
+use usql_core::{Connection, Connector, Executor};
+use usql_value::ValueCow;
 pub struct Conn {
     channel: flume::Sender<Request>,
 }

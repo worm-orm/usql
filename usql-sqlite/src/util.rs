@@ -1,4 +1,4 @@
-use usql_core::{Value, ValueRef};
+use usql_value::{Value, ValueRef};
 
 pub fn sqlite_ref_to_usql(value: &rusqlite::types::Value) -> ValueRef<'_> {
     match value {

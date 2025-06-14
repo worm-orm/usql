@@ -3,9 +3,9 @@ use libsql::Connection;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
-use usql_core::{Connector, Executor, QueryStream, ValueCow};
-
 use crate::{row::Row, stmt::Stmt, transaction::Trans};
+use usql_core::{Connector, Executor, QueryStream};
+use usql_value::ValueCow;
 
 use super::{LibSqlInfo, connector::LibSql};
 

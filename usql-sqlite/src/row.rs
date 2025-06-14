@@ -1,9 +1,9 @@
 use rusqlite::types::{FromSql, FromSqlError, Value as SqliteValue, ValueRef as SqliteValueRef};
 use std::{collections::HashMap, string::String, sync::Arc, vec::Vec};
 
-use usql_core::{Connector, JsonValue, Value, ValueCow, ValueRef};
-
 use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
+use usql_core::Connector;
+use usql_value::{JsonValue, Type, Value, ValueCow, ValueRef};
 
 pub trait ColumnIndex {
     fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue>;
@@ -92,7 +92,7 @@ impl usql_core::Row for Row {
     fn get_typed<'a>(
         &'a self,
         index: usql_core::ColumnIndex<'_>,
-        ty: usql_core::Type,
+        ty: Type,
     ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error> {
         let value = usql_core::Row::get(self, index)?;
 
@@ -101,13 +101,13 @@ impl usql_core::Row for Row {
         }
 
         let value = match ty {
-            usql_core::Type::Text => {
+            Type::Text => {
                 if !value.as_ref().is_text() {
                     panic!("type error")
                 }
                 value
             }
-            usql_core::Type::SmallInt => {
+            Type::SmallInt => {
                 //
                 match value.as_ref() {
                     ValueRef::BigInt(i) => Value::SmallInt(i as _).into(),
@@ -118,7 +118,7 @@ impl usql_core::Row for Row {
                     }
                 }
             }
-            usql_core::Type::BigInt => match value.as_ref() {
+            Type::BigInt => match value.as_ref() {
                 ValueRef::BigInt(i) => Value::BigInt(i).into(),
                 ValueRef::Int(i) => Value::BigInt(i as _).into(),
                 ValueRef::SmallInt(i) => Value::BigInt(i as _).into(),
@@ -126,7 +126,7 @@ impl usql_core::Row for Row {
                     panic!("type error")
                 }
             },
-            usql_core::Type::Int => match value.as_ref() {
+            Type::Int => match value.as_ref() {
                 ValueRef::BigInt(i) => Value::Int(i as _).into(),
                 ValueRef::Int(i) => Value::Int(i).into(),
                 ValueRef::SmallInt(i) => Value::Int(i as _).into(),
@@ -134,13 +134,13 @@ impl usql_core::Row for Row {
                     panic!("type error")
                 }
             },
-            usql_core::Type::Blob => {
+            Type::Blob => {
                 if !value.as_ref().is_binary() {
                     panic!("type error")
                 }
                 value
             }
-            usql_core::Type::Time => match value.as_ref() {
+            Type::Time => match value.as_ref() {
                 ValueRef::Text(text) => {
                     let time = chrono::NaiveTime::parse_from_str(text, "%T%.f").unwrap();
                     Value::Time(time).into()
@@ -149,7 +149,7 @@ impl usql_core::Row for Row {
                     panic!("type error")
                 }
             },
-            usql_core::Type::Date => match value.as_ref() {
+            Type::Date => match value.as_ref() {
                 ValueRef::Text(text) => {
                     let date = chrono::NaiveDate::parse_from_str(text, "%F").unwrap();
                     Value::Date(date).into()
@@ -158,7 +158,7 @@ impl usql_core::Row for Row {
                     panic!("type error")
                 }
             },
-            usql_core::Type::DateTime => match value.as_ref() {
+            Type::DateTime => match value.as_ref() {
                 ValueRef::Text(text) => {
                     let date = chrono::NaiveDateTime::parse_from_str(text, "%+").unwrap();
                     Value::Timestamp(date).into()
@@ -167,7 +167,7 @@ impl usql_core::Row for Row {
                     panic!("type error")
                 }
             },
-            usql_core::Type::Json => match value.as_ref() {
+            Type::Json => match value.as_ref() {
                 ValueRef::Text(text) => {
                     let json: JsonValue = serde_json::from_str(text).unwrap();
                     Value::Json(json).into()
@@ -176,21 +176,21 @@ impl usql_core::Row for Row {
                     panic!("type error")
                 }
             },
-            usql_core::Type::Real => match value.as_ref() {
+            Type::Real => match value.as_ref() {
                 ValueRef::Float(f) => Value::Double((*f as f64).into()).into(),
                 ValueRef::Double(f) => Value::Double(f).into(),
                 _ => {
                     panic!("typ error")
                 }
             },
-            usql_core::Type::Double => match value.as_ref() {
+            Type::Double => match value.as_ref() {
                 ValueRef::Float(f) => Value::Float((*f as f32).into()).into(),
                 ValueRef::Double(f) => Value::Float((*f as f32).into()).into(),
                 _ => {
                     panic!("typ error")
                 }
             },
-            usql_core::Type::Uuid => match value.as_ref() {
+            Type::Uuid => match value.as_ref() {
                 ValueRef::ByteArray(bs) => {
                     let id = uuid::Uuid::from_slice(&*bs).unwrap();
                     Value::Uuid(id).into()
@@ -199,7 +199,7 @@ impl usql_core::Row for Row {
                     panic!("typ error")
                 }
             },
-            usql_core::Type::Bool => {
+            Type::Bool => {
                 let b = match value.as_ref() {
                     ValueRef::Bool(b) => return Ok(Value::Bool(b).into()),
                     ValueRef::BigInt(b) => b as u8,
@@ -212,8 +212,8 @@ impl usql_core::Row for Row {
 
                 Value::Bool(if b == 0 { false } else { true }).into()
             }
-            usql_core::Type::Array(value) => todo!(),
-            usql_core::Type::Any => value,
+            Type::Array(value) => todo!(),
+            Type::Any => value,
         };
 
         Ok(value)

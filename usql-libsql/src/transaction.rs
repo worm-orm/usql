@@ -1,8 +1,8 @@
 use core::ops::Deref;
 
-use usql_core::{Connector, Executor, Transaction, ValueCow};
-
 use crate::{row::Row, stmt::Stmt};
+use usql_core::{Connector, Executor, Transaction};
+use usql_value::ValueCow;
 
 use super::{LibSql, LibSqlInfo};
 

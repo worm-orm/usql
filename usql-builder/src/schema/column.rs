@@ -1,8 +1,5 @@
 use core::fmt::Write;
 
-use alloc::{borrow::Cow, format};
-use usql_core::{System, ValueCow};
-
 use crate::{
     Context, Error,
     expr::{Expression, ExpressionBox, Ident, expr_box},
@@ -11,6 +8,9 @@ use crate::{
         ty::{ColumnType, write_sql_type},
     },
 };
+use alloc::{borrow::Cow, format};
+use usql_core::System;
+use usql_value::ValueCow;
 
 #[derive(Clone)]
 pub struct Column<'a> {

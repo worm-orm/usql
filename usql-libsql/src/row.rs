@@ -1,6 +1,6 @@
-use usql_core::{Connector, Value, ValueCow};
-
 use super::connector::LibSql;
+use usql_core::Connector;
+use usql_value::{Type, Value, ValueCow};
 
 fn row_index(row: &libsql::Row, name: &str) -> Option<i32> {
     for idx in 0..row.column_count() {
@@ -51,7 +51,7 @@ impl usql_core::Row for Row {
     fn get_typed<'a>(
         &'a self,
         index: usql_core::ColumnIndex<'_>,
-        ty: usql_core::Type,
+        ty: Type,
     ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error> {
         todo!()
     }

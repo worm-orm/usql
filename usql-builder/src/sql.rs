@@ -1,14 +1,14 @@
+use crate::{
+    Context, Error,
+    statement::{self, Statement},
+};
 use alloc::{
     fmt,
     string::{String, ToString},
     vec::Vec,
 };
-use usql_core::{System, ValueCow};
-
-use crate::{
-    Context, Error,
-    statement::{self, Statement},
-};
+use usql_core::System;
+use usql_value::ValueCow;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SqlStmt<'a> {

@@ -2,8 +2,6 @@ use core::fmt;
 
 use alloc::string::String;
 
-use crate::schema::ColumnType;
-
 #[derive(Debug)]
 pub enum Error {
     Write(fmt::Error),

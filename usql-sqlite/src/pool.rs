@@ -6,14 +6,14 @@ use std::{
 use async_lock::Mutex;
 use uuid::Uuid;
 
-use usql_core::{Connection, Connector, Executor, ValueCow};
-
 use super::{
     conn::Conn,
     connector::{Sqlite, SqliteDatabaseInfo},
     error::Error,
     transaction::Transaction,
 };
+use usql_core::{Connection, Connector, Executor};
+use usql_value::ValueCow;
 
 // pub type PooledConn = deadpool::managed::Object<Manager>;
 

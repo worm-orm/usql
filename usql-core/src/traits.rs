@@ -1,6 +1,7 @@
-use crate::{Type, ValueCow, system::System};
+use crate::system::System;
 use alloc::vec::Vec;
 use futures_core::stream::BoxStream;
+use usql_value::{Type, ValueCow};
 
 pub trait Connector: Send + Sync {
     type Connection: Connection<Connector = Self>;

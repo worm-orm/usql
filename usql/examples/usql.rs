@@ -1,13 +1,13 @@
 use futures::TryStreamExt;
-use usql::{Error, FromRow, core::Connector};
+use usql::{Error, FromRow};
 use usql_builder::{
-    StatementExt,
     expr::val,
     mutate::{Set, insert},
     schema::{Column, ColumnType, create_table},
     select::{QueryExt, select},
 };
-use usql_core::System;
+use usql_core::Connector;
+use usql_sqlite::SqliteOptions;
 
 #[derive(Debug, FromRow)]
 struct User {
@@ -18,11 +18,11 @@ struct User {
 
 fn main() {
     futures::executor::block_on(async move {
-        let pool = usql_core::Sqlite::create_pool(usql_core::SqliteOptions::default())
+        let pool = usql_sqlite::Sqlite::create_pool(SqliteOptions::default())
             .await
             .unwrap();
 
-        let core = usql::Pool::<usql_core::Sqlite>::new(pool);
+        let core = usql::Pool::<usql_sqlite::Sqlite>::new(pool);
 
         let conn = core.conn().await.unwrap();
 
@@ -50,7 +50,7 @@ fn main() {
             println!("{:?}", row);
         }
 
-        Result::<_, Error<usql_core::Sqlite>>::Ok(())
+        Result::<_, Error<usql_sqlite::Sqlite>>::Ok(())
     })
     .unwrap();
 }

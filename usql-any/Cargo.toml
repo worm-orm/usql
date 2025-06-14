@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["libsql"]
 sqlite = ["usql-sqlite"]
 libsql = ["usql-libsql"]
 postgres = ["usql-postgres"]
@@ -20,8 +19,5 @@ usql-postgres = { path = "../usql-postgres", optional = true }
 
 pin-project-lite = { workspace = true }
 futures-core = { workspace = true }
-
-
 serde = { version = "1", features = ["derive"] }
-
 schemars = { version = "1.0.0-alpha.17", optional = true }

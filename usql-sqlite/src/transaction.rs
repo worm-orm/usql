@@ -4,11 +4,11 @@ use std::string::ToString;
 
 use futures_channel::oneshot;
 
-use usql_core::{Connector, Executor, ValueCow};
-
 use super::{Sqlite, SqliteDatabaseInfo, SqliteStatement};
 use super::{conn::QueryStream, query_result::QueryResult, row::Row, traits::Params};
 use super::{error::Error, worker::TransRequest};
+use usql_core::{Connector, Executor};
+use usql_value::ValueCow;
 
 pub struct Transaction<'conn> {
     pub(crate) invariant: PhantomData<&'conn ()>,

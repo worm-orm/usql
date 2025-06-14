@@ -1323,6 +1323,7 @@ dependencies = [
  "usql-builder",
  "usql-core",
  "usql-macros",
+ "usql-sqlite",
 ]
 
 [[package]]
@@ -1346,6 +1347,7 @@ dependencies = [
  "dyn-clone",
  "sqlformat",
  "usql-core",
+ "usql-value",
 ]
 
 [[package]]

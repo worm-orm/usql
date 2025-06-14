@@ -16,13 +16,13 @@ impl Params for () {
     }
 }
 
-impl Params for Vec<usql_core::Value> {
+impl Params for Vec<usql_value::Value> {
     fn into_params(self) -> Vec<Value> {
         self.into_iter().map(super::util::usql_to_sqlite).collect()
     }
 }
 
-impl<'a> Params for Vec<usql_core::ValueCow<'a>> {
+impl<'a> Params for Vec<usql_value::ValueCow<'a>> {
     fn into_params(self) -> Vec<Value> {
         self.into_iter()
             .map(|m| m.to_owned())

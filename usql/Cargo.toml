@@ -19,8 +19,9 @@ async-stream = { version = "0.3" }
 
 [dev-dependencies]
 futures = { version = "0.3" }
+usql-sqlite = { path = "../usql-sqlite" }
+
 
 [[example]]
 name = "usql"
 path = "examples/usql.rs"
-required-features = ["sqlite"]

@@ -2,11 +2,11 @@ use std::mem::transmute;
 
 use rquickjs::{Class, Ctx, Function, JsLifetime, class::Trace, prelude::Opt};
 use rquickjs_util::{StringRef, throw, throw_if};
-use usql_core::{AnyConn, prelude::*};
-
-use crate::{row::JsRow, statement::StatementOrQuery, value::Val};
 
 use super::{statement::JsStatement, trans::JsTrans};
+use crate::{row::JsRow, statement::StatementOrQuery, value::Val};
+use usql_any::{AnyConn, AnyTransaction};
+use usql_core::{Connection, Executor, Transaction};
 
 #[rquickjs::class(rename = "Conn")]
 pub struct JsConn {
@@ -70,9 +70,7 @@ impl JsConn {
                 // Safety: We are only using the transaction for the duration of this call
                 // making sure to release it before return
                 // Also the we have mutable exclusive access to jsconn
-                i: Some(unsafe {
-                    transmute::<usql_core::AnyTransaction<'_>, usql_core::AnyTransaction<'_>>(trans)
-                }),
+                i: Some(unsafe { transmute::<AnyTransaction<'_>, AnyTransaction<'_>>(trans) }),
             },
         )?;
 

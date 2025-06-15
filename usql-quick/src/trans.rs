@@ -1,6 +1,7 @@
 use rquickjs::{Ctx, JsLifetime, class::Trace, prelude::Opt};
 use rquickjs_util::{StringRef, throw, throw_if};
-use usql_core::{AnyTransaction, prelude::*};
+use usql_any::AnyTransaction;
+use usql_core::Executor;
 
 use crate::{JsRow, JsStatement, Val, statement::StatementOrQuery};
 

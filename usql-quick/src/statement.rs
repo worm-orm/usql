@@ -1,9 +1,9 @@
+use crate::{JsRow, Val};
 use futures::TryStreamExt;
 use rquickjs::{Class, Ctx, FromJs, JsLifetime, class::Trace};
 use rquickjs_util::{StringRef, throw, throw_if};
-use usql_core::{AnyConnector, AnyStatement, Executor};
-
-use crate::{JsRow, Val};
+use usql_any::{AnyConnector, AnyStatement};
+use usql_core::Executor;
 
 #[rquickjs::class(rename = "Statement")]
 pub struct JsStatement {

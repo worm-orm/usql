@@ -5,13 +5,13 @@ use rquickjs::{
 };
 
 use rquickjs_util::{Map as JsMap, Set as JsSet, date::Date};
-use usql_core::Value;
+use usql_value::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Val(pub usql_core::Value);
+pub struct Val(pub usql_value::Value);
 
 impl core::ops::Deref for Val {
-    type Target = usql_core::Value;
+    type Target = usql_value::Value;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -115,7 +115,7 @@ impl<'js> IntoJs<'js> for Val {
         let val = match self.0 {
             Value::Bool(b) => JsValue::new_bool(ctx.clone(), b),
             Value::Text(t) => JsString::from_str(ctx.clone(), t.as_str())?.into(),
-            Value::Json(map) => {
+            Value::Json(_map) => {
                 // let obj = rquickjs::Object::new(ctx.clone())?;
                 // for (k, v) in map {
                 //     obj.set(k.as_str(), Val(v).into_js(ctx)?)?;

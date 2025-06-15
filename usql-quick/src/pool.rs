@@ -2,10 +2,8 @@ use std::path::PathBuf;
 
 use rquickjs::{Ctx, FromJs, JsLifetime, Object, class::Trace};
 use rquickjs_util::{StringRef, throw, throw_if};
-use usql_core::{
-    AnyPool, Pool,
-    config::{LibSqlConfig, SqliteConfig},
-};
+use usql_any::{AnyPool, LibSqlConfig, SqliteConfig};
+use usql_core::Pool;
 
 use crate::JsConn;
 
@@ -41,7 +39,7 @@ impl JsPool {
     }
 }
 
-pub struct Config(pub usql_core::config::Config);
+pub struct Config(pub usql_any::Config);
 
 impl<'js> FromJs<'js> for Config {
     fn from_js(ctx: &rquickjs::Ctx<'js>, value: rquickjs::Value<'js>) -> rquickjs::Result<Self> {
@@ -52,9 +50,9 @@ impl<'js> FromJs<'js> for Config {
         let cfg = match ty.as_str() {
             "sqlite" => {
                 let path: Option<String> = obj.get("path")?;
-                usql_core::config::Config {
+                usql_any::Config {
                     workers: None,
-                    kind: usql_core::config::DatabaseConfig::Sqlite(
+                    kind: usql_any::DatabaseConfig::Sqlite(
                         path.map(|m| SqliteConfig::Path(PathBuf::from(m)))
                             .unwrap_or(SqliteConfig::Memory),
                     ),
@@ -62,9 +60,9 @@ impl<'js> FromJs<'js> for Config {
             }
             "libsql" => {
                 let path: Option<String> = obj.get("path")?;
-                usql_core::config::Config {
+                usql_any::Config {
                     workers: None,
-                    kind: usql_core::config::DatabaseConfig::LibSql(
+                    kind: usql_any::DatabaseConfig::LibSql(
                         path.map(|m| LibSqlConfig::Path(PathBuf::from(m)))
                             .unwrap_or(LibSqlConfig::Memory),
                     ),

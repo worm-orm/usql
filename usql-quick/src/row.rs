@@ -1,6 +1,8 @@
 use rquickjs::{Ctx, FromJs, JsLifetime, Object, atom::PredefinedAtom, class::Trace};
 use rquickjs_util::StringRef;
-use usql_core::{AnyRow, ColumnIndex, Row, Value};
+use usql_any::AnyRow;
+use usql_core::{ColumnIndex, Row};
+use usql_value::Value;
 
 use crate::value::Val;
 

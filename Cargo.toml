@@ -6,7 +6,7 @@ members = [
   "usql-core",
   "usql-builder",
   # "usql-migrate",
-  # "usql-quick",
+  "usql-quick",
   "usql",
   "usql-macros",
   "usql-sqlite",

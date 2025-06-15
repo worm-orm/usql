@@ -27,7 +27,7 @@ where
                 .required(true)
                 .primary_key(),
         )
-        .column(Column::new("data", ColumnType::DateTime).required(true))
+        .column(Column::new("date", ColumnType::DateTime).required(true))
         .column(Column::new("meta", ColumnType::Json))
         .to_sql(executor.db_info().variant())?;
 

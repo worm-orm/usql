@@ -5,7 +5,8 @@ use usql_core::{Connection, Connector, DatabaseInfo, Executor, System};
 
 use crate::{Exec, MigrationLoader, Runner};
 
-pub struct SqlLoader {}
+#[derive(Default)]
+pub struct SqlLoader;
 
 const EXTS: &'static [&'static str] = &["sql", "sqlite", "libsql", "postgres"];
 

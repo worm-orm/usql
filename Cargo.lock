@@ -2701,10 +2701,13 @@ dependencies = [
 name = "usql-migrate"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "futures-core",
+ "futures-executor",
  "tokio",
  "usql-builder",
  "usql-core",
+ "usql-sqlite",
  "usql-value",
 ]
 

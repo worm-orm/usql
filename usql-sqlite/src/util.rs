@@ -20,7 +20,7 @@ pub fn usql_to_sqlite(value: Value) -> rusqlite::types::Value {
         }
         Value::ByteArray(b) => rusqlite::types::Value::Blob(b.to_vec()),
         Value::Date(d) => rusqlite::types::Value::Text(d.format("%F").to_string()),
-        Value::Timestamp(dt) => rusqlite::types::Value::Text(dt.format("%+").to_string()),
+        Value::Timestamp(dt) => rusqlite::types::Value::Text(dt.format("%F %T%.f").to_string()),
         Value::Time(t) => rusqlite::types::Value::Text(t.format("%T%.f").to_string()),
         Value::Uuid(u) => rusqlite::types::Value::Blob(u.as_bytes().to_vec()),
         Value::Int(n) => rusqlite::types::Value::Integer(n as _),

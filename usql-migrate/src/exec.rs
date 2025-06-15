@@ -26,7 +26,7 @@ where
     type Connector = B;
 
     fn db_info(&self) -> <Self::Connector as Connector>::Info {
-        todo!()
+        self.conn.db_info()
     }
 
     fn prepare<'a>(

@@ -195,7 +195,7 @@ fn get_typed<'a>(value: ValueCow<'a>, ty: Type) -> Result<ValueCow<'a>, Error> {
         },
         Type::DateTime => match value.as_ref() {
             ValueRef::Text(text) => {
-                let date = chrono::NaiveDateTime::parse_from_str(text, "%+").unwrap();
+                let date = chrono::NaiveDateTime::parse_from_str(text, "%F %T%.f").unwrap();
                 Value::Timestamp(date).into()
             }
             _ => {

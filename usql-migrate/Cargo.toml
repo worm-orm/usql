@@ -12,5 +12,11 @@ usql-core = { path = "../usql-core" }
 usql-builder = { path = "../usql-builder" }
 usql-value = { path = "../usql-value" }
 futures-core = { version = "0.3" }
+chrono = { version = "0.4", features = ["now"] }
 
 tokio = { version = "1", features = ["fs"], optional = true }
+
+
+[dev-dependencies]
+futures-executor = "0.3"
+usql-sqlite = { path = "../usql-sqlite" }

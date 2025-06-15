@@ -6,7 +6,7 @@ mod migration;
 mod migrator;
 
 #[cfg(feature = "sql")]
-mod sql;
+pub mod sql;
 
 pub use self::{
     error::Error, exec::Exec, loader::MigrationLoader, migration::Runner, migrator::Migrator,

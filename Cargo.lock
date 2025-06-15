@@ -2702,6 +2702,7 @@ name = "usql-migrate"
 version = "0.1.0"
 dependencies = [
  "futures-core",
+ "tokio",
  "usql-builder",
  "usql-core",
  "usql-value",

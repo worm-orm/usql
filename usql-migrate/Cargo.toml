@@ -3,8 +3,14 @@ name = "usql-migrate"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["sql"]
+sql = ["tokio"]
+
 [dependencies]
 usql-core = { path = "../usql-core" }
 usql-builder = { path = "../usql-builder" }
 usql-value = { path = "../usql-value" }
 futures-core = { version = "0.3" }
+
+tokio = { version = "1", features = ["fs"], optional = true }

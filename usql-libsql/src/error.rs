@@ -1,10 +1,13 @@
 use core::fmt;
 
+use usql_value::Type;
+
 #[derive(Debug)]
 pub enum Error {
     LibSql(libsql::Error),
     NotFound,
     Pool,
+    Convert { found: Option<Type>, expected: Type },
 }
 
 impl From<libsql::Error> for Error {
@@ -19,6 +22,17 @@ impl fmt::Display for Error {
             Self::LibSql(err) => err.fmt(f),
             Self::NotFound => write!(f, "not found"),
             Self::Pool => write!(f, "pool"),
+            Self::Convert { found, expected } => {
+                write!(
+                    f,
+                    "Convert: found: {}, expected {}",
+                    found
+                        .as_ref()
+                        .map(|m| m.to_string())
+                        .unwrap_or_else(|| "null".to_string()),
+                    expected
+                )
+            }
         }
     }
 }

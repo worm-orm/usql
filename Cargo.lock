@@ -1370,6 +1370,7 @@ dependencies = [
  "async-stream",
  "deadpool",
  "libsql",
+ "serde_json",
  "usql-core",
  "usql-value",
  "uuid",

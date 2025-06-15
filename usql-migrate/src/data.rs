@@ -1,5 +1,4 @@
-use std::alloc::System;
-
+use crate::error::Error;
 use usql_builder::{
     StatementExt,
     expr::val,
@@ -7,12 +6,8 @@ use usql_builder::{
     schema::{Column, ColumnType, create_table},
     select::{Order, QueryExt, SortQuery, select},
 };
-use usql_core::{
-    ColumnIndex, Connector, DatabaseInfo, Executor, JsonValue, Row, Type, chrono::NaiveDateTime,
-    util::next,
-};
-
-use crate::{error::Error, migration::Migration};
+use usql_core::{ColumnIndex, Connector, DatabaseInfo, Executor, Row, util::next};
+use usql_value::{JsonValue, Type, chrono::NaiveDateTime};
 
 #[derive(Debug, Clone)]
 pub struct Entry {

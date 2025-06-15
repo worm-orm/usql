@@ -2698,6 +2698,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "usql-migrate"
+version = "0.1.0"
+dependencies = [
+ "futures-core",
+ "usql-builder",
+ "usql-core",
+ "usql-value",
+]
+
+[[package]]
 name = "usql-postgres"
 version = "0.1.0"
 

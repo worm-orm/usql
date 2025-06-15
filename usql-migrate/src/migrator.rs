@@ -1,9 +1,10 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use usql_core::{Connection, Connector, Executor, Pool, Transaction, chrono::Utc};
+use usql_core::{Connection, Connector, Executor, Pool, Transaction};
+use usql_value::chrono::Utc;
 
 use crate::{
-    data::{Entry, insert_migration, list_entries},
+    data::{Entry, ensure_table, insert_migration, list_entries},
     error::Error,
     exec::Exec,
     loader::MigrationLoader,
@@ -17,6 +18,7 @@ where
     pool: B::Pool,
     loader: T,
     path: PathBuf,
+    table_name: String,
 }
 
 impl<B, T> Migrator<B, T>
@@ -32,8 +34,13 @@ where
     T: MigrationLoader<B>,
     T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
-    pub const fn new(pool: B::Pool, loader: T, path: PathBuf) -> Migrator<B, T> {
-        Migrator { pool, loader, path }
+    pub fn new(pool: B::Pool, loader: T, path: PathBuf) -> Migrator<B, T> {
+        Migrator {
+            pool,
+            loader,
+            path,
+            table_name: "migrations".to_string(),
+        }
     }
 
     pub async fn has_migrations(&self) -> Result<bool, Error> {
@@ -111,7 +118,13 @@ where
 
         migration.runner.up(&exec).await.map_err(Error::new)?;
 
-        insert_migration(&exec, "migrations", &migration.name, Utc::now().naive_utc()).await?;
+        insert_migration(
+            &exec,
+            &self.table_name,
+            &migration.name,
+            Utc::now().naive_utc(),
+        )
+        .await?;
 
         exec.conn.commit().await.map_err(Error::new)?;
 
@@ -158,6 +171,8 @@ where
         E: Executor<Connector = B>,
         <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
     {
-        list_entries(conn, "migrations").await
+        // TODO: Fix this
+        ensure_table(conn, &self.table_name).await?;
+        list_entries(conn, &self.table_name).await
     }
 }

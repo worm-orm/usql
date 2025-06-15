@@ -1,7 +1,6 @@
+use crate::{error::Error, exec::Exec};
 use futures_core::future::BoxFuture;
-use usql_core::{Connection, Connector, Executor};
-
-use crate::{error::Error, exec::Exec, loader::MigrationLoader};
+use usql_core::{Connection, Connector};
 
 pub struct Migration<T> {
     pub name: String,

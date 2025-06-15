@@ -5,7 +5,7 @@ resolver = "2"
 members = [
   "usql-core",
   "usql-builder",
-  # "usql-migrate",
+  "usql-migrate",
   "usql-quick",
   "usql",
   "usql-macros",

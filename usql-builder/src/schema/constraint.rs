@@ -29,7 +29,7 @@ impl<'a> Constraint<'a> {
                         write!(ctx, ",")?;
                     }
 
-                    ctx.push_identifier(&pkg);
+                    ctx.push_identifier(&pkg)?;
                 }
                 ctx.write_char(')')?;
             }

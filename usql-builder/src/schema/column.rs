@@ -1,14 +1,13 @@
-use core::fmt::Write;
-
 use crate::{
     Context, Error,
-    expr::{Expression, ExpressionBox, Ident, expr_box},
+    expr::{Expression, ExpressionBox, expr_box},
     schema::{
         fk::ForeignKey,
         ty::{ColumnType, write_sql_type},
     },
 };
 use alloc::{borrow::Cow, format};
+use core::fmt::Write;
 use usql_core::System;
 
 #[derive(Clone)]

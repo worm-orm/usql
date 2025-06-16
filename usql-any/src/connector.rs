@@ -64,6 +64,7 @@ impl Connector for AnyConnector {
     }
 }
 
+#[derive(Clone)]
 #[non_exhaustive]
 pub enum AnyOptions {
     #[cfg(feature = "sqlite")]
@@ -86,6 +87,7 @@ impl From<LibSqlOptions> for AnyOptions {
     }
 }
 
+#[derive(Clone)]
 #[non_exhaustive]
 pub enum AnyPool {
     #[cfg(feature = "sqlite")]

@@ -17,6 +17,7 @@ enum Source {
     Path(PathBuf),
 }
 
+#[derive(Clone)]
 pub struct ManagerOptions {
     pub path: Option<PathBuf>,
     pub flags: libsql::OpenFlags,

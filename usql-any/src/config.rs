@@ -2,6 +2,11 @@ use crate::{AnyError, AnyPool};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+#[allow(unused)]
+use crate::connector::{AnyConnector, AnyOptions};
+#[allow(unused)]
+use usql_core::Connector;
+
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -28,9 +33,9 @@ pub enum SqliteConfig {
 }
 
 #[cfg(feature = "sqlite")]
-impl From<SqliteConfig> for AnyOptions {
+impl From<SqliteConfig> for crate::AnyOptions {
     fn from(value: SqliteConfig) -> Self {
-        use crate::SqliteOptions;
+        use usql_sqlite::SqliteOptions;
         let opts = match value {
             SqliteConfig::Memory => SqliteOptions {
                 path: None,

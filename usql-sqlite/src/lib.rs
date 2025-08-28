@@ -15,3 +15,12 @@ pub use self::{
     pool::Pool as SqlitePool, pool::PooledConn as SqliteConn, row::Row as SqliteRow,
     statement::Statement as SqliteStatement, transaction::Transaction as SqliteTransaction,
 };
+
+#[cfg(feature = "vector")]
+pub fn init_vector() {
+    unsafe {
+        rusqlite::ffi::sqlite3_auto_extension(Some(std::mem::transmute(
+            sqlite_vec::sqlite3_vec_init as *const (),
+        )));
+    }
+}

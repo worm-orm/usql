@@ -1,8 +1,8 @@
-use std::{borrow::Cow, iter::Peekable, pin::Pin};
+use std::{borrow::Cow, pin::Pin};
 
-use anyhow::{Context, anyhow};
+use anyhow::Context;
 use futures::{
-    Stream, StreamExt, TryStream, TryStreamExt,
+    Stream, StreamExt,
     stream::{BoxStream, LocalBoxStream},
 };
 use usql_core::{ColumnIndex, Connector, Row};
@@ -58,8 +58,11 @@ impl<'a> Project<'a> {
         let mut stream = stream.peekable();
 
         let stream = async_stream::stream! {
+            let mut cache = Vec::new();
 
-            while let Some(next) = self.next_row_async(&output,&mut stream).await {
+
+            while let Some(next) = self.next_row_async(&output,&mut stream, &mut cache).await {
+                cache.clear();
                 yield next;
             }
 
@@ -87,8 +90,10 @@ impl<'a> Project<'a> {
         let mut stream = stream.peekable();
 
         let stream = async_stream::stream! {
+            let mut cache = Vec::new();
 
-            while let Some(next) = self.next_row_async(&output,&mut stream).await {
+            while let Some(next) = self.next_row_async(&output,&mut stream, &mut cache).await {
+                cache.clear();
                 yield next;
             }
 
@@ -134,9 +139,7 @@ impl<'a> ProjectField<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
     {
         let value = match &self.ty {
-            Some(v) => row
-                .get_typed(ColumnIndex::Index(self.index), v.clone())
-                .context("Get row")?,
+            Some(v) => row.get_typed(ColumnIndex::Index(self.index), v.clone())?,
             None => row.get(ColumnIndex::Index(self.index)).context("Get row")?,
         };
 
@@ -245,7 +248,7 @@ impl<'a> ProjectRelation<'a> {
                     }
 
                     for relation in &self.relations {
-                        relation.write::<O, _>(output, &rows[idx..end], &mut entry)?;
+                        relation.write(output, &rows[idx..end], &mut entry)?;
                     }
                     result.append_relation(&self.name, entry.finalize()?)?;
                 }
@@ -274,7 +277,7 @@ impl<'a> ProjectRelation<'a> {
                     }
 
                     for relation in &self.relations {
-                        relation.write::<O, _>(output, &rows[idx..end], &mut entry)?;
+                        relation.write(output, &rows[idx..end], &mut entry)?;
                     }
 
                     result.write_relation(&self.name, entry.finalize()?)?;
@@ -361,6 +364,7 @@ impl<'a> Project<'a> {
         &self,
         output: &O,
         iter: &mut futures::stream::Peekable<T>,
+        cache: &mut Vec<<T::Item as IntoResult>::Ok>,
     ) -> Option<anyhow::Result<<O::Writer as Writer>::Output>>
     where
         O: Output,
@@ -392,7 +396,9 @@ impl<'a> Project<'a> {
 
         let pk = pk.to_owned();
 
-        let mut rest = vec![next];
+        cache.push(next);
+
+        // let mut rest = vec![next];
 
         loop {
             if let Some(peek) = iter.as_mut().peek().await {
@@ -416,11 +422,11 @@ impl<'a> Project<'a> {
 
             let next = ok_or!(next.into_result());
 
-            rest.push(next);
+            cache.push(next);
         }
 
         for relation in &self.relations {
-            ok_or!(relation.write(output, &rest, &mut result))
+            ok_or!(relation.write(output, &cache, &mut result))
         }
 
         Some(result.finalize().map_err(Into::into))

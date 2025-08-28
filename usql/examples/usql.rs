@@ -19,6 +19,8 @@ struct User {
 }
 
 fn main() {
+    usql_sqlite::init_vector();
+
     futures::executor::block_on(async move {
         let pool = usql_sqlite::Sqlite::create_pool(SqliteOptions::default())
             .await
@@ -152,6 +154,8 @@ fn main() {
         .order_by(("user_id", Order::Asc))
         .into_stmt();
 
+        println!("Stmt {}", stmt.to_sql(System::Sqlite).unwrap());
+
         let mut stream = conn.fetch(stmt).await?.project_into(project, SerdeOutput);
 
         // let mut stream = project.wrap_stream(SerdeOutput, stream.map_ok(|m| m.into_inner()));
@@ -159,6 +163,10 @@ fn main() {
         while let Some(row) = stream.try_next().await.unwrap() {
             println!("{}", serde_json::to_string_pretty(&row).unwrap());
         }
+
+        let stmt = conn.fetch_one("SELECT vec_version()").await?;
+
+        println!("Vector {}", stmt.try_get::<String, _>(0).unwrap());
 
         Result::<_, Error<usql_sqlite::Sqlite>>::Ok(())
     })

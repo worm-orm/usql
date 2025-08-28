@@ -1,6 +1,6 @@
 use alloc::string::String;
-use usql_value::Type;
 use usql_value::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use usql_value::{JsonValue, Type};
 
 pub trait Typed {
     const TYPE: Type;
@@ -29,5 +29,6 @@ types!(
   String => Text,
   NaiveDate => Date,
   NaiveDateTime => DateTime,
-  NaiveTime => Time
+  NaiveTime => Time,
+  JsonValue => Json
 );

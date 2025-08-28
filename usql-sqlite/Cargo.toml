@@ -3,6 +3,11 @@ name = "usql-sqlite"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["vector"]
+bundled = ["rusqlite/bundled"]
+vector = ["bundled", "sqlite-vec"]
+
 [dependencies]
 usql-core = { path = "../usql-core" }
 usql-value = { path = "../usql-value", features = ["serde"] }
@@ -22,3 +27,5 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 
 serde_json = { workspace = true }
+
+sqlite-vec = { version = "0.1", optional = true }

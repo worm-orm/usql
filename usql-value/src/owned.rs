@@ -10,6 +10,7 @@ use ordered_float::OrderedFloat;
 use super::{JsonValue, Type, ValueRef};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Value {
     Null,

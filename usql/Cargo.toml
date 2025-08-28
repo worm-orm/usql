@@ -13,6 +13,8 @@ usql-core = { path = "../usql-core" }
 usql-builder = { path = "../usql-builder" }
 usql-macros = { path = "../usql-macros", optional = true }
 usql-value = { path = "../usql-value" }
+usql-util = { path = "../usql-util" }
+futures = { version = "0.3" }
 futures-core = { version = "0.3" }
 pin-project-lite = { version = "0.2" }
 async-stream = { version = "0.3" }
@@ -21,6 +23,7 @@ async-stream = { version = "0.3" }
 [dev-dependencies]
 futures = { version = "0.3" }
 usql-sqlite = { path = "../usql-sqlite" }
+serde_json = "1.0"
 
 
 [[example]]

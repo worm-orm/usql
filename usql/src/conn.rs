@@ -16,6 +16,10 @@ impl<B: Connector> Conn<B> {
     pub fn new(conn: B::Connection) -> Conn<B> {
         Conn { conn }
     }
+
+    pub fn into_inner(self) -> B::Connection {
+        self.conn
+    }
 }
 
 impl<B> Conn<B>

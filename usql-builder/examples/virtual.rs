@@ -6,7 +6,6 @@ use usql_builder::{
 };
 use usql_core::System;
 use usql_value::Value;
-use zerocopy::AsBytes;
 
 fn main() -> Result<(), Error> {
     let sql = create_virtual_table("embed", "vec0")

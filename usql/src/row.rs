@@ -37,4 +37,8 @@ impl<B: Connector> Row<B> {
 
         value.to_owned().try_into().map_err(Error::query)
     }
+
+    pub fn into_inner(self) -> B::Row {
+        self.row
+    }
 }

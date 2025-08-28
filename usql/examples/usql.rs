@@ -1,13 +1,15 @@
 use futures::TryStreamExt;
 use usql::{Error, FromRow};
 use usql_builder::{
-    expr::val,
+    StatementExt,
+    expr::{ExpressionExt, val},
     mutate::{Set, insert},
-    schema::{Column, ColumnType, create_table},
-    select::{QueryExt, select},
+    schema::{Column, ColumnType, ForeignKey, create_table},
+    select::{IdentExt, Join, JoinQuery, Order, QueryExt, SortQuery, TargetExt, select},
 };
-use usql_core::Connector;
-use usql_sqlite::SqliteOptions;
+use usql_core::{Connector, System};
+use usql_sqlite::{Sqlite, SqliteOptions};
+use usql_util::{Output, Project, ProjectField, ProjectRelation, Writer};
 
 #[derive(Debug, FromRow)]
 struct User {
@@ -35,9 +37,71 @@ fn main() {
         .await?;
 
         conn.exec(
+            create_table("blog")
+                .column(Column::new("id", ColumnType::Int).auto(true).primary_key())
+                .column(Column::new("title", ColumnType::Text).required(true))
+                .column(
+                    Column::new("user_id", ColumnType::Int)
+                        .required(true)
+                        .foreign_key(ForeignKey::new("user", "id")),
+                ),
+        )
+        .await?;
+
+        conn.exec(
+            create_table("comment")
+                .column(Column::new("id", ColumnType::Int).auto(true).primary_key())
+                .column(Column::new("title", ColumnType::Text).required(true))
+                .column(
+                    Column::new("user_id", ColumnType::Int)
+                        .required(true)
+                        .foreign_key(ForeignKey::new("user", "id")),
+                )
+                .column(
+                    Column::new("blog_id", ColumnType::Int)
+                        .required(true)
+                        .foreign_key(ForeignKey::new("blog", "id")),
+                ),
+        )
+        .await?;
+
+        conn.exec(
             insert("user")
                 .with("name", val("Rasmus"))
                 .with("email", val("rasmus@email.com")),
+        )
+        .await?;
+
+        conn.exec(
+            insert("user")
+                .with("name", val("Wilbur"))
+                .with("email", val("wilbur@email.com")),
+        )
+        .await?;
+
+        for i in 0..2 {
+            conn.exec(
+                insert("blog")
+                    .with("title", val(format!("Blog {i}")))
+                    .with("user_id", val(1)),
+            )
+            .await?;
+
+            for ii in 1..3 {
+                conn.exec(
+                    insert("comment")
+                        .with("title", val(format!("Comment {i}-{ii}")))
+                        .with("user_id", val(ii))
+                        .with("blog_id", val(1)),
+                )
+                .await?;
+            }
+        }
+
+        conn.exec(
+            insert("blog")
+                .with("title", val(format!("Blog")))
+                .with("user_id", val(2)),
         )
         .await?;
 
@@ -50,7 +114,107 @@ fn main() {
             println!("{:?}", row);
         }
 
+        let project = Project::new(6, 0)
+            .field(ProjectField::new(0).map("id"))
+            .field(ProjectField::new(1))
+            .relation(
+                ProjectRelation::many(3, "blogs")
+                    .field(ProjectField::new(3).map("id"))
+                    .field(ProjectField::new(4).map("title"))
+                    .relation(
+                        ProjectRelation::many(5, "comments")
+                            .field(ProjectField::new(6))
+                            .relation(
+                                ProjectRelation::single(7, "user").field(ProjectField::new(7)),
+                            ),
+                    ),
+            );
+
+        let stmt = select(
+            "user",
+            (
+                "user".col("id").alias("user_id"),
+                "user".col("name").alias("user_name"),
+                "user".col("email").alias("user_email"),
+                "blog".col("id").alias("blog_id"),
+                "blog".col("title").alias("blog_title"),
+                "comment".col("id").alias("comment_id"),
+                "comment".col("title").alias("command_title"),
+                "comment_user".col("id").alias("id"),
+            ),
+        )
+        .join(Join::left("blog").on("blog".col("user_id").eql("user".col("id"))))
+        .join(Join::left("comment").on("comment".col("blog_id").eql("blog".col("id"))))
+        .join(
+            Join::left("user".alias("comment_user"))
+                .on("comment_user".col("id").eql("comment".col("user_id"))),
+        )
+        .order_by(("user_id", Order::Asc))
+        .into_stmt();
+
+        let mut stream = conn.fetch(stmt).await?.project_into(project, SerdeOutput);
+
+        // let mut stream = project.wrap_stream(SerdeOutput, stream.map_ok(|m| m.into_inner()));
+
+        while let Some(row) = stream.try_next().await.unwrap() {
+            println!("{}", serde_json::to_string_pretty(&row).unwrap());
+        }
+
         Result::<_, Error<usql_sqlite::Sqlite>>::Ok(())
     })
     .unwrap();
+}
+
+pub struct SerdeOutput;
+
+impl Output for SerdeOutput {
+    type Writer = SerdeWriter;
+    fn create(&self) -> Self::Writer {
+        SerdeWriter {
+            map: Default::default(),
+        }
+    }
+}
+
+pub struct SerdeWriter {
+    map: serde_json::Map<String, serde_json::Value>,
+}
+
+impl Writer for SerdeWriter {
+    type Output = serde_json::Value;
+
+    type Error = serde_json::Error;
+
+    fn write_field(
+        &mut self,
+        field: &str,
+        value: usql_value::ValueCow<'_>,
+    ) -> Result<(), Self::Error> {
+        self.map
+            .insert(field.into(), serde_json::to_value(value.to_owned())?);
+
+        Ok(())
+    }
+
+    fn write_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error> {
+        self.map.insert(field.to_string(), value.into());
+        Ok(())
+    }
+
+    fn append_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error> {
+        if let Some(ret) = self.map.get_mut(field) {
+            let Some(array) = ret.as_array_mut() else {
+                panic!("Not array")
+            };
+            array.push(value.into());
+        } else {
+            let list: Vec<serde_json::Value> = vec![value.into()];
+            self.map.insert(field.to_string(), list.into());
+        }
+        Ok(())
+    }
+
+    fn finalize(self) -> Result<Self::Output, Self::Error> {
+        Ok(self.map.into())
+    }
 }

@@ -1,32 +1,29 @@
-use std::{
-    borrow::Cow,
-    collections::{BTreeMap, HashMap},
-    iter::Peekable,
-    pin::Pin,
+use std::{borrow::Cow, iter::Peekable, pin::Pin};
+
+use anyhow::{Context, anyhow};
+use futures::{
+    Stream, StreamExt, TryStream, TryStreamExt,
+    stream::{BoxStream, LocalBoxStream},
 };
-
-use futures::{Stream, StreamExt, pin_mut};
-use smallvec::SmallVec;
 use usql_core::{ColumnIndex, Connector, Row};
-use usql_value::{Type, Value, ValueCow};
+use usql_value::{Type, ValueCow};
 
-pub struct Project<'a, const N: usize = 8> {
+use crate::result::IntoResult;
+
+pub struct Project<'a> {
     count: usize,
     pk: usize,
-    relations: SmallVec<[ProjectRelation<'a>; N]>,
-    fields: SmallVec<[ProjectField<'a>; N]>,
+    relations: Vec<ProjectRelation<'a>>,
+    fields: Vec<ProjectField<'a>>,
 }
 
-impl<'a, const N: usize> Project<'a, N> {
-    pub fn new(columns: usize, pk: usize) -> Project<'a, N> {
-        let relations = SmallVec::with_capacity(columns);
-        let fields = SmallVec::with_capacity(columns);
-
+impl<'a> Project<'a> {
+    pub fn new(columns: usize, pk: usize) -> Project<'a> {
         Project {
             pk,
             count: columns,
-            relations,
-            fields,
+            relations: Default::default(),
+            fields: Default::default(),
         }
     }
 
@@ -39,24 +36,108 @@ impl<'a, const N: usize> Project<'a, N> {
         self.relations.push(relation);
         self
     }
+
+    pub fn wrap_stream<'b, O, S>(
+        self,
+        output: O,
+        stream: S,
+    ) -> BoxStream<'b, anyhow::Result<<O::Writer as Writer>::Output>>
+    where
+        O: Output + Send + Sync + 'b,
+        O::Writer: Send,
+        <O::Writer as Writer>::Output: Send,
+        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
+        S: Stream + Send + Unpin + 'b,
+        S::Item: IntoResult + Send,
+        <S::Item as IntoResult>::Ok: Row,
+        <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
+        <<<S::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+            core::error::Error + Send + Sync + 'static,
+        'a: 'b,
+    {
+        let mut stream = stream.peekable();
+
+        let stream = async_stream::stream! {
+
+            while let Some(next) = self.next_row_async(&output,&mut stream).await {
+                yield next;
+            }
+
+        };
+
+        Box::pin(stream)
+    }
+
+    pub fn wrap_stream_local<'b, O, S>(
+        self,
+        output: O,
+        stream: S,
+    ) -> LocalBoxStream<'b, anyhow::Result<<O::Writer as Writer>::Output>>
+    where
+        O: Output + 'b,
+        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
+        S: Stream + Unpin + 'b,
+        S::Item: IntoResult,
+        <S::Item as IntoResult>::Ok: Row,
+        <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
+        <<<S::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+            core::error::Error + Send + Sync + 'static,
+        'a: 'b,
+    {
+        let mut stream = stream.peekable();
+
+        let stream = async_stream::stream! {
+
+            while let Some(next) = self.next_row_async(&output,&mut stream).await {
+                yield next;
+            }
+
+        };
+
+        Box::pin(stream)
+    }
 }
 
 #[derive(Clone)]
 pub struct ProjectField<'a> {
-    pub index: usize,
-    pub map: Option<Cow<'a, str>>,
-    pub ty: Option<Type>,
+    index: usize,
+    map: Option<Cow<'a, str>>,
+    ty: Option<Type>,
 }
 
 impl<'a> ProjectField<'a> {
-    fn write<B, O>(&self, row: &B::Row, writer: &mut O::Writer) -> Result<(), B::Error>
+    pub fn new(index: usize) -> ProjectField<'a> {
+        ProjectField {
+            index,
+            map: None,
+            ty: None,
+        }
+    }
+
+    pub fn map(mut self, mapping: impl Into<Cow<'a, str>>) -> Self {
+        self.map = Some(mapping.into());
+        self
+    }
+
+    pub fn ty(mut self, ty: Type) -> Self {
+        self.ty = Some(ty);
+        self
+    }
+}
+
+impl<'a> ProjectField<'a> {
+    fn write<O, R>(&self, row: &R, writer: &mut O::Writer) -> anyhow::Result<()>
     where
-        B: Connector,
+        R: Row,
+        <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
         O: Output,
+        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
     {
         let value = match &self.ty {
-            Some(v) => row.get_typed(ColumnIndex::Index(self.index), v.clone())?,
-            None => row.get(ColumnIndex::Index(self.index))?,
+            Some(v) => row
+                .get_typed(ColumnIndex::Index(self.index), v.clone())
+                .context("Get row")?,
+            None => row.get(ColumnIndex::Index(self.index)).context("Get row")?,
         };
 
         let key = self
@@ -66,7 +147,7 @@ impl<'a> ProjectField<'a> {
             .or_else(|| row.column_name(self.index))
             .expect("key");
 
-        writer.write_field(key, value);
+        writer.write_field(key, value)?;
 
         Ok(())
     }
@@ -107,36 +188,99 @@ impl<'a> ProjectRelation<'a> {
             fields: Default::default(),
         }
     }
+
+    pub fn field(mut self, map: ProjectField<'a>) -> Self {
+        self.fields.push(map);
+        self
+    }
+
+    pub fn relation(mut self, relation: ProjectRelation<'a>) -> Self {
+        self.relations.push(relation);
+        self
+    }
 }
 
 impl<'a> ProjectRelation<'a> {
-    fn write<B, O>(&self, row: &B::Row, output: &mut O::Writer) -> Result<(), B::Error>
+    fn write<O, R>(&self, output: &O, rows: &[R], result: &mut O::Writer) -> anyhow::Result<()>
     where
-        B: Connector,
+        R: Row,
+        <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
         O: Output,
+        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
     {
-        let pk = row.get(ColumnIndex::Index(self.index))?;
+        let mut iter = rows.iter().enumerate().peekable();
 
-        if pk.as_ref().is_null() {
-            return Ok(());
-        }
+        loop {
+            let Some((idx, row)) = iter.next() else { break };
 
-        let mut entry = O::create();
+            let pk = row.get(ColumnIndex::Index(self.index))?;
 
-        for field in &self.fields {
-            field.write::<B, O>(&row, &mut entry)?;
-        }
-
-        for relation in &self.relations {
-            relation.write::<B, O>(&row, &mut entry)?;
-        }
-
-        match self.kind {
-            RelationKind::Many => {
-                output.append_relation(&self.name, entry.finalize());
+            if pk.as_ref().is_null() {
+                break;
             }
-            RelationKind::One => {
-                output.write_relation(&self.name, entry.finalize());
+
+            match self.kind {
+                RelationKind::Many => {
+                    let mut entry = output.create();
+
+                    for field in &self.fields {
+                        field.write::<O, _>(row, &mut entry)?;
+                    }
+
+                    let mut end = idx + 1;
+                    loop {
+                        let Some((_, next)) = iter.peek() else {
+                            break;
+                        };
+
+                        let next_pk = next.get(ColumnIndex::Index(self.index))?;
+
+                        if next_pk.as_ref().is_null() || next_pk != pk {
+                            break;
+                        };
+
+                        let _ = iter.next();
+
+                        end += 1;
+                    }
+
+                    for relation in &self.relations {
+                        relation.write::<O, _>(output, &rows[idx..end], &mut entry)?;
+                    }
+                    result.append_relation(&self.name, entry.finalize()?)?;
+                }
+                RelationKind::One => {
+                    let mut entry = output.create();
+
+                    for field in &self.fields {
+                        field.write::<O, _>(row, &mut entry)?;
+                    }
+
+                    let mut end = idx + 1;
+                    loop {
+                        let Some((_, next)) = iter.peek() else {
+                            break;
+                        };
+
+                        let next_pk = next.get(ColumnIndex::Index(self.index))?;
+
+                        if next_pk.as_ref().is_null() || next_pk != pk {
+                            break;
+                        };
+
+                        let _ = iter.next();
+
+                        end += 1;
+                    }
+
+                    for relation in &self.relations {
+                        relation.write::<O, _>(output, &rows[idx..end], &mut entry)?;
+                    }
+
+                    result.write_relation(&self.name, entry.finalize()?)?;
+
+                    break;
+                }
             }
         }
 
@@ -148,105 +292,111 @@ macro_rules! ok_or {
     ($expr: expr) => {
         match $expr {
             Ok(ret) => ret,
-            Err(err) => return Some(Err(err)),
+            Err(err) => return Some(Err(err.into())),
         }
     };
 }
 
-impl<'a, const N: usize> Project<'a, N> {
-    pub fn next_row<B, O, T>(
+impl<'a> Project<'a> {
+    // pub fn next_row<B, O, T>(
+    //     &self,
+    //     iter: &mut Peekable<T>,
+    // ) -> Option<anyhow::Result<<O::Writer as Writer>::Output>>
+    // where
+    //     O: Output,
+    //     B: Connector,
+    //     T: Iterator<Item = Result<B::Row, B::Error>>,
+    // {
+    //     let next = match iter.next()? {
+    //         Ok(ret) => ret,
+    //         Err(err) => return Some(Err(err)),
+    //     };
+
+    //     let pk = match next.get(ColumnIndex::Index(self.pk)) {
+    //         Ok(ret) => ret,
+    //         Err(err) => return Some(Err(err)),
+    //     };
+
+    //     let mut output = O::create();
+
+    //     for field in &self.fields {
+    //         ok_or!(field.write::<B, O>(&next, &mut output));
+    //     }
+
+    //     for relation in &self.relations {
+    //         ok_or!(relation.write::<B, O>(&next, &mut output))
+    //     }
+
+    //     loop {
+    //         if let Some(peek) = iter.peek() {
+    //             let Ok(ret) = peek else {
+    //                 break;
+    //             };
+
+    //             let next_pk = match ret.get(ColumnIndex::Index(self.pk)) {
+    //                 Ok(ret) => ret,
+    //                 Err(_) => break,
+    //             };
+
+    //             if next_pk != pk {
+    //                 break;
+    //             }
+    //         }
+
+    //         let Some(next) = iter.next() else {
+    //             break;
+    //         };
+
+    //         let next = ok_or!(next);
+
+    //         for relation in &self.relations {
+    //             ok_or!(relation.write::<B, O>(&next, &mut output))
+    //         }
+    //     }
+
+    //     Some(Ok(output.finalize()?))
+    // }
+
+    pub async fn next_row_async<O, T>(
         &self,
-        iter: &mut Peekable<T>,
-    ) -> Option<Result<<O::Writer as Writer>::Output, B::Error>>
-    where
-        O: Output,
-        B: Connector,
-        T: Iterator<Item = Result<B::Row, B::Error>>,
-    {
-        let next = match iter.next()? {
-            Ok(ret) => ret,
-            Err(err) => return Some(Err(err)),
-        };
-
-        let pk = match next.get(ColumnIndex::Index(self.pk)) {
-            Ok(ret) => ret,
-            Err(err) => return Some(Err(err)),
-        };
-
-        let mut output = O::create();
-
-        for field in &self.fields {
-            ok_or!(field.write::<B, O>(&next, &mut output));
-        }
-
-        for relation in &self.relations {
-            ok_or!(relation.write::<B, O>(&next, &mut output))
-        }
-
-        loop {
-            if let Some(peek) = iter.peek() {
-                let Ok(ret) = peek else {
-                    break;
-                };
-
-                let next_pk = match ret.get(ColumnIndex::Index(self.pk)) {
-                    Ok(ret) => ret,
-                    Err(_) => break,
-                };
-
-                if next_pk != pk {
-                    break;
-                }
-            }
-
-            let Some(next) = iter.next() else {
-                break;
-            };
-
-            let next = ok_or!(next);
-
-            for relation in &self.relations {
-                ok_or!(relation.write::<B, O>(&next, &mut output))
-            }
-        }
-
-        Some(Ok(output.finalize()))
-    }
-
-    pub async fn next_row_async<B, O, T>(
-        &self,
+        output: &O,
         iter: &mut futures::stream::Peekable<T>,
-    ) -> Option<Result<<O::Writer as Writer>::Output, B::Error>>
+    ) -> Option<anyhow::Result<<O::Writer as Writer>::Output>>
     where
         O: Output,
-        B: Connector,
-        T: Stream<Item = Result<B::Row, B::Error>> + Unpin,
+        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
+        T: Stream + Unpin,
+        T::Item: IntoResult,
+        <T::Item as IntoResult>::Ok: Row,
+        <T::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
+        <<<T::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+            core::error::Error + Send + Sync + 'static,
     {
         let mut iter = Pin::new(iter);
 
-        let next = match iter.next().await? {
+        let next = match iter.next().await?.into_result() {
             Ok(ret) => ret,
-            Err(err) => return Some(Err(err)),
+            Err(err) => return Some(Err(err.into())),
         };
 
         let pk = match next.get(ColumnIndex::Index(self.pk)) {
             Ok(ret) => ret,
-            Err(err) => return Some(Err(err)),
+            Err(err) => return Some(Err(err.into())),
         };
 
-        let mut output = O::create();
+        let mut result = output.create();
 
         for field in &self.fields {
-            ok_or!(field.write::<B, O>(&next, &mut output));
+            ok_or!(field.write::<O, _>(&next, &mut result));
         }
 
-        for relation in &self.relations {
-            ok_or!(relation.write::<B, O>(&next, &mut output))
-        }
+        let pk = pk.to_owned();
+
+        let mut rest = vec![next];
 
         loop {
             if let Some(peek) = iter.as_mut().peek().await {
-                let Ok(ret) = peek else {
+                let Ok(ret) = peek.as_result() else {
                     break;
                 };
 
@@ -255,7 +405,7 @@ impl<'a, const N: usize> Project<'a, N> {
                     Err(_) => break,
                 };
 
-                if next_pk != pk {
+                if next_pk.as_ref() != pk.as_ref() {
                     break;
                 }
             }
@@ -264,27 +414,30 @@ impl<'a, const N: usize> Project<'a, N> {
                 break;
             };
 
-            let next = ok_or!(next);
+            let next = ok_or!(next.into_result());
 
-            for relation in &self.relations {
-                ok_or!(relation.write::<B, O>(&next, &mut output))
-            }
+            rest.push(next);
         }
 
-        Some(Ok(output.finalize()))
+        for relation in &self.relations {
+            ok_or!(relation.write(output, &rest, &mut result))
+        }
+
+        Some(result.finalize().map_err(Into::into))
     }
 }
 
 pub trait Output {
     type Writer: Writer;
 
-    fn create() -> Self::Writer;
+    fn create(&self) -> Self::Writer;
 }
 
 pub trait Writer {
     type Output;
-    fn write_field(&mut self, field: &str, value: ValueCow<'_>);
-    fn write_relation(&mut self, field: &str, value: Self::Output);
-    fn append_relation(&mut self, field: &str, value: Self::Output);
-    fn finalize(self) -> Self::Output;
+    type Error;
+    fn write_field(&mut self, field: &str, value: ValueCow<'_>) -> Result<(), Self::Error>;
+    fn write_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error>;
+    fn append_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error>;
+    fn finalize(self) -> Result<Self::Output, Self::Error>;
 }

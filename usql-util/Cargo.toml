@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+usql-core = { path = "../usql-core" }
+usql-value = { path = "../usql-value" }
+smallvec = "1.14.0"
+futures = { version = "0.3" }

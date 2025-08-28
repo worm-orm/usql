@@ -2753,6 +2753,12 @@ dependencies = [
 [[package]]
 name = "usql-util"
 version = "0.1.0"
+dependencies = [
+ "futures",
+ "smallvec",
+ "usql-core",
+ "usql-value",
+]
 
 [[package]]
 name = "usql-value"

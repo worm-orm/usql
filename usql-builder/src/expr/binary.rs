@@ -19,6 +19,7 @@ pub enum BinaryOperator {
     Sub,
     Mul,
     Add,
+    Match,
     ExtractText, // ->
     Extract,     // ->>
 }
@@ -89,6 +90,7 @@ fn build_binary_operator(ctx: &mut Context<'_>, operator: BinaryOperator) -> Res
         BinaryOperator::Mul => ctx.write_char('*'),
         BinaryOperator::Extract => ctx.write_str("->>"),
         BinaryOperator::ExtractText => ctx.write_str("->"),
+        BinaryOperator::Match => ctx.write_str("MATCH"),
     }?;
     Ok(())
 }

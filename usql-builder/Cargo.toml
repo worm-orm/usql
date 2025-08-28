@@ -17,3 +17,4 @@ dyn-clone = { version = "1" }
 
 [dev-dependencies]
 sqlformat = { version = "*" }
+zerocopy = { version = "*" }

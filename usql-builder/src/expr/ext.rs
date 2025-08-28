@@ -21,6 +21,7 @@ pub trait ExpressionExt<'val>: Expression<'val> + Sized {
     op_impl!(gte, Gte);
     op_impl!(like, Like);
     op_impl!(has, In);
+    op_impl!(matching, Match);
 }
 
 impl<'val, T> ExpressionExt<'val> for T where T: Expression<'val> {}

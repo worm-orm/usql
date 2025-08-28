@@ -2662,6 +2662,7 @@ dependencies = [
  "sqlformat",
  "usql-core",
  "usql-value",
+ "zerocopy 0.7.35",
 ]
 
 [[package]]

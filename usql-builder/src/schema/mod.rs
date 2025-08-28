@@ -6,4 +6,6 @@ mod table;
 mod ty;
 mod r#virtual;
 
-pub use self::{column::Column, constraint::*, fk::*, index::*, table::*, ty::ColumnType};
+pub use self::{
+    column::Column, constraint::*, fk::*, index::*, table::*, ty::ColumnType, r#virtual::*,
+};

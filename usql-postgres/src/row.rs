@@ -1,6 +1,8 @@
+use usql_core::ColumnIndex;
+
 use crate::connector::Postgres;
 
-pub struct Row(tokio_postgres::row::Row);
+pub struct Row(pub(crate) tokio_postgres::row::Row);
 
 impl usql_core::Row for Row {
     type Connector = Postgres;
@@ -9,6 +11,11 @@ impl usql_core::Row for Row {
         &'a self,
         index: usql_core::ColumnIndex<'_>,
     ) -> Result<usql_value::ValueCow<'a>, <Self::Connector as usql_core::Connector>::Error> {
+        match index {
+            ColumnIndex::Named(named) => self.0.get(named),
+            ColumnIndex::Index(idx) => self.0.get(idx),
+        };
+
         todo!()
     }
 
@@ -21,10 +28,10 @@ impl usql_core::Row for Row {
     }
 
     fn len(&self) -> usize {
-        todo!()
+        self.0.len()
     }
 
     fn column_name(&self, idx: usize) -> Option<&str> {
-        todo!()
+        self.0.columns().get(idx).map(|m| m.name())
     }
 }

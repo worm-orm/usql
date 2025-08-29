@@ -222,92 +222,6 @@ impl<'a> ProjectRelation<'a> {
     {
         let mut iter = rows.iter().enumerate().peekable();
 
-        loop {
-            let Some((idx, row)) = iter.next() else { break };
-
-            let pk = row.get(self.index)?;
-
-            if pk.as_ref().is_null() {
-                break;
-            }
-
-            match self.kind {
-                RelationKind::Many => {
-                    let mut entry = output.create();
-
-                    for field in &self.fields {
-                        field.write::<O, _>(row, &mut entry)?;
-                    }
-
-                    let mut end = idx + 1;
-                    loop {
-                        let Some((_, next)) = iter.peek() else {
-                            break;
-                        };
-
-                        let next_pk = next.get(self.index)?;
-
-                        if next_pk.as_ref().is_null() || next_pk != pk {
-                            break;
-                        };
-
-                        let _ = iter.next();
-
-                        end += 1;
-                    }
-
-                    for relation in &self.relations {
-                        relation.write(output, &rows[idx..end], &mut entry)?;
-                    }
-                    result.append_relation(&self.name, entry.finalize()?)?;
-                }
-                RelationKind::One => {
-                    let mut entry = output.create();
-
-                    for field in &self.fields {
-                        field.write::<O, _>(row, &mut entry)?;
-                    }
-
-                    let mut end = idx + 1;
-                    loop {
-                        let Some((_, next)) = iter.peek() else {
-                            break;
-                        };
-
-                        let next_pk = next.get(self.index)?;
-
-                        if next_pk.as_ref().is_null() || next_pk != pk {
-                            break;
-                        };
-
-                        let _ = iter.next();
-
-                        end += 1;
-                    }
-
-                    for relation in &self.relations {
-                        relation.write(output, &rows[idx..end], &mut entry)?;
-                    }
-
-                    result.write_relation(&self.name, entry.finalize()?)?;
-
-                    break;
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    fn write2<O, R>(&self, output: &O, rows: &[R], result: &mut O::Writer) -> anyhow::Result<()>
-    where
-        R: Row,
-        <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
-        O: Output,
-        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
-    {
-        let mut iter = rows.iter().enumerate().peekable();
-
         match self.kind {
             RelationKind::Many => {
                 //
@@ -351,6 +265,8 @@ impl<'a> ProjectRelation<'a> {
 
                     entries.push(entry.finalize()?);
                 }
+
+                result.write_relations(&self.name, entries)?;
             }
             RelationKind::One => {
                 let Some((idx, row)) = iter.next() else {
@@ -505,8 +421,6 @@ impl<'a> Project<'a> {
 
         cache.push(next);
 
-        // let mut rest = vec![next];
-
         loop {
             if let Some(peek) = iter.as_mut().peek().await {
                 let Ok(ret) = peek.as_result() else {
@@ -551,7 +465,8 @@ pub trait Writer {
     type Error;
     fn write_field(&mut self, field: &str, value: ValueCow<'_>) -> Result<(), Self::Error>;
     fn write_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error>;
-    fn append_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error>;
+    fn write_relations(&mut self, field: &str, value: Vec<Self::Output>)
+    -> Result<(), Self::Error>;
     fn finalize(self) -> Result<Self::Output, Self::Error>;
 }
 
@@ -587,8 +502,13 @@ impl Writer for DefaultWriter {
         Ok(())
     }
 
-    fn append_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error> {
-        todo!()
+    fn write_relations(
+        &mut self,
+        field: &str,
+        value: Vec<Self::Output>,
+    ) -> Result<(), Self::Error> {
+        self.i.insert(field.to_string(), DefaultValue::List(value));
+        Ok(())
     }
 
     fn finalize(self) -> Result<Self::Output, Self::Error> {
@@ -596,6 +516,8 @@ impl Writer for DefaultWriter {
     }
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
 pub enum DefaultValue {
     Map(HashMap<String, DefaultValue>),
     List(Vec<DefaultValue>),

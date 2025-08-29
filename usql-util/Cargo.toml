@@ -5,7 +5,8 @@ edition = "2024"
 
 [dependencies]
 usql-core = { path = "../usql-core" }
-usql-value = { path = "../usql-value" }
+usql-value = { path = "../usql-value", features = ["serde"] }
 futures = { version = "0.3" }
 async-stream = "0.3"
 anyhow = "1.0"
+serde = { version = "1", features = ["derive"] }

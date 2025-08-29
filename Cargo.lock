@@ -2838,6 +2838,7 @@ dependencies = [
  "anyhow",
  "async-stream",
  "futures",
+ "serde",
  "usql-core",
  "usql-value",
 ]

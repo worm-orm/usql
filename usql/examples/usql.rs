@@ -1,5 +1,5 @@
 use futures::TryStreamExt;
-use usql::{Error, FromRow};
+use usql::{Error, FromRow, IntoQuery};
 use usql_builder::{
     StatementExt,
     expr::{ExpressionExt, val},
@@ -9,7 +9,7 @@ use usql_builder::{
 };
 use usql_core::{Connector, System};
 use usql_sqlite::{Sqlite, SqliteOptions};
-use usql_util::{Output, Project, ProjectField, ProjectRelation, Writer};
+use usql_util::{DefaultOutput, Output, Project, ProjectField, ProjectRelation, Writer};
 
 #[derive(Debug, FromRow)]
 struct User {
@@ -19,7 +19,7 @@ struct User {
 }
 
 fn main() {
-    usql_sqlite::init_vector();
+    // usql_sqlite::init_vector();
 
     futures::executor::block_on(async move {
         let pool = usql_sqlite::Sqlite::create_pool(SqliteOptions::default())
@@ -156,7 +156,7 @@ fn main() {
 
         // println!("Stmt {}", stmt.to_sql(System::Sqlite).unwrap());
 
-        let mut stream = conn.fetch(stmt).await?.project_into(project, SerdeOutput);
+        let mut stream = conn.fetch(stmt).await?.project_into(project, DefaultOutput);
 
         // let mut stream = project.wrap_stream(SerdeOutput, stream.map_ok(|m| m.into_inner()));
 
@@ -171,58 +171,4 @@ fn main() {
         Result::<_, Error<usql_sqlite::Sqlite>>::Ok(())
     })
     .unwrap();
-}
-
-pub struct SerdeOutput;
-
-impl Output for SerdeOutput {
-    type Writer = SerdeWriter;
-    fn create(&self) -> Self::Writer {
-        SerdeWriter {
-            map: Default::default(),
-        }
-    }
-}
-
-pub struct SerdeWriter {
-    map: serde_json::Map<String, serde_json::Value>,
-}
-
-impl Writer for SerdeWriter {
-    type Output = serde_json::Value;
-
-    type Error = serde_json::Error;
-
-    fn write_field(
-        &mut self,
-        field: &str,
-        value: usql_value::ValueCow<'_>,
-    ) -> Result<(), Self::Error> {
-        self.map
-            .insert(field.into(), serde_json::to_value(value.to_owned())?);
-
-        Ok(())
-    }
-
-    fn write_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error> {
-        self.map.insert(field.to_string(), value.into());
-        Ok(())
-    }
-
-    fn append_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error> {
-        if let Some(ret) = self.map.get_mut(field) {
-            let Some(array) = ret.as_array_mut() else {
-                panic!("Not array")
-            };
-            array.push(value.into());
-        } else {
-            let list: Vec<serde_json::Value> = vec![value.into()];
-            self.map.insert(field.to_string(), list.into());
-        }
-        Ok(())
-    }
-
-    fn finalize(self) -> Result<Self::Output, Self::Error> {
-        Ok(self.map.into())
-    }
 }

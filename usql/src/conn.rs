@@ -82,3 +82,50 @@ where
         Ok(())
     }
 }
+
+impl<B> Executor for Conn<B>
+where
+    B: Connector,
+{
+    type Connector = B;
+
+    fn db_info(&self) -> <Self::Connector as Connector>::Info {
+        self.conn.db_info()
+    }
+
+    fn prepare<'a>(
+        &'a self,
+        query: &'a str,
+    ) -> impl Future<
+        Output = Result<
+            <Self::Connector as Connector>::Statement,
+            <Self::Connector as Connector>::Error,
+        >,
+    > + Send
+    + 'a {
+        self.conn.prepare(query)
+    }
+
+    fn query<'a>(
+        &'a self,
+        stmt: &'a mut <Self::Connector as Connector>::Statement,
+        params: alloc::vec::Vec<usql_value::ValueCow<'a>>,
+    ) -> usql_core::QueryStream<'a, Self::Connector> {
+        self.conn.query(stmt, params)
+    }
+
+    fn exec<'a>(
+        &'a self,
+        stmt: &'a mut <Self::Connector as Connector>::Statement,
+        params: alloc::vec::Vec<usql_value::ValueCow<'a>>,
+    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+        self.conn.exec(stmt, params)
+    }
+
+    fn exec_batch<'a>(
+        &'a self,
+        stmt: &'a str,
+    ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send + 'a {
+        self.conn.exec_batch(stmt)
+    }
+}

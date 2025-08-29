@@ -45,7 +45,7 @@ export interface Executor {
 /**
  * Represents a database connection that can execute SQL statements and manage transactions.
  */
-export class Conn implements Executor {
+interface Conn extends Executor {
   /**
    * Executes a function within a transaction. If the function throws an error,
    * the transaction is rolled back. Otherwise, it is committed.

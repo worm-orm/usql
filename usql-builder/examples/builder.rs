@@ -4,8 +4,8 @@ use usql_builder::{
     mutate::{Set, insert, update},
     schema::{Column, ColumnType, CreateIndex, create_table},
     select::{
-        FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt,
-        SortQuery, TargetExt, select,
+        FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt, SortQuery,
+        TargetExt, select,
     },
 };
 use usql_core::System;
@@ -75,7 +75,7 @@ fn main() {
         user_name
             .like(val("%rasmus%"))
             .or(user_id.eql(val(20)))
-            .and(user_id.has(subselect)),
+            .and(user_id.has(subselect).and("id".between(val(2), val(4)))),
     )
     .group_by(user_name)
     .having(user_id.eql(val(20)))

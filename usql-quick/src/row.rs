@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use rquickjs::{Ctx, FromJs, JsLifetime, Object, atom::PredefinedAtom, class::Trace};
 use rquickjs_util::StringRef;
 use usql_any::AnyRow;

@@ -11,11 +11,6 @@ impl usql_core::Row for Row {
         &'a self,
         index: usql_core::ColumnIndex<'_>,
     ) -> Result<usql_value::ValueCow<'a>, <Self::Connector as usql_core::Connector>::Error> {
-        match index {
-            ColumnIndex::Named(named) => self.0.get(named),
-            ColumnIndex::Index(idx) => self.0.get(idx),
-        };
-
         todo!()
     }
 

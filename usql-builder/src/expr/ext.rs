@@ -1,3 +1,5 @@
+use crate::expr::between::Between;
+
 use super::{BinaryExpression, BinaryOperator, Expression};
 
 macro_rules! op_impl {
@@ -22,6 +24,28 @@ pub trait ExpressionExt<'val>: Expression<'val> + Sized {
     op_impl!(like, Like);
     op_impl!(has, In);
     op_impl!(matching, Match);
+
+    fn binary<'a, E: Expression<'a>>(
+        self,
+        operator: impl Into<BinaryOperator>,
+        e: E,
+    ) -> BinaryExpression<Self, E>
+    where
+        Self: 'a,
+    {
+        BinaryExpression::new(self, e, operator)
+    }
+
+    fn between<'a, L: Expression<'a>, R: Expression<'a>>(
+        self,
+        left: L,
+        right: R,
+    ) -> Between<Self, L, R>
+    where
+        Self: 'a,
+    {
+        Between::new(self, left, right)
+    }
 }
 
 impl<'val, T> ExpressionExt<'val> for T where T: Expression<'val> {}

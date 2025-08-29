@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
 
     while let Some(next) = usql_core::util::next(&mut stream).await {
         let next = next?;
-        println!("{:?}", Row::get(&next, ColumnIndex::Named("date")));
+        println!("{:?}", Row::get(&next, ColumnIndex::named("date")));
     }
 
     Ok(())

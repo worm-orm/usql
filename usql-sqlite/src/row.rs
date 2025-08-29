@@ -1,6 +1,6 @@
 use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
 use rusqlite::types::{FromSql, FromSqlError, Value as SqliteValue, ValueRef as SqliteValueRef};
-use std::{collections::HashMap, string::String, sync::Arc, vec::Vec};
+use std::{borrow::Cow, collections::HashMap, string::String, sync::Arc, vec::Vec};
 use usql_core::Connector;
 use usql_value::{JsonValue, Type, Value, ValueCow, ValueRef};
 
@@ -17,6 +17,14 @@ impl ColumnIndex for usize {
 impl ColumnIndex for &str {
     fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
         row.columns.get(*self).and_then(|m| row.values.get(*m))
+    }
+}
+
+impl<'b> ColumnIndex for &Cow<'b, str> {
+    fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue> {
+        row.columns
+            .get(self.as_ref())
+            .and_then(|m| row.values.get(*m))
     }
 }
 

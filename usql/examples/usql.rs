@@ -116,12 +116,12 @@ fn main() {
             println!("{:?}", row);
         }
 
-        let project = Project::new(6, 0)
+        let project = Project::new(6, "user_id")
             .field(ProjectField::new(0).map("id"))
             .field(ProjectField::new(1))
             .relation(
                 ProjectRelation::many(3, "blogs")
-                    .field(ProjectField::new(3).map("id"))
+                    .field(ProjectField::new("blog_id").map("id"))
                     .field(ProjectField::new(4).map("title"))
                     .relation(
                         ProjectRelation::many(5, "comments")
@@ -154,7 +154,7 @@ fn main() {
         .order_by(("user_id", Order::Asc))
         .into_stmt();
 
-        println!("Stmt {}", stmt.to_sql(System::Sqlite).unwrap());
+        // println!("Stmt {}", stmt.to_sql(System::Sqlite).unwrap());
 
         let mut stream = conn.fetch(stmt).await?.project_into(project, SerdeOutput);
 

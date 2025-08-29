@@ -93,7 +93,7 @@ impl Config {
                 #[cfg(feature = "libsql")]
                 let pool = AnyConnector::create_pool(lib_sql_config.into()).await;
                 #[cfg(not(feature = "libsql"))]
-                let pool = Err(AnyError::Message("Sqlite feature not enabled"));
+                let pool = Err(AnyError::Message("Libsql feature not enabled"));
                 pool
             }
         }

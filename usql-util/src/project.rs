@@ -1,4 +1,4 @@
-use std::{borrow::Cow, pin::Pin};
+use std::{borrow::Cow, collections::HashMap, convert::Infallible, pin::Pin};
 
 use anyhow::Context;
 use futures::{
@@ -6,21 +6,21 @@ use futures::{
     stream::{BoxStream, LocalBoxStream},
 };
 use usql_core::{ColumnIndex, Connector, Row};
-use usql_value::{Type, ValueCow};
+use usql_value::{Type, Value, ValueCow};
 
 use crate::result::IntoResult;
 
 pub struct Project<'a> {
     count: usize,
-    pk: usize,
+    pk: ColumnIndex<'a>,
     relations: Vec<ProjectRelation<'a>>,
     fields: Vec<ProjectField<'a>>,
 }
 
 impl<'a> Project<'a> {
-    pub fn new(columns: usize, pk: usize) -> Project<'a> {
+    pub fn new(columns: usize, pk: impl Into<ColumnIndex<'a>>) -> Project<'a> {
         Project {
-            pk,
+            pk: pk.into(),
             count: columns,
             relations: Default::default(),
             fields: Default::default(),
@@ -105,15 +105,15 @@ impl<'a> Project<'a> {
 
 #[derive(Clone)]
 pub struct ProjectField<'a> {
-    index: usize,
+    index: ColumnIndex<'a>,
     map: Option<Cow<'a, str>>,
     ty: Option<Type>,
 }
 
 impl<'a> ProjectField<'a> {
-    pub fn new(index: usize) -> ProjectField<'a> {
+    pub fn new(index: impl Into<ColumnIndex<'a>>) -> ProjectField<'a> {
         ProjectField {
-            index,
+            index: index.into(),
             map: None,
             ty: None,
         }
@@ -139,15 +139,18 @@ impl<'a> ProjectField<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
     {
         let value = match &self.ty {
-            Some(v) => row.get_typed(ColumnIndex::Index(self.index), v.clone())?,
-            None => row.get(ColumnIndex::Index(self.index)).context("Get row")?,
+            Some(v) => row.get_typed(self.index.clone(), v.clone())?,
+            None => row.get(self.index.clone()).context("Get row")?,
         };
 
         let key = self
             .map
             .as_ref()
             .map(|m| m.as_ref())
-            .or_else(|| row.column_name(self.index))
+            .or_else(|| match &self.index {
+                ColumnIndex::Named(n) => Some(&*n),
+                ColumnIndex::Index(idx) => row.column_name(*idx),
+            })
             .expect("key");
 
         writer.write_field(key, value)?;
@@ -165,27 +168,33 @@ pub enum RelationKind {
 #[derive(Clone)]
 pub struct ProjectRelation<'a> {
     kind: RelationKind,
-    index: usize,
+    index: ColumnIndex<'a>,
     name: Cow<'a, str>,
     relations: Vec<ProjectRelation<'a>>,
     fields: Vec<ProjectField<'a>>,
 }
 
 impl<'a> ProjectRelation<'a> {
-    pub fn single(index: usize, name: impl Into<Cow<'a, str>>) -> ProjectRelation<'a> {
+    pub fn single(
+        index: impl Into<ColumnIndex<'a>>,
+        name: impl Into<Cow<'a, str>>,
+    ) -> ProjectRelation<'a> {
         ProjectRelation {
             kind: RelationKind::One,
-            index,
+            index: index.into(),
             name: name.into(),
             relations: Default::default(),
             fields: Default::default(),
         }
     }
 
-    pub fn many(index: usize, name: impl Into<Cow<'a, str>>) -> ProjectRelation<'a> {
+    pub fn many(
+        index: impl Into<ColumnIndex<'a>>,
+        name: impl Into<Cow<'a, str>>,
+    ) -> ProjectRelation<'a> {
         ProjectRelation {
             kind: RelationKind::Many,
-            index,
+            index: index.into(),
             name: name.into(),
             relations: Default::default(),
             fields: Default::default(),
@@ -216,7 +225,7 @@ impl<'a> ProjectRelation<'a> {
         loop {
             let Some((idx, row)) = iter.next() else { break };
 
-            let pk = row.get(ColumnIndex::Index(self.index))?;
+            let pk = row.get(self.index)?;
 
             if pk.as_ref().is_null() {
                 break;
@@ -236,7 +245,7 @@ impl<'a> ProjectRelation<'a> {
                             break;
                         };
 
-                        let next_pk = next.get(ColumnIndex::Index(self.index))?;
+                        let next_pk = next.get(self.index)?;
 
                         if next_pk.as_ref().is_null() || next_pk != pk {
                             break;
@@ -265,7 +274,7 @@ impl<'a> ProjectRelation<'a> {
                             break;
                         };
 
-                        let next_pk = next.get(ColumnIndex::Index(self.index))?;
+                        let next_pk = next.get(self.index)?;
 
                         if next_pk.as_ref().is_null() || next_pk != pk {
                             break;
@@ -284,6 +293,104 @@ impl<'a> ProjectRelation<'a> {
 
                     break;
                 }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn write2<O, R>(&self, output: &O, rows: &[R], result: &mut O::Writer) -> anyhow::Result<()>
+    where
+        R: Row,
+        <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
+        O: Output,
+        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
+    {
+        let mut iter = rows.iter().enumerate().peekable();
+
+        match self.kind {
+            RelationKind::Many => {
+                //
+                let mut entries = Vec::<<O::Writer as Writer>::Output>::default();
+
+                loop {
+                    let Some((idx, row)) = iter.next() else { break };
+
+                    let pk = row.get(self.index)?;
+
+                    if pk.as_ref().is_null() {
+                        break;
+                    }
+
+                    let mut entry = output.create();
+
+                    for field in &self.fields {
+                        field.write::<O, _>(row, &mut entry)?;
+                    }
+
+                    let mut end = idx + 1;
+                    loop {
+                        let Some((_, next)) = iter.peek() else {
+                            break;
+                        };
+
+                        let next_pk = next.get(self.index)?;
+
+                        if next_pk.as_ref().is_null() || next_pk != pk {
+                            break;
+                        };
+
+                        let _ = iter.next();
+
+                        end += 1;
+                    }
+
+                    for relation in &self.relations {
+                        relation.write(output, &rows[idx..end], &mut entry)?;
+                    }
+
+                    entries.push(entry.finalize()?);
+                }
+            }
+            RelationKind::One => {
+                let Some((idx, row)) = iter.next() else {
+                    return Ok(());
+                };
+
+                let pk = row.get(self.index)?;
+
+                if pk.as_ref().is_null() {
+                    return Ok(());
+                }
+
+                let mut entry = output.create();
+
+                for field in &self.fields {
+                    field.write::<O, _>(row, &mut entry)?;
+                }
+
+                let mut end = idx + 1;
+                loop {
+                    let Some((_, next)) = iter.peek() else {
+                        break;
+                    };
+
+                    let next_pk = next.get(self.index)?;
+
+                    if next_pk.as_ref().is_null() || next_pk != pk {
+                        break;
+                    };
+
+                    let _ = iter.next();
+
+                    end += 1;
+                }
+
+                for relation in &self.relations {
+                    relation.write(output, &rows[idx..end], &mut entry)?;
+                }
+
+                result.write_relation(&self.name, entry.finalize()?)?;
             }
         }
 
@@ -383,7 +490,7 @@ impl<'a> Project<'a> {
             Err(err) => return Some(Err(err.into())),
         };
 
-        let pk = match next.get(ColumnIndex::Index(self.pk)) {
+        let pk = match next.get(self.pk) {
             Ok(ret) => ret,
             Err(err) => return Some(Err(err.into())),
         };
@@ -406,7 +513,7 @@ impl<'a> Project<'a> {
                     break;
                 };
 
-                let next_pk = match ret.get(ColumnIndex::Index(self.pk)) {
+                let next_pk = match ret.get(self.pk) {
                     Ok(ret) => ret,
                     Err(_) => break,
                 };
@@ -446,4 +553,51 @@ pub trait Writer {
     fn write_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error>;
     fn append_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error>;
     fn finalize(self) -> Result<Self::Output, Self::Error>;
+}
+
+#[derive(Default)]
+pub struct DefaultOutput;
+
+impl Output for DefaultOutput {
+    type Writer = DefaultWriter;
+
+    fn create(&self) -> Self::Writer {
+        DefaultWriter {
+            i: Default::default(),
+        }
+    }
+}
+
+pub struct DefaultWriter {
+    i: HashMap<String, DefaultValue>,
+}
+
+impl Writer for DefaultWriter {
+    type Error = Infallible;
+    type Output = DefaultValue;
+
+    fn write_field(&mut self, field: &str, value: ValueCow<'_>) -> Result<(), Self::Error> {
+        self.i
+            .insert(field.to_string(), DefaultValue::Scalar(value.to_owned()));
+        Ok(())
+    }
+
+    fn write_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error> {
+        self.i.insert(field.to_string(), value);
+        Ok(())
+    }
+
+    fn append_relation(&mut self, field: &str, value: Self::Output) -> Result<(), Self::Error> {
+        todo!()
+    }
+
+    fn finalize(self) -> Result<Self::Output, Self::Error> {
+        Ok(DefaultValue::Map(self.i))
+    }
+}
+
+pub enum DefaultValue {
+    Map(HashMap<String, DefaultValue>),
+    List(Vec<DefaultValue>),
+    Scalar(Value),
 }

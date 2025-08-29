@@ -1,8 +1,10 @@
 use core::fmt::Write;
 
+use alloc::string::{String, ToString};
+
 use crate::{context::Context, error::Error, expr::Expression};
 
-#[derive(Debug, Clone, PartialEq, Eq, Copy, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BinaryOperator {
     And,
     Or,
@@ -22,9 +24,22 @@ pub enum BinaryOperator {
     Match,
     ExtractText, // ->
     Extract,     // ->>
+    Custom(String),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+impl From<String> for BinaryOperator {
+    fn from(value: String) -> Self {
+        BinaryOperator::Custom(value)
+    }
+}
+
+impl<'a> From<&'a str> for BinaryOperator {
+    fn from(value: &'a str) -> Self {
+        BinaryOperator::Custom(value.to_string())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct BinaryExpression<L, R> {
     pub(crate) operator: BinaryOperator,
     pub(crate) left: L,
@@ -32,11 +47,11 @@ pub struct BinaryExpression<L, R> {
 }
 
 impl<L, R> BinaryExpression<L, R> {
-    pub fn new(left: L, right: R, operator: BinaryOperator) -> Self {
+    pub fn new(left: L, right: R, operator: impl Into<BinaryOperator>) -> Self {
         BinaryExpression {
             left,
             right,
-            operator,
+            operator: operator.into(),
         }
     }
 
@@ -91,6 +106,7 @@ fn build_binary_operator(ctx: &mut Context<'_>, operator: BinaryOperator) -> Res
         BinaryOperator::Extract => ctx.write_str("->>"),
         BinaryOperator::ExtractText => ctx.write_str("->"),
         BinaryOperator::Match => ctx.write_str("MATCH"),
+        BinaryOperator::Custom(m) => ctx.write_str(&*m),
     }?;
     Ok(())
 }

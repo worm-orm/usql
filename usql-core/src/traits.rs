@@ -1,5 +1,5 @@
 use crate::system::System;
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, string::String, vec::Vec};
 use futures_core::stream::BoxStream;
 use usql_value::{Type, ValueCow};
 
@@ -100,6 +100,48 @@ pub trait Statement: Send + Sync {
 pub enum ColumnIndex<'a> {
     Named(&'a str),
     Index(usize),
+}
+
+impl<'a> ColumnIndex<'a> {
+    pub fn named(input: &'a str) -> ColumnIndex<'a> {
+        ColumnIndex::Named(input.into())
+    }
+}
+
+impl<'a> From<&'a str> for ColumnIndex<'a> {
+    fn from(value: &'a str) -> Self {
+        ColumnIndex::Named(value)
+    }
+}
+
+// impl<'a> From<Cow<'a, str>> for ColumnIndex<'a> {
+//     fn from(value: Cow<'a, str>) -> Self {
+//         ColumnIndex::Named(value)
+//     }
+// }
+
+// impl<'a> From<String> for ColumnIndex<'a> {
+//     fn from(value: String) -> Self {
+//         ColumnIndex::Named(Cow::Owned(value))
+//     }
+// }
+
+impl<'a> From<usize> for ColumnIndex<'a> {
+    fn from(value: usize) -> Self {
+        ColumnIndex::Index(value)
+    }
+}
+
+impl<'a> From<u64> for ColumnIndex<'a> {
+    fn from(value: u64) -> Self {
+        ColumnIndex::Index(value as _)
+    }
+}
+
+impl<'a> From<i32> for ColumnIndex<'a> {
+    fn from(value: i32) -> Self {
+        ColumnIndex::Index(value as _)
+    }
 }
 
 pub trait Row: Send {

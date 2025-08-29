@@ -36,7 +36,7 @@ impl usql_core::Row for Row {
     ) -> Result<ValueCow<'a>, <Self::Connector as Connector>::Error> {
         match index {
             usql_core::ColumnIndex::Named(named) => {
-                let Some(idx) = row_index(&self.0, named) else {
+                let Some(idx) = row_index(&self.0, &*named) else {
                     return Err(super::error::Error::NotFound);
                 };
 

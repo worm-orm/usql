@@ -28,10 +28,9 @@ where
         Ok(Stmt::new(stmt))
     }
 
-    pub async fn fetch<'a, Q>(&'c self, query: Q) -> Result<QueryStream<'a, B>, Error<B>>
+    pub async fn fetch<'a, 'b: 'a, Q>(&'b self, query: Q) -> Result<QueryStream<'a, B>, Error<B>>
     where
         Q: IntoQuery<'a, B>,
-        'c: 'a,
     {
         let mut query = query.into_query(&self.trans).await?;
 
@@ -48,10 +47,9 @@ where
         })
     }
 
-    pub async fn fetch_one<'a, Q>(&'c self, query: Q) -> Result<Row<B>, Error<B>>
+    pub async fn fetch_one<'a, 'b: 'a, Q>(&'b self, query: Q) -> Result<Row<B>, Error<B>>
     where
         Q: IntoQuery<'a, B>,
-        'c: 'a,
     {
         let mut stream = self.fetch(query).await?;
         match next(&mut stream).await {

@@ -92,6 +92,12 @@ impl From<&str> for Value {
     }
 }
 
+impl From<&[u8]> for Value {
+    fn from(value: &[u8]) -> Self {
+        Value::ByteArray(value.to_vec().into())
+    }
+}
+
 impl From<Bytes> for Value {
     fn from(value: Bytes) -> Self {
         Value::ByteArray(value)

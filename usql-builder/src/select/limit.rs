@@ -24,7 +24,11 @@ where
     fn build(self, ctx: &mut crate::Context<'a>) -> Result<(), crate::Error> {
         self.select.build(ctx)?;
 
-        write!(ctx, " LIMIT {} OFFSET {}", self.limit, self.offset)?;
+        if self.offset == 0 {
+            write!(ctx, "LIMIT {}", self.limit)?;
+        } else {
+            write!(ctx, " LIMIT {} OFFSET {}", self.limit, self.offset)?;
+        }
 
         Ok(())
     }

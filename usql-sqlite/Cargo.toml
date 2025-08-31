@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-bundled = ["rusqlite/bundled"]
+bundled = ["rusqlite/bundled-full"]
 vector = ["bundled", "sqlite-vec"]
 
 [dependencies]
 usql-core = { path = "../usql-core" }
 usql-value = { path = "../usql-value", features = ["serde"] }
 
-rusqlite = { version = "0.36" }
+rusqlite = { version = "0.37" }
 flume = { version = "0.11" }
 futures-channel = { version = "0.3", default-features = false, features = [
   "alloc",

@@ -10,10 +10,12 @@ members = [
   "usql",
   "usql-macros",
   "usql-sqlite",
-  "usql-libsql",
+  # "usql-libsql",
   "usql-postgres",
   "usql-any",
-  "usql-value", "usql-util",
+  "usql-value",
+  "usql-util",
+  "usql-cli",
 ]
 
 

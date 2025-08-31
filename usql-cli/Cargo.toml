@@ -1,0 +1,27 @@
+[package]
+name = "usql-cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "usql"
+path = "src/main.rs"
+
+[features]
+default = ["sqlite"]
+sqlite = ["usql-any/sqlite-vector", "usql-sqlite"]
+# libsql = ["usql-any/libsql"]
+
+[dependencies]
+tokio = { version = "1", features = ["rt", "macros", "fs"] }
+anyhow = { version = "1" }
+clap = { version = "4", features = ["derive"] }
+usql = { path = "../usql" }
+usql-any = { path = "../usql-any" }
+usql-value = { path = "../usql-value" }
+usql-sqlite = { path = "../usql-sqlite", features = [
+  "vector",
+], optional = true }
+
+futures = { version = "0.3" }
+serde_json = { version = "1" }

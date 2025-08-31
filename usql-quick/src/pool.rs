@@ -53,8 +53,10 @@ impl<'js> FromJs<'js> for Config {
                 usql_any::Config {
                     workers: None,
                     kind: usql_any::DatabaseConfig::Sqlite(
-                        path.map(|m| SqliteConfig::Path(PathBuf::from(m)))
-                            .unwrap_or(SqliteConfig::Memory),
+                        path.map(|m| SqliteConfig::Path {
+                            path: PathBuf::from(m),
+                        })
+                        .unwrap_or(SqliteConfig::Memory),
                     ),
                 }
             }

@@ -18,7 +18,7 @@ pub struct Config {
 
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "lowercase")]
+#[serde(tag = "type", content = "options", rename_all = "lowercase")]
 pub enum DatabaseConfig {
     Sqlite(SqliteConfig),
     LibSql(LibSqlConfig),
@@ -29,7 +29,7 @@ pub enum DatabaseConfig {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SqliteConfig {
     Memory,
-    Path(PathBuf),
+    Path { path: PathBuf },
 }
 
 #[cfg(feature = "sqlite")]
@@ -41,7 +41,7 @@ impl From<SqliteConfig> for crate::AnyOptions {
                 path: None,
                 flags: Default::default(),
             },
-            SqliteConfig::Path(path) => SqliteOptions {
+            SqliteConfig::Path { path } => SqliteOptions {
                 path: Some(path),
                 flags: Default::default(),
             },
@@ -85,6 +85,9 @@ impl Config {
             DatabaseConfig::Sqlite(sqlite_config) => {
                 #[cfg(feature = "sqlite")]
                 let pool = AnyConnector::create_pool(sqlite_config.into()).await;
+                #[cfg(feature = "sqlite-vector")]
+                usql_sqlite::init_vector();
+
                 #[cfg(not(feature = "sqlite"))]
                 let pool = Err(AnyError::Message("Sqlite feature not enabled"));
                 pool

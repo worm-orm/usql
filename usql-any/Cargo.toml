@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-# default = ["sqlite", "libsql"]
 sqlite = ["usql-sqlite"]
-libsql = ["usql-libsql"]
+sqlite-vector = ["sqlite", "usql-sqlite/vector"]
+# libsql = ["usql-libsql"]
 postgres = ["usql-postgres"]
 
 jsonschema = ["schemars"]
@@ -17,7 +17,7 @@ usql-value = { path = "../usql-value" }
 
 
 usql-sqlite = { path = "../usql-sqlite", optional = true }
-usql-libsql = { path = "../usql-libsql", optional = true }
+# usql-libsql = { path = "../usql-libsql", optional = true }
 usql-postgres = { path = "../usql-postgres", optional = true }
 
 pin-project-lite = { workspace = true }

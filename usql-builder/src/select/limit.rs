@@ -25,7 +25,7 @@ where
         self.select.build(ctx)?;
 
         if self.offset == 0 {
-            write!(ctx, "LIMIT {}", self.limit)?;
+            write!(ctx, " LIMIT {}", self.limit)?;
         } else {
             write!(ctx, " LIMIT {} OFFSET {}", self.limit, self.offset)?;
         }

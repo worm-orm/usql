@@ -25,6 +25,8 @@ types!(
   u32 => Int,
   u64 => BigInt,
   i64 => BigInt,
+  f32 => Real,
+  f64 => Double,
   bool => Bool,
   String => Text,
   NaiveDate => Date,

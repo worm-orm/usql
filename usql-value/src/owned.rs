@@ -50,9 +50,27 @@ impl From<bool> for Value {
     }
 }
 
+impl From<i8> for Value {
+    fn from(value: i8) -> Self {
+        Value::SmallInt(value as _)
+    }
+}
+
+impl From<u8> for Value {
+    fn from(value: u8) -> Self {
+        Value::SmallInt(value as _)
+    }
+}
+
 impl From<i16> for Value {
     fn from(value: i16) -> Self {
         Value::SmallInt(value)
+    }
+}
+
+impl From<u16> for Value {
+    fn from(value: u16) -> Self {
+        Value::SmallInt(value as _)
     }
 }
 
@@ -62,9 +80,21 @@ impl From<i32> for Value {
     }
 }
 
+impl From<u32> for Value {
+    fn from(value: u32) -> Self {
+        Value::Int(value as _)
+    }
+}
+
 impl From<i64> for Value {
     fn from(value: i64) -> Self {
         Value::BigInt(value)
+    }
+}
+
+impl From<u64> for Value {
+    fn from(value: u64) -> Self {
+        Value::BigInt(value as _)
     }
 }
 

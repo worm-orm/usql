@@ -1,6 +1,10 @@
 use crate::{Context, Error, expr::Ident, schema::Column, statement::Statement};
 use core::fmt::Write;
 
+pub fn alter_table<'a, T, O>(table: T, operation: O) -> AlterTable<T, O> {
+    AlterTable { table, operation }
+}
+
 pub trait AlterOperation<'a> {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error>;
 }

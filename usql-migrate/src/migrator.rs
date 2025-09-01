@@ -66,7 +66,7 @@ where
     }
 
     pub async fn list_migrations(&self) -> Result<Vec<Migration<T::Migration>>, Error> {
-        let conn = self.pool.get().await.unwrap();
+        let conn = self.pool.get().await.map_err(Error::new)?;
 
         ensure_table(&conn, &self.table_name).await?;
 
@@ -85,23 +85,25 @@ where
         Ok(output)
     }
 
-    pub async fn migrate(&self) -> Result<(), Error> {
+    pub async fn migrate(&self) -> Result<bool, Error> {
         let migrations = self.load_migrations().await?;
         let mut conn = self.pool.get().await.map_err(Error::new)?;
-        self.migration_one(&mut conn, &migrations).await?;
-        Ok(())
+        let ret = self.migration_one(&mut conn, &migrations).await?;
+        Ok(ret)
     }
 
-    pub async fn migrate_all(&self) -> Result<(), Error> {
+    pub async fn migrate_all(&self) -> Result<bool, Error> {
         let migrations = self.load_migrations().await?;
         let mut conn = self.pool.get().await.map_err(Error::new)?;
+        let mut ret = false;
         loop {
             if !self.migration_one(&mut conn, &migrations).await? {
                 break;
             }
+            ret = true;
         }
 
-        Ok(())
+        Ok(ret)
     }
 }
 

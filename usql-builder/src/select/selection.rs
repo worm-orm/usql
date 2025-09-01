@@ -1,6 +1,7 @@
 use core::fmt::Write;
 
 use alloc::vec::Vec;
+use usql_value::Atom;
 
 use crate::{context::Context, either::Either, error::Error};
 
@@ -11,6 +12,18 @@ pub trait Selection<'a> {
 impl<'a, 'b> Selection<'a> for &'b str {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(self)
+    }
+}
+
+impl<'a> Selection<'a> for Atom {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(self.as_str())
+    }
+}
+
+impl<'a, 'b> Selection<'a> for &'b Atom {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(self.as_str())
     }
 }
 

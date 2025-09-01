@@ -117,7 +117,7 @@ impl<'a> From<ValueRef<'a>> for Value {
             ValueRef::BigInt(i) => Value::BigInt(i),
             ValueRef::Float(f) => Value::Float(f),
             ValueRef::Double(d) => Value::Double(d),
-            ValueRef::Text(s) => Value::Text(s.to_string()),
+            ValueRef::Text(s) => Value::Text(s.into()),
             ValueRef::ByteArray(b) => Value::ByteArray(Bytes::copy_from_slice(b)),
             ValueRef::Date(d) => Value::Date(d),
             ValueRef::Time(t) => Value::Time(t),

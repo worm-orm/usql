@@ -13,7 +13,7 @@ pub fn sqlite_ref_to_usql(value: &rusqlite::types::Value) -> ValueRef<'_> {
 pub fn usql_to_sqlite(value: Value) -> rusqlite::types::Value {
     match value {
         Value::Bool(b) => rusqlite::types::Value::Integer((b).into()),
-        Value::Text(s) => rusqlite::types::Value::Text(s),
+        Value::Text(s) => rusqlite::types::Value::Text(s.into()),
         Value::Array(list) => {
             let string = serde_json::to_string(&list).expect("json encode");
             rusqlite::types::Value::Text(string)

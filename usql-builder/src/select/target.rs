@@ -1,5 +1,7 @@
 use core::fmt::Write;
 
+use usql_value::Atom;
+
 use crate::{
     context::Context,
     error::Error,
@@ -14,6 +16,18 @@ pub trait Target<'a> {
 impl<'a, 'b> Target<'a> for &'b str {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(self)
+    }
+}
+
+impl<'a> Target<'a> for Atom {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(self.as_str())
+    }
+}
+
+impl<'a, 'b> Target<'a> for &'b Atom {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(self.as_str())
     }
 }
 

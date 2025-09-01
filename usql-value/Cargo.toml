@@ -13,6 +13,7 @@ serde = [
   "ordered-float/serde",
   "uuid/serde",
 ]
+std = ["parking_lot"]
 
 [dependencies]
 chrono = { workspace = true }
@@ -31,5 +32,9 @@ libsql = { version = "0.9", default-features = false, features = [
 
 serde = { version = "1", default-features = false, features = [
   "derive",
+  "rc",
 ], optional = true }
 serde_json = { workspace = true, optional = true }
+
+parking_lot = { version = "0.12", optional = true }
+spin = { version = "0.10" }

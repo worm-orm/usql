@@ -2,6 +2,7 @@ use core::marker::PhantomData;
 
 use alloc::boxed::Box;
 use dyn_clone::DynClone;
+use usql_value::Atom;
 
 use crate::{context::Context, error::Error};
 
@@ -26,6 +27,18 @@ pub trait Expression<'a> {
 impl<'a, 'b> Expression<'a> for &'b str {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(self)
+    }
+}
+
+impl<'a> Expression<'a> for Atom {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(self.as_str())
+    }
+}
+
+impl<'a, 'b> Expression<'a> for &'b Atom {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(self.as_str())
     }
 }
 

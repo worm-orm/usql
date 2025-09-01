@@ -39,7 +39,9 @@ fn from_js<'js>(
 ) -> rquickjs::Result<Val> {
     match value.type_of() {
         Type::Bool => Ok(Val(Value::Bool(value.as_bool().unwrap()))),
-        Type::String => Ok(Val(Value::Text(un!(value.try_into_string())?.to_string()?))),
+        Type::String => Ok(Val(Value::Text(
+            un!(value.try_into_string())?.to_string()?.into(),
+        ))),
         Type::Int => Ok(Val(Value::BigInt(value.as_int().unwrap().into()))),
         Type::Float => Ok(Val(Value::Double(value.as_float().unwrap().into()))),
         Type::Null | Type::Undefined => Ok(Val(Value::Null)),
@@ -95,7 +97,7 @@ fn from_js<'js>(
         }
         Type::Exception => {
             let exption = un!(value.try_into_exception())?;
-            Ok(Val(Value::Text(exption.to_string())))
+            Ok(Val(Value::Text(exption.to_string().into())))
         }
         _ => Err(rquickjs::Error::new_from_js("value", "value")),
     }

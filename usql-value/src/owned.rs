@@ -7,6 +7,8 @@ use core::convert::TryFrom;
 use core::hash::Hash;
 use ordered_float::OrderedFloat;
 
+use crate::Atom;
+
 use super::{JsonValue, Type, ValueRef};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -20,7 +22,7 @@ pub enum Value {
     BigInt(i64),
     Float(OrderedFloat<f32>),
     Double(OrderedFloat<f64>),
-    Text(String),
+    Text(Atom),
     ByteArray(Bytes),
     Date(chrono::NaiveDate),
     Time(chrono::NaiveTime),
@@ -112,13 +114,13 @@ impl From<f64> for Value {
 
 impl From<String> for Value {
     fn from(value: String) -> Self {
-        Value::Text(value)
+        Value::Text(value.into())
     }
 }
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Value::Text(value.to_string())
+        Value::Text(value.into())
     }
 }
 
@@ -250,6 +252,18 @@ impl TryFrom<Value> for f64 {
 }
 
 impl TryFrom<Value> for String {
+    type Error = ValueConversionError;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        if let Value::Text(s) = value {
+            Ok(s.into())
+        } else {
+            Err(ValueConversionError::NotText)
+        }
+    }
+}
+
+impl TryFrom<Value> for Atom {
     type Error = ValueConversionError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {

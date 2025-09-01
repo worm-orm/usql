@@ -171,7 +171,7 @@ version = "0.1.0"
 source = "git+https://github.com/kildevaeld/avagarden#72e8cf21675202fe1f56ae123daadeadf438fffa"
 dependencies = [
  "rustc_version",
- "spin",
+ "spin 0.9.8",
 ]
 
 [[package]]
@@ -615,7 +615,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "nanorand",
- "spin",
+ "spin 0.9.8",
 ]
 
 [[package]]
@@ -2427,6 +2427,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "spin"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
+dependencies = [
+ "lock_api",
+]
+
+[[package]]
 name = "sqlformat"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3090,9 +3099,11 @@ dependencies = [
  "chrono",
  "libsql",
  "ordered-float",
+ "parking_lot",
  "postgres-types",
  "serde",
  "serde_json",
+ "spin 0.10.0",
  "uuid",
 ]
 

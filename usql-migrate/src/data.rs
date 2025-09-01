@@ -1,10 +1,10 @@
 use crate::error::Error;
 use usql_builder::{
     StatementExt,
-    expr::val,
+    expr::{ExpressionExt, val},
     mutate::{Set, insert},
     schema::{Column, ColumnType, create_table},
-    select::{Order, QueryExt, SortQuery, select},
+    select::{FilterQuery, Order, QueryExt, SortQuery, select},
 };
 use usql_core::{ColumnIndex, Connector, DatabaseInfo, Executor, Row, util::next};
 use usql_value::{JsonValue, Type, chrono::NaiveDateTime};
@@ -80,6 +80,48 @@ where
     }
 
     Ok(output)
+}
+
+pub async fn get_entry<E>(executor: &E, table: &str, name: &str) -> Result<Option<Entry>, Error>
+where
+    E: Executor,
+    <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
+{
+    let sql = select(table, ("name", "date", "meta"))
+        .filter("name".eql(val(name)))
+        .into_stmt()
+        .to_sql(executor.db_info().variant())?;
+
+    let mut stmt = executor.prepare(&sql.sql).await.unwrap();
+
+    let mut stream = executor.query(&mut stmt, sql.bindings);
+
+    let Some(next) = next(&mut stream).await else {
+        return Ok(None);
+    };
+
+    let row = next.unwrap();
+
+    let name = row
+        .get_typed(ColumnIndex::Index(0), Type::Text)
+        .unwrap()
+        .to_owned();
+    let date = row
+        .get_typed(ColumnIndex::Index(1), Type::DateTime)
+        .unwrap()
+        .to_owned();
+    let meta = row
+        .get_typed(ColumnIndex::Index(2), Type::Json)
+        .unwrap()
+        .to_owned();
+
+    let entry = Entry {
+        name: name.try_into().unwrap(),
+        date: date.try_into().unwrap(),
+        meta: meta.try_into().unwrap(),
+    };
+
+    Ok(Some(entry))
 }
 
 pub async fn insert_migration<E>(

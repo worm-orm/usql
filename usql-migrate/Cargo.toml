@@ -11,6 +11,7 @@ sql = ["tokio"]
 usql-core = { path = "../usql-core" }
 usql-builder = { path = "../usql-builder" }
 usql-value = { path = "../usql-value" }
+usql-util = { path = "../usql-util" }
 futures-core = { version = "0.3" }
 chrono = { version = "0.4", features = ["now"] }
 

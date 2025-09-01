@@ -4,11 +4,11 @@ use usql_core::{Connection, Connector, Executor, Pool, Transaction};
 use usql_value::chrono::Utc;
 
 use crate::{
-    data::{Entry, ensure_table, insert_migration, list_entries},
+    data::{Entry, ensure_table, get_entry, insert_migration, list_entries},
     error::Error,
     exec::Exec,
     loader::MigrationLoader,
-    migration::{Migration, Runner},
+    migration::{Migration, MigrationInfo, Runner},
 };
 
 pub struct Migrator<B, T>
@@ -58,6 +58,26 @@ where
         Ok(ret)
     }
 
+    pub async fn list_migrations(&self) -> Result<Vec<Migration<T::Migration>>, Error> {
+        let conn = self.pool.get().await.unwrap();
+
+        ensure_table(&conn, &self.table_name).await?;
+
+        let info = self.load_migrations().await?;
+
+        let mut output = Vec::with_capacity(info.len());
+        for info in info {
+            let entry = get_entry(&conn, &self.table_name, &info.name).await?;
+            output.push(Migration {
+                name: info.name,
+                runner: info.runner,
+                applied: entry.map(|m| m.date),
+            });
+        }
+
+        Ok(output)
+    }
+
     pub async fn migrate(&self) -> Result<(), Error> {
         let migrations = self.load_migrations().await?;
         let mut conn = self.pool.get().await.map_err(Error::new)?;
@@ -94,7 +114,7 @@ where
     async fn migration_one(
         &self,
         conn: &mut B::Connection,
-        migrations: &Vec<Migration<T::Migration>>,
+        migrations: &Vec<MigrationInfo<T::Migration>>,
     ) -> Result<bool, Error> {
         let trans = conn.begin().await.map_err(Error::new)?;
 
@@ -131,7 +151,7 @@ where
         Ok(true)
     }
 
-    async fn load_migrations(&self) -> Result<Vec<Migration<T::Migration>>, Error> {
+    async fn load_migrations(&self) -> Result<Vec<MigrationInfo<T::Migration>>, Error> {
         let mut readdir = std::fs::read_dir(&self.path)
             .unwrap()
             .into_iter()
@@ -160,7 +180,7 @@ where
 
             seen.insert(name.clone());
 
-            migrations.push(Migration { name, runner });
+            migrations.push(MigrationInfo { name, runner });
         }
 
         Ok(migrations)

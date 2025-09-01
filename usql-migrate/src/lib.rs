@@ -9,5 +9,9 @@ mod migrator;
 pub mod sql;
 
 pub use self::{
-    error::Error, exec::Exec, loader::MigrationLoader, migration::Runner, migrator::Migrator,
+    error::Error,
+    exec::Exec,
+    loader::MigrationLoader,
+    migration::{Migration, MigrationInfo, Runner},
+    migrator::Migrator,
 };

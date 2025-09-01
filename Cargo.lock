@@ -3029,6 +3029,7 @@ dependencies = [
  "usql-builder",
  "usql-core",
  "usql-sqlite",
+ "usql-util",
  "usql-value",
 ]
 

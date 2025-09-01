@@ -1,4 +1,7 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 use usql_core::{Connection, Connector, Executor, Pool, Transaction};
 use usql_value::chrono::Utc;
@@ -41,6 +44,10 @@ where
             path,
             table_name,
         }
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 
     pub async fn has_migrations(&self) -> Result<bool, Error> {

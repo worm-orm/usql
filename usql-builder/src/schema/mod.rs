@@ -1,3 +1,4 @@
+mod alter;
 mod column;
 mod constraint;
 mod fk;
@@ -7,5 +8,6 @@ mod ty;
 mod r#virtual;
 
 pub use self::{
-    column::Column, constraint::*, fk::*, index::*, table::*, ty::ColumnType, r#virtual::*,
+    alter::*, column::Column, constraint::*, fk::*, index::*, table::*, ty::ColumnType,
+    r#virtual::*,
 };

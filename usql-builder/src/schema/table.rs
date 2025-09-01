@@ -12,6 +12,10 @@ pub fn create_table<'a>(name: impl Into<Cow<'a, str>>) -> CreateTable<'a> {
     CreateTable::new(name)
 }
 
+pub fn drop_table<'a>(name: impl Into<Cow<'a, str>>) -> DropTable<'a> {
+    DropTable::new(name)
+}
+
 #[derive(Clone)]
 pub struct CreateTable<'a> {
     pub name: Cow<'a, str>,
@@ -111,6 +115,12 @@ impl<'val> Statement<'val> for CreateTable<'val> {
 
 pub struct DropTable<'a> {
     pub name: Cow<'a, str>,
+}
+
+impl<'a> DropTable<'a> {
+    pub fn new(name: impl Into<Cow<'a, str>>) -> DropTable<'a> {
+        DropTable { name: name.into() }
+    }
 }
 
 impl<'a> Statement<'a> for DropTable<'a> {

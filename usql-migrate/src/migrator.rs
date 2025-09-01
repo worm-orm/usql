@@ -34,12 +34,12 @@ where
     T: MigrationLoader<B>,
     T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
-    pub fn new(pool: B::Pool, loader: T, path: PathBuf) -> Migrator<B, T> {
+    pub fn new(pool: B::Pool, loader: T, path: PathBuf, table_name: String) -> Migrator<B, T> {
         Migrator {
             pool,
             loader,
             path,
-            table_name: "migrations".to_string(),
+            table_name,
         }
     }
 

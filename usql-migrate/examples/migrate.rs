@@ -13,6 +13,7 @@ async fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
         pool.clone(),
         SqlLoader::default(),
         PathBuf::from("usql-migrate/examples/migrations"),
+        "migrations".to_string(),
     );
 
     println!("Migrations {}", migrator.has_migrations().await?);

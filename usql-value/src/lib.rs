@@ -3,6 +3,7 @@
 extern crate alloc;
 
 mod atom;
+pub mod convert;
 mod cow;
 mod json;
 mod owned;

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use tokio::fs;
-use usql_core::{Connection, Connector, DatabaseInfo, Executor, System};
+use usql::core::{Connection, Connector, DatabaseInfo, Executor, System};
 
 use crate::{Exec, MigrationLoader, Runner};
 
@@ -115,6 +115,7 @@ impl Script {
     }
 }
 
+#[derive(Debug)]
 pub struct SqlRunner {
     up: Script,
     down: Script,

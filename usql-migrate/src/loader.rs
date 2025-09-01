@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use usql_core::{Connection, Connector};
+use usql::core::{Connection, Connector};
 
 use crate::{
     error::Error,

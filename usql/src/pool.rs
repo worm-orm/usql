@@ -20,6 +20,11 @@ impl<B: Connector> Pool<B> {
     pub fn new(pool: B::Pool) -> Pool<B> {
         Pool { pool }
     }
+
+    pub async fn open(options: B::Options) -> Result<Self, Error<B>> {
+        let pool = B::create_pool(options).await.map_err(Error::connector)?;
+        Ok(Self::new(pool))
+    }
 }
 
 impl<B: Connector> Pool<B> {

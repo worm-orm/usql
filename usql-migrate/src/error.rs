@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub enum Error {
-    Builder(usql_builder::Error),
+    Builder(usql::builder::Error),
     Unknown(Box<dyn core::error::Error + Send + Sync>),
 }
 
@@ -28,8 +28,8 @@ impl Error {
     }
 }
 
-impl From<usql_builder::Error> for Error {
-    fn from(value: usql_builder::Error) -> Self {
+impl From<usql::builder::Error> for Error {
+    fn from(value: usql::builder::Error) -> Self {
         Error::Builder(value)
     }
 }

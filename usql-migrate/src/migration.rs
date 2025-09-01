@@ -1,8 +1,9 @@
 use crate::{error::Error, exec::Exec};
 use chrono::NaiveDateTime;
 use futures_core::future::BoxFuture;
-use usql_core::{Connection, Connector};
+use usql::core::{Connection, Connector};
 
+#[derive(Debug)]
 pub struct Migration<T> {
     pub name: String,
     pub runner: T,

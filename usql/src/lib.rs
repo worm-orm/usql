@@ -16,6 +16,7 @@ mod typed;
 pub use usql_builder as builder;
 pub use usql_core as core;
 pub use usql_util as util;
+pub use usql_value as value;
 
 pub use self::{
     conn::Conn, error::Error, from_row::FromRow, pool::Pool, query::IntoQuery, row::Row,

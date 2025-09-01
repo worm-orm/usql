@@ -3,8 +3,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use usql_core::{Connection, Connector, Executor, Pool, Transaction};
-use usql_value::chrono::Utc;
+use usql::value::chrono::Utc;
+use usql::{
+    Conn,
+    core::{Connection, Connector, Executor, Pool, Transaction},
+};
 
 use crate::{
     data::{Entry, ensure_table, get_entry, insert_migration, list_entries},
@@ -18,7 +21,7 @@ pub struct Migrator<B, T>
 where
     B: Connector,
 {
-    pool: B::Pool,
+    pool: usql::Pool<B>,
     loader: T,
     path: PathBuf,
     table_name: String,
@@ -26,7 +29,7 @@ where
 
 impl<B, T> Migrator<B, T>
 where
-    B: Connector,
+    B: Connector + 'static,
     B::Error: Into<Box<dyn core::error::Error + Send + Sync>>
         + core::error::Error
         + Send
@@ -37,7 +40,12 @@ where
     T: MigrationLoader<B>,
     T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
-    pub fn new(pool: B::Pool, loader: T, path: PathBuf, table_name: String) -> Migrator<B, T> {
+    pub fn new(
+        pool: usql::Pool<B>,
+        loader: T,
+        path: PathBuf,
+        table_name: String,
+    ) -> Migrator<B, T> {
         Migrator {
             pool,
             loader,
@@ -52,7 +60,7 @@ where
 
     pub async fn has_migrations(&self) -> Result<bool, Error> {
         let migrations = self.load_migrations().await?;
-        let conn = self.pool.get().await.map_err(Error::new)?;
+        let conn = self.pool.conn().await.map_err(Error::new)?;
         let entries = self.load_entries(&conn).await?;
         let ret = if entries.len() > migrations.len() {
             false
@@ -66,7 +74,7 @@ where
     }
 
     pub async fn list_migrations(&self) -> Result<Vec<Migration<T::Migration>>, Error> {
-        let conn = self.pool.get().await.map_err(Error::new)?;
+        let conn = self.pool.conn().await.map_err(Error::new)?;
 
         ensure_table(&conn, &self.table_name).await?;
 
@@ -87,14 +95,14 @@ where
 
     pub async fn migrate(&self) -> Result<bool, Error> {
         let migrations = self.load_migrations().await?;
-        let mut conn = self.pool.get().await.map_err(Error::new)?;
+        let mut conn = self.pool.conn().await.map_err(Error::new)?;
         let ret = self.migration_one(&mut conn, &migrations).await?;
         Ok(ret)
     }
 
     pub async fn migrate_all(&self) -> Result<bool, Error> {
         let migrations = self.load_migrations().await?;
-        let mut conn = self.pool.get().await.map_err(Error::new)?;
+        let mut conn = self.pool.conn().await.map_err(Error::new)?;
         let mut ret = false;
         loop {
             if !self.migration_one(&mut conn, &migrations).await? {
@@ -109,7 +117,8 @@ where
 
 impl<B, T> Migrator<B, T>
 where
-    B: Connector,
+    B: Connector + 'static,
+    B::Statement: 'static,
     T: MigrationLoader<B>,
     B::Connection: Send,
     B::Error: Into<Box<dyn core::error::Error + Send + Sync>>
@@ -122,7 +131,7 @@ where
 {
     async fn migration_one(
         &self,
-        conn: &mut B::Connection,
+        conn: &mut Conn<B>,
         migrations: &Vec<MigrationInfo<T::Migration>>,
     ) -> Result<bool, Error> {
         let trans = conn.begin().await.map_err(Error::new)?;

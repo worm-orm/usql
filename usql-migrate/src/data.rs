@@ -1,19 +1,21 @@
 use crate::error::Error;
-use usql_builder::{
-    StatementExt,
-    expr::{ExpressionExt, val},
-    mutate::{Set, insert},
-    schema::{Column, ColumnType, create_table},
-    select::{FilterQuery, Order, QueryExt, SortQuery, select},
+use usql::{
+    builder::{
+        StatementExt,
+        expr::{ExpressionExt, val},
+        mutate::{Set, insert},
+        schema::{Column, ColumnType, create_table},
+        select::{FilterQuery, Order, QueryExt, SortQuery, select},
+    },
+    core::{ColumnIndex, Connector, DatabaseInfo, Executor, Row, util::next},
+    value::{JsonValue, Type, Value, chrono::NaiveDateTime},
 };
-use usql_core::{ColumnIndex, Connector, DatabaseInfo, Executor, Row, util::next};
-use usql_value::{JsonValue, Type, chrono::NaiveDateTime};
 
 #[derive(Debug, Clone)]
 pub struct Entry {
     pub name: String,
     pub date: NaiveDateTime,
-    pub meta: JsonValue,
+    pub meta: Option<JsonValue>,
 }
 
 pub async fn ensure_table<E>(executor: &E, table: &str) -> Result<(), Error>
@@ -71,9 +73,9 @@ where
             .to_owned();
 
         let entry = Entry {
-            name: name.try_into().unwrap(),
-            date: date.try_into().unwrap(),
-            meta: meta.try_into().unwrap(),
+            name: name.try_get().unwrap(),
+            date: date.try_get().unwrap(),
+            meta: meta.try_get().unwrap(),
         };
 
         output.push(entry);
@@ -116,9 +118,9 @@ where
         .to_owned();
 
     let entry = Entry {
-        name: name.try_into().unwrap(),
-        date: date.try_into().unwrap(),
-        meta: meta.try_into().unwrap(),
+        name: name.try_get().unwrap(),
+        date: date.try_get().unwrap(),
+        meta: meta.try_get().unwrap(),
     };
 
     Ok(Some(entry))

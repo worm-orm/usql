@@ -1,4 +1,4 @@
-use alloc::{boxed::Box, string::ToString};
+use alloc::boxed::Box;
 use bytes::Bytes;
 use ordered_float::OrderedFloat;
 

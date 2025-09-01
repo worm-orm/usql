@@ -1,7 +1,4 @@
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{string::String, vec::Vec};
 use bytes::Bytes;
 use core::convert::TryFrom;
 use core::hash::Hash;

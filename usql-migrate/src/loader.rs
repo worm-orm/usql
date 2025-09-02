@@ -8,7 +8,7 @@ use usql::{
 use crate::migration::{DynamicRunner, Runner, runner_box};
 
 pub trait MigrationLoader<B: Connector> {
-    type Migration: Runner<B, Error = Self::Error>;
+    type Migration: Runner<B>;
     type Error;
 
     fn can_load<'a>(&'a self, path: &'a Path) -> impl Future<Output = bool> + Send + 'a;
@@ -26,6 +26,7 @@ macro_rules! loaders {
             for<'a> <B::Connection as Connection>::Transaction<'a>: Send + Sync,
             $only: MigrationLoader<B> + Send + Sync,
             $only::Migration: Send + Sync + 'static,
+            <$only::Migration as Runner<B>>::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
             $only::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
         {
             type Migration = Box<dyn DynamicRunner<B>>;
@@ -55,10 +56,12 @@ macro_rules! loaders {
             for<'a> <B::Connection as Connection>::Transaction<'a>: Send + Sync,
             $first: MigrationLoader<B> + Send + Sync,
             $first::Migration: Send + Sync + 'static,
+            <$first::Migration as Runner<B>>::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
             $first::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
             $(
                 $rest: MigrationLoader<B> + Send + Sync,
                 $rest::Migration: Send + Sync + 'static,
+                <$rest::Migration as Runner<B>>::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
                 $rest::Error: Into<Box<dyn core::error::Error + Send + Sync>>
             ),+
         {

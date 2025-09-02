@@ -37,6 +37,7 @@ where
     B::Connection: Send,
     for<'b> <B::Connection as Connection>::Transaction<'b>: Send + Sync,
     T: MigrationLoader<B>,
+    <T::Migration as Runner<B>>::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
     T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
     pub fn new(
@@ -119,6 +120,7 @@ where
     B: Connector + 'static,
     B::Statement: 'static,
     T: MigrationLoader<B>,
+    <T::Migration as Runner<B>>::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
     B::Connection: Send,
     B::Error: Into<Box<dyn core::error::Error + Send + Sync>>
         + core::error::Error

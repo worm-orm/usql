@@ -56,7 +56,7 @@ impl<'a> AlterOperation<'a> for Column<'a> {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.write_str("ADD COLUMN ")?;
 
-        self.build(ctx)?;
+        Self::build(&self, ctx, true)?;
 
         Ok(())
     }

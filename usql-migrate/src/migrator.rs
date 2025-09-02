@@ -3,15 +3,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use usql::value::chrono::Utc;
 use usql::{
-    Conn,
-    core::{Connection, Connector, Executor, Pool, Transaction},
+    Conn, Error,
+    core::{Connection, Connector, Executor},
+    value::chrono::Utc,
 };
 
 use crate::{
     data::{Entry, ensure_table, get_entry, insert_migration, list_entries},
-    error::Error,
     exec::Exec,
     loader::MigrationLoader,
     migration::{Migration, MigrationInfo, Runner},
@@ -58,9 +57,9 @@ where
         &self.path
     }
 
-    pub async fn has_migrations(&self) -> Result<bool, Error> {
+    pub async fn has_migrations(&self) -> Result<bool, Error<B>> {
         let migrations = self.load_migrations().await?;
-        let conn = self.pool.conn().await.map_err(Error::new)?;
+        let conn = self.pool.conn().await?;
         let entries = self.load_entries(&conn).await?;
         let ret = if entries.len() > migrations.len() {
             false
@@ -73,8 +72,8 @@ where
         Ok(ret)
     }
 
-    pub async fn list_migrations(&self) -> Result<Vec<Migration<T::Migration>>, Error> {
-        let conn = self.pool.conn().await.map_err(Error::new)?;
+    pub async fn list_migrations(&self) -> Result<Vec<Migration<T::Migration>>, Error<B>> {
+        let conn = self.pool.conn().await?;
 
         ensure_table(&conn, &self.table_name).await?;
 
@@ -93,16 +92,16 @@ where
         Ok(output)
     }
 
-    pub async fn migrate(&self) -> Result<bool, Error> {
+    pub async fn migrate(&self) -> Result<bool, Error<B>> {
         let migrations = self.load_migrations().await?;
-        let mut conn = self.pool.conn().await.map_err(Error::new)?;
+        let mut conn = self.pool.conn().await?;
         let ret = self.migration_one(&mut conn, &migrations).await?;
         Ok(ret)
     }
 
-    pub async fn migrate_all(&self) -> Result<bool, Error> {
+    pub async fn migrate_all(&self) -> Result<bool, Error<B>> {
         let migrations = self.load_migrations().await?;
-        let mut conn = self.pool.conn().await.map_err(Error::new)?;
+        let mut conn = self.pool.conn().await?;
         let mut ret = false;
         loop {
             if !self.migration_one(&mut conn, &migrations).await? {
@@ -133,8 +132,8 @@ where
         &self,
         conn: &mut Conn<B>,
         migrations: &Vec<MigrationInfo<T::Migration>>,
-    ) -> Result<bool, Error> {
-        let trans = conn.begin().await.map_err(Error::new)?;
+    ) -> Result<bool, Error<B>> {
+        let trans = conn.begin().await?;
 
         let entries = self.load_entries(&trans).await?;
 
@@ -154,7 +153,7 @@ where
 
         let exec = Exec::new(trans);
 
-        migration.runner.up(&exec).await.map_err(Error::new)?;
+        migration.runner.up(&exec).await.map_err(Error::unknown)?;
 
         insert_migration(
             &exec,
@@ -164,12 +163,12 @@ where
         )
         .await?;
 
-        exec.conn.commit().await.map_err(Error::new)?;
+        exec.conn.commit().await?;
 
         Ok(true)
     }
 
-    async fn load_migrations(&self) -> Result<Vec<MigrationInfo<T::Migration>>, Error> {
+    async fn load_migrations(&self) -> Result<Vec<MigrationInfo<T::Migration>>, Error<B>> {
         let mut readdir = std::fs::read_dir(&self.path)
             .unwrap()
             .into_iter()
@@ -194,7 +193,7 @@ where
                 panic!("Migration is already defined")
             }
 
-            let runner = self.loader.load(&path).await.map_err(Error::new)?;
+            let runner = self.loader.load(&path).await.map_err(Error::unknown)?;
 
             seen.insert(name.clone());
 
@@ -204,7 +203,7 @@ where
         Ok(migrations)
     }
 
-    async fn load_entries<E>(&self, conn: &E) -> Result<Vec<Entry>, Error>
+    async fn load_entries<E>(&self, conn: &E) -> Result<Vec<Entry>, Error<B>>
     where
         E: Executor<Connector = B>,
         <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,

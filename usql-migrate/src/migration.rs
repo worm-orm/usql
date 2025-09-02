@@ -1,7 +1,10 @@
-use crate::{error::Error, exec::Exec};
+use crate::exec::Exec;
 use chrono::NaiveDateTime;
 use futures_core::future::BoxFuture;
-use usql::core::{Connection, Connector};
+use usql::{
+    Error,
+    core::{Connection, Connector},
+};
 
 #[derive(Debug)]
 pub struct Migration<T> {
@@ -30,9 +33,9 @@ pub trait Runner<B: Connector> {
 }
 
 pub trait DynamicRunner<B: Connector>: Send + Sync {
-    fn up<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error>>;
+    fn up<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error<B>>>;
 
-    fn down<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error>>;
+    fn down<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error<B>>>;
 }
 
 impl<B> Runner<B> for Box<dyn DynamicRunner<B>>
@@ -40,7 +43,7 @@ where
     B: Connector,
     for<'a> <B::Connection as Connection>::Transaction<'a>: Send + Sync,
 {
-    type Error = Error;
+    type Error = Error<B>;
 
     fn up<'a>(
         &'a self,
@@ -76,11 +79,11 @@ where
     T: Runner<B> + Send + Sync,
     T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
-    fn up<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error>> {
-        Box::pin(async move { self.0.up(conn).await.map_err(Error::new) })
+    fn up<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error<B>>> {
+        Box::pin(async move { self.0.up(conn).await.map_err(Error::unknown) })
     }
 
-    fn down<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error>> {
-        Box::pin(async move { self.0.down(conn).await.map_err(Error::new) })
+    fn down<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error<B>>> {
+        Box::pin(async move { self.0.down(conn).await.map_err(Error::unknown) })
     }
 }

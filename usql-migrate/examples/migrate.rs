@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
-use usql::core::{ColumnIndex, Connector, Pool, Row};
 use usql_migrate::{Migrator, sql::SqlLoader};
-use usql_sqlite::{Sqlite, SqliteError, SqliteOptions};
+use usql_sqlite::{Sqlite, SqliteOptions};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {

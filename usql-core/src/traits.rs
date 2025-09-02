@@ -1,5 +1,5 @@
 use crate::system::System;
-use alloc::{borrow::Cow, string::String, vec::Vec};
+use alloc::vec::Vec;
 use futures_core::stream::BoxStream;
 use usql_value::{Type, ValueCow};
 
@@ -113,18 +113,6 @@ impl<'a> From<&'a str> for ColumnIndex<'a> {
         ColumnIndex::Named(value)
     }
 }
-
-// impl<'a> From<Cow<'a, str>> for ColumnIndex<'a> {
-//     fn from(value: Cow<'a, str>) -> Self {
-//         ColumnIndex::Named(value)
-//     }
-// }
-
-// impl<'a> From<String> for ColumnIndex<'a> {
-//     fn from(value: String) -> Self {
-//         ColumnIndex::Named(Cow::Owned(value))
-//     }
-// }
 
 impl<'a> From<usize> for ColumnIndex<'a> {
     fn from(value: usize) -> Self {

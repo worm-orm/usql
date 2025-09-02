@@ -1,5 +1,5 @@
-use crate::error::Error;
 use usql::{
+    Error,
     builder::{
         StatementExt,
         expr::{ExpressionExt, val},
@@ -8,17 +8,18 @@ use usql::{
         select::{FilterQuery, Order, QueryExt, SortQuery, select},
     },
     core::{ColumnIndex, Connector, DatabaseInfo, Executor, Row, util::next},
-    value::{JsonValue, Type, Value, chrono::NaiveDateTime},
+    value::{JsonValue, Type, chrono::NaiveDateTime},
 };
 
 #[derive(Debug, Clone)]
 pub struct Entry {
     pub name: String,
     pub date: NaiveDateTime,
+    #[allow(unused)]
     pub meta: Option<JsonValue>,
 }
 
-pub async fn ensure_table<E>(executor: &E, table: &str) -> Result<(), Error>
+pub async fn ensure_table<E>(executor: &E, table: &str) -> Result<(), Error<E::Connector>>
 where
     E: Executor,
     <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
@@ -40,7 +41,7 @@ where
     Ok(())
 }
 
-pub async fn list_entries<E>(executor: &E, table: &str) -> Result<Vec<Entry>, Error>
+pub async fn list_entries<E>(executor: &E, table: &str) -> Result<Vec<Entry>, Error<E::Connector>>
 where
     E: Executor,
     <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
@@ -84,7 +85,11 @@ where
     Ok(output)
 }
 
-pub async fn get_entry<E>(executor: &E, table: &str, name: &str) -> Result<Option<Entry>, Error>
+pub async fn get_entry<E>(
+    executor: &E,
+    table: &str,
+    name: &str,
+) -> Result<Option<Entry>, Error<E::Connector>>
 where
     E: Executor,
     <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
@@ -131,7 +136,7 @@ pub async fn insert_migration<E>(
     table: &str,
     name: &str,
     date: NaiveDateTime,
-) -> Result<(), Error>
+) -> Result<(), Error<E::Connector>>
 where
     E: Executor,
     <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,

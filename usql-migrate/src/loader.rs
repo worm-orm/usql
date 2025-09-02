@@ -1,11 +1,11 @@
 use std::path::Path;
 
-use usql::core::{Connection, Connector};
-
-use crate::{
-    error::Error,
-    migration::{DynamicRunner, Runner, runner_box},
+use usql::{
+    Error,
+    core::{Connection, Connector},
 };
+
+use crate::migration::{DynamicRunner, Runner, runner_box};
 
 pub trait MigrationLoader<B: Connector> {
     type Migration: Runner<B, Error = Self::Error>;
@@ -29,7 +29,7 @@ macro_rules! loaders {
             $only::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
         {
             type Migration = Box<dyn DynamicRunner<B>>;
-            type Error = Error;
+            type Error = Error<B>;
 
             fn can_load<'a>(&'a self, path: &'a Path) -> impl Future<Output = bool> + Send + 'a {
                 async move { self.0.can_load(path).await }
@@ -40,7 +40,7 @@ macro_rules! loaders {
                 path: &'a Path,
             ) -> impl Future<Output = Result<Self::Migration, Self::Error>> + Send + 'a {
                 async move {
-                    let migration = self.0.load(path).await.map_err(Error::new)?;
+                    let migration = self.0.load(path).await.map_err(Error::unknown)?;
                     Ok(runner_box(migration))
                  }
             }
@@ -63,7 +63,7 @@ macro_rules! loaders {
             ),+
         {
             type Migration = Box<dyn DynamicRunner<B>>;
-            type Error = Error;
+            type Error = Error<B>;
 
             fn can_load<'a>(&'a self, path: &'a Path) -> impl Future<Output = bool> + Send + 'a {
                 async move {
@@ -79,16 +79,16 @@ macro_rules! loaders {
                 async move {
                     let ($first, $($rest),+) = self;
                     if $first.can_load(path).await {
-                        return $first.load(path).await.map_err(Error::new).map(runner_box);
+                        return $first.load(path).await.map_err(Error::unknown).map(runner_box);
 
                     }
                     $(
                         if $rest.can_load(path).await {
-                            return $rest.load(path).await.map_err(Error::new).map(runner_box);
+                            return $rest.load(path).await.map_err(Error::unknown).map(runner_box);
                         }
                     )+
 
-                    Err(Error::new("Invalid loader"))
+                    Err(Error::unknown("Invalid loader"))
                  }
             }
         }

@@ -1,5 +1,5 @@
 use usql::{
-    QueryStream, Trans,
+    Trans,
     core::{Connection, Connector, Executor},
     value::ValueCow,
 };

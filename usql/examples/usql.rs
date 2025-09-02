@@ -116,7 +116,7 @@ fn main() {
             println!("{:?}", row);
         }
 
-        let project = Project::new(6, "user_id")
+        let project = Project::new("user_id")
             .field(ProjectField::new(0).map("id"))
             .field(ProjectField::new(1))
             .relation(

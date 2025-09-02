@@ -11,17 +11,15 @@ use usql_value::{Type, Value, ValueCow};
 use crate::result::IntoResult;
 
 pub struct Project<'a> {
-    count: usize,
     pk: ColumnIndex<'a>,
     relations: Vec<ProjectRelation<'a>>,
     fields: Vec<ProjectField<'a>>,
 }
 
 impl<'a> Project<'a> {
-    pub fn new(columns: usize, pk: impl Into<ColumnIndex<'a>>) -> Project<'a> {
+    pub fn new(pk: impl Into<ColumnIndex<'a>>) -> Project<'a> {
         Project {
             pk: pk.into(),
-            count: columns,
             relations: Default::default(),
             fields: Default::default(),
         }
@@ -168,20 +166,34 @@ pub enum RelationKind {
 #[derive(Clone)]
 pub struct ProjectRelation<'a> {
     kind: RelationKind,
-    index: ColumnIndex<'a>,
+    pk: ColumnIndex<'a>,
     name: Cow<'a, str>,
     relations: Vec<ProjectRelation<'a>>,
     fields: Vec<ProjectField<'a>>,
 }
 
 impl<'a> ProjectRelation<'a> {
+    pub fn from_project(
+        project: Project<'a>,
+        kind: RelationKind,
+        name: impl Into<Cow<'a, str>>,
+    ) -> ProjectRelation<'a> {
+        ProjectRelation {
+            kind,
+            pk: project.pk,
+            name: name.into(),
+            relations: project.relations,
+            fields: project.fields,
+        }
+    }
+
     pub fn single(
         index: impl Into<ColumnIndex<'a>>,
         name: impl Into<Cow<'a, str>>,
     ) -> ProjectRelation<'a> {
         ProjectRelation {
             kind: RelationKind::One,
-            index: index.into(),
+            pk: index.into(),
             name: name.into(),
             relations: Default::default(),
             fields: Default::default(),
@@ -194,7 +206,7 @@ impl<'a> ProjectRelation<'a> {
     ) -> ProjectRelation<'a> {
         ProjectRelation {
             kind: RelationKind::Many,
-            index: index.into(),
+            pk: index.into(),
             name: name.into(),
             relations: Default::default(),
             fields: Default::default(),
@@ -230,7 +242,7 @@ impl<'a> ProjectRelation<'a> {
                 loop {
                     let Some((idx, row)) = iter.next() else { break };
 
-                    let pk = row.get(self.index)?;
+                    let pk = row.get(self.pk)?;
 
                     if pk.as_ref().is_null() {
                         break;
@@ -248,7 +260,7 @@ impl<'a> ProjectRelation<'a> {
                             break;
                         };
 
-                        let next_pk = next.get(self.index)?;
+                        let next_pk = next.get(self.pk)?;
 
                         if next_pk.as_ref().is_null() || next_pk != pk {
                             break;
@@ -273,7 +285,7 @@ impl<'a> ProjectRelation<'a> {
                     return Ok(());
                 };
 
-                let pk = row.get(self.index)?;
+                let pk = row.get(self.pk)?;
 
                 if pk.as_ref().is_null() {
                     return Ok(());
@@ -291,7 +303,7 @@ impl<'a> ProjectRelation<'a> {
                         break;
                     };
 
-                    let next_pk = next.get(self.index)?;
+                    let next_pk = next.get(self.pk)?;
 
                     if next_pk.as_ref().is_null() || next_pk != pk {
                         break;

@@ -1,7 +1,7 @@
 use alloc::boxed::Box;
 use usql_core::{Connection, Connector, Executor, Transaction, util::next};
 
-use crate::{Error, IntoQuery, QueryStream, Row, query, stmt::Stmt};
+use crate::{Error, IntoQuery, QueryStream, Row, stmt::Stmt, target::Target};
 
 pub struct Trans<'a, B: Connector>
 where
@@ -13,6 +13,10 @@ where
 impl<'a, B: Connector> Trans<'a, B> {
     pub fn new(trans: <B::Connection as Connection>::Transaction<'a>) -> Trans<'a, B> {
         Trans { trans }
+    }
+
+    pub fn into_target(self) -> Target<'a, B> {
+        Target::Trans(self)
     }
 }
 

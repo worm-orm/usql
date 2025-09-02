@@ -10,6 +10,7 @@ mod query;
 mod row;
 mod stmt;
 mod stream;
+mod target;
 mod trans;
 mod typed;
 
@@ -25,7 +26,3 @@ pub use self::{
 
 #[cfg(feature = "derive")]
 pub use usql_macros::*;
-
-pub mod prelude {
-    pub use usql_core::prelude::*;
-}

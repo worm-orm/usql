@@ -21,7 +21,7 @@ pub use usql_value as value;
 
 pub use self::{
     conn::Conn, error::Error, from_row::FromRow, pool::Pool, query::IntoQuery, row::Row,
-    stream::QueryStream, trans::Trans, typed::Typed,
+    stream::QueryStream, target::Target, trans::Trans, typed::Typed,
 };
 
 #[cfg(feature = "derive")]

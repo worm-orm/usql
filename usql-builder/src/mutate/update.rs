@@ -9,16 +9,16 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct Update<'val> {
-    pub(crate) table: Cow<'val, str>,
-    pub(crate) keys: Vec<Cow<'val, str>>,
+pub struct Update<'key, 'val> {
+    pub(crate) table: Cow<'key, str>,
+    pub(crate) keys: Vec<Cow<'key, str>>,
     pub(crate) values: Vec<ExpressionBox<'val>>,
 }
 
-impl<'val> Set<'val> for Update<'val> {
+impl<'key, 'val> Set<'key, 'val> for Update<'key, 'val> {
     fn set<F, V>(&mut self, field: F, value: V) -> &mut Self
     where
-        F: Into<Cow<'val, str>>,
+        F: Into<Cow<'key, str>>,
         V: crate::expr::Expression<'val> + Send + Sync + Clone + 'val,
     {
         self.keys.push(field.into());
@@ -30,8 +30,8 @@ impl<'val> Set<'val> for Update<'val> {
     }
 }
 
-impl<'val> Update<'val> {
-    pub fn new(table: impl Into<Cow<'val, str>>) -> Update<'val> {
+impl<'key, 'val> Update<'key, 'val> {
+    pub fn new(table: impl Into<Cow<'key, str>>) -> Update<'key, 'val> {
         Update {
             table: table.into(),
             values: Vec::default(),
@@ -49,7 +49,7 @@ impl<'val> Update<'val> {
         }
     }
 
-    pub fn filter<'a, E: Expression<'a>>(self, expr: E) -> UpdateFilter<'val, E> {
+    pub fn filter<'a, E: Expression<'a>>(self, expr: E) -> UpdateFilter<'key, 'val, E> {
         UpdateFilter {
             update: self,
             filter: expr,
@@ -57,7 +57,7 @@ impl<'val> Update<'val> {
     }
 }
 
-impl<'val> Statement<'val> for Update<'val> {
+impl<'key, 'val> Statement<'val> for Update<'key, 'val> {
     fn build(self, ctx: &mut Context<'val>) -> Result<(), Error> {
         write!(ctx, "UPDATE ")?;
         ctx.push_identifier(&self.table)?;
@@ -75,12 +75,12 @@ impl<'val> Statement<'val> for Update<'val> {
     }
 }
 
-pub struct UpdateFilter<'val, E> {
-    update: Update<'val>,
+pub struct UpdateFilter<'key, 'val, E> {
+    update: Update<'key, 'val>,
     filter: E,
 }
 
-impl<'val, E> UpdateFilter<'val, E> {
+impl<'key, 'val, E> UpdateFilter<'key, 'val, E> {
     pub fn returning<S>(self, selection: S) -> UpdateReturning<S, Self>
     where
         S: Selection<'val>,
@@ -92,13 +92,13 @@ impl<'val, E> UpdateFilter<'val, E> {
     }
 }
 
-impl<'val, E> Set<'val> for UpdateFilter<'val, E>
+impl<'key, 'val, E> Set<'key, 'val> for UpdateFilter<'key, 'val, E>
 where
     E: Expression<'val>,
 {
     fn set<F, V>(&mut self, field: F, value: V) -> &mut Self
     where
-        F: Into<Cow<'val, str>>,
+        F: Into<Cow<'key, str>>,
         V: Expression<'val> + Send + Sync + Clone + 'val,
     {
         self.update.set(field, value);
@@ -110,7 +110,7 @@ where
     }
 }
 
-impl<'val, E> Statement<'val> for UpdateFilter<'val, E>
+impl<'key, 'val, E> Statement<'val> for UpdateFilter<'key, 'val, E>
 where
     E: Expression<'val>,
 {
@@ -128,13 +128,13 @@ pub struct UpdateReturning<S, U> {
     returning: S,
 }
 
-impl<'val, S, U> UpdateReturning<S, U>
+impl<'key, 'val, S, U> UpdateReturning<S, U>
 where
-    U: Set<'val>,
+    U: Set<'key, 'val>,
 {
     pub fn with<F, V>(mut self, field: F, value: V) -> Self
     where
-        F: Into<Cow<'val, str>>,
+        F: Into<Cow<'key, str>>,
         V: Expression<'val> + Send + Sync + Clone + 'val,
     {
         self.update = self.update.with(field, value);
@@ -143,7 +143,7 @@ where
 
     pub fn set<F, V>(&mut self, field: F, value: V) -> &mut Self
     where
-        F: Into<Cow<'val, str>>,
+        F: Into<Cow<'key, str>>,
         V: Expression<'val> + Send + Sync + Clone + 'val,
     {
         self.update.set(field, value);
@@ -171,7 +171,7 @@ where
     }
 }
 
-pub fn update<'val>(table: impl Into<Cow<'val, str>>) -> Update<'val> {
+pub fn update<'key, 'val>(table: impl Into<Cow<'key, str>>) -> Update<'key, 'val> {
     Update::new(table)
 }
 

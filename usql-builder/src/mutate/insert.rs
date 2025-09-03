@@ -10,21 +10,21 @@ use crate::{
     statement::Statement,
 };
 
-pub fn insert<'val>(table: impl Into<Cow<'val, str>>) -> Insert<'val> {
+pub fn insert<'key, 'val>(table: impl Into<Cow<'key, str>>) -> Insert<'key, 'val> {
     Insert::new(table)
 }
 
 #[derive(Clone)]
-pub struct Insert<'val> {
-    pub(crate) table: Cow<'val, str>,
-    pub(crate) keys: Vec<Cow<'val, str>>,
+pub struct Insert<'key, 'val> {
+    pub(crate) table: Cow<'key, str>,
+    pub(crate) keys: Vec<Cow<'key, str>>,
     pub(crate) values: Vec<ExpressionBox<'val>>,
 }
 
-impl<'val> Set<'val> for Insert<'val> {
+impl<'key, 'val> Set<'key, 'val> for Insert<'key, 'val> {
     fn set<F, V>(&mut self, field: F, value: V) -> &mut Self
     where
-        F: Into<Cow<'val, str>>,
+        F: Into<Cow<'key, str>>,
         V: crate::expr::Expression<'val> + Send + Sync + Clone + 'val,
     {
         self.keys.push(field.into());
@@ -37,8 +37,8 @@ impl<'val> Set<'val> for Insert<'val> {
     }
 }
 
-impl<'val> Insert<'val> {
-    pub fn new(table: impl Into<Cow<'val, str>>) -> Insert<'val> {
+impl<'key, 'val> Insert<'key, 'val> {
+    pub fn new(table: impl Into<Cow<'key, str>>) -> Insert<'key, 'val> {
         Insert {
             table: table.into(),
             values: Vec::default(),
@@ -46,7 +46,7 @@ impl<'val> Insert<'val> {
         }
     }
 
-    pub fn returning<T>(self, selection: T) -> InsertReturning<'val, T>
+    pub fn returning<T>(self, selection: T) -> InsertReturning<'key, 'val, T>
     where
         T: Selection<'val>,
     {
@@ -57,7 +57,7 @@ impl<'val> Insert<'val> {
     }
 }
 
-impl<'val> Statement<'val> for Insert<'val> {
+impl<'key, 'val> Statement<'val> for Insert<'key, 'val> {
     fn build(self, ctx: &mut Context<'val>) -> Result<(), Error> {
         write!(ctx, "INSERT INTO ")?;
         self.table.build(ctx)?;
@@ -84,18 +84,18 @@ impl<'val> Statement<'val> for Insert<'val> {
 }
 
 #[derive(Clone)]
-pub struct InsertReturning<'val, S> {
-    insert: Insert<'val>,
+pub struct InsertReturning<'key, 'val, S> {
+    insert: Insert<'key, 'val>,
     returning: S,
 }
 
-impl<'val, S> Set<'val> for InsertReturning<'val, S>
+impl<'key, 'val, S> Set<'key, 'val> for InsertReturning<'key, 'val, S>
 where
     S: Selection<'val>,
 {
     fn set<F, V>(&mut self, field: F, value: V) -> &mut Self
     where
-        F: Into<Cow<'val, str>>,
+        F: Into<Cow<'key, str>>,
         V: crate::expr::Expression<'val> + Send + Sync + Clone + 'val,
     {
         self.insert.set(field, value);
@@ -107,12 +107,12 @@ where
     }
 }
 
-impl<'val, S> Statement<'val> for InsertReturning<'val, S>
+impl<'key, 'val, S> Statement<'val> for InsertReturning<'key, 'val, S>
 where
     S: Selection<'val>,
 {
     fn build(self, ctx: &mut Context<'val>) -> Result<(), Error> {
-        <Insert<'val> as Statement>::build(self.insert, ctx)?;
+        <Insert<'key, 'val> as Statement>::build(self.insert, ctx)?;
         write!(ctx, " RETURNING ")?;
         self.returning.build(ctx)?;
         Ok(())

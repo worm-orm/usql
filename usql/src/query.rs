@@ -178,7 +178,7 @@ where
     }
 }
 
-impl<'a, B: Connector> IntoQuery<'a, B> for Insert<'a>
+impl<'k, 'a, B: Connector> IntoQuery<'a, B> for Insert<'k, 'a>
 where
     B::Statement: 'static,
     B::Error: core::error::Error,
@@ -200,7 +200,7 @@ where
     }
 }
 
-impl<'a, B: Connector, S> IntoQuery<'a, B> for InsertReturning<'a, S>
+impl<'k, 'a, B: Connector, S> IntoQuery<'a, B> for InsertReturning<'k, 'a, S>
 where
     B::Statement: 'static,
     B::Error: core::error::Error,

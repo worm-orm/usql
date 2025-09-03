@@ -10,6 +10,7 @@ use usql_value::{Type, Value, ValueCow};
 
 use crate::result::IntoResult;
 
+#[derive(Clone, Debug)]
 pub struct Project<'a> {
     pk: ColumnIndex<'a>,
     relations: Vec<ProjectRelation<'a>>,
@@ -101,7 +102,7 @@ impl<'a> Project<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ProjectField<'a> {
     index: ColumnIndex<'a>,
     map: Option<Cow<'a, str>>,
@@ -163,7 +164,7 @@ pub enum RelationKind {
     One,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ProjectRelation<'a> {
     kind: RelationKind,
     pk: ColumnIndex<'a>,

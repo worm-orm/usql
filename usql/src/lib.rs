@@ -10,6 +10,7 @@ mod query;
 mod row;
 mod stmt;
 mod stream;
+mod target;
 mod trans;
 mod typed;
 
@@ -19,13 +20,17 @@ pub use usql_util as util;
 pub use usql_value as value;
 
 pub use self::{
-    conn::Conn, error::Error, from_row::FromRow, pool::Pool, query::IntoQuery, row::Row,
-    stream::QueryStream, trans::Trans, typed::Typed,
+    conn::Conn,
+    error::Error,
+    from_row::FromRow,
+    pool::Pool,
+    query::IntoQuery,
+    row::Row,
+    stream::{FromRowStream, ProjectStream, QueryStream},
+    target::Target,
+    trans::Trans,
+    typed::Typed,
 };
 
 #[cfg(feature = "derive")]
 pub use usql_macros::*;
-
-pub mod prelude {
-    pub use usql_core::prelude::*;
-}

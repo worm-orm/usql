@@ -2,7 +2,8 @@ use alloc::boxed::Box;
 use usql_core::{Connection, Connector, Executor, util::next};
 
 use crate::{
-    error::Error, query::IntoQuery, row::Row, stmt::Stmt, stream::QueryStream, trans::Trans,
+    error::Error, query::IntoQuery, row::Row, stmt::Stmt, stream::QueryStream, target::Target,
+    trans::Trans,
 };
 
 pub struct Conn<B>
@@ -19,6 +20,10 @@ impl<B: Connector> Conn<B> {
 
     pub fn into_inner(self) -> B::Connection {
         self.conn
+    }
+
+    pub fn as_target(&self) -> Target<'_, B> {
+        Target::Conn(self)
     }
 }
 

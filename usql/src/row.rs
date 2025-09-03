@@ -1,7 +1,7 @@
 use crate::{error::Error, typed::Typed};
 use alloc::boxed::Box;
 use usql_core::{ColumnIndex, Connector, Row as _};
-use usql_value::{Value, convert::FromValue};
+use usql_value::convert::FromValue;
 
 pub trait IntoColumnIndex<'a> {
     fn into_column_index(self) -> ColumnIndex<'a>;

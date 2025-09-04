@@ -1,6 +1,7 @@
 use core::fmt::Write;
 
 use crate::{
+    Either,
     context::Context,
     error::Error,
     expr::{Expression, Ident},
@@ -16,6 +17,19 @@ use crate::{
 
 pub trait Query<'a> {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error>;
+}
+
+impl<'a, L, R> Query<'a> for Either<L, R>
+where
+    L: Query<'a>,
+    R: Query<'a>,
+{
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        match self {
+            Self::Left(left) => left.build(ctx),
+            Self::Right(right) => right.build(ctx),
+        }
+    }
 }
 
 pub trait FilterQuery<'a>: Query<'a> + Sized {

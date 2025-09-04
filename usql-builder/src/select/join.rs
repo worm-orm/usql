@@ -1,10 +1,14 @@
 use crate::{
-    context::Context, either::Either, error::Error, expr::Expression, select::query::Query,
+    context::Context,
+    either::Either,
+    error::Error,
+    expr::Expression,
+    select::{join, query::Query},
 };
 
 use super::target::Target;
 
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use core::fmt::Write;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -140,4 +144,39 @@ impl JoinType {
         }?;
         Ok(())
     }
+}
+
+pub type BoxJoinable<'val> = Box<dyn DynJoinable<'val>>;
+pub trait DynJoinable<'val> {
+    fn build(self: Box<Self>, ctx: &mut Context<'val>) -> Result<(), Error>;
+}
+
+impl<'val> DynJoinable<'val> for Box<dyn DynJoinable<'val>> {
+    fn build(self: Box<Self>, ctx: &mut Context<'val>) -> Result<(), Error> {
+        (*self).build(ctx)
+    }
+}
+
+impl<'val> Joinable<'val> for Box<dyn DynJoinable<'val>> {
+    fn build(self, ctx: &mut Context<'val>) -> Result<(), Error> {
+        self.build(ctx)
+    }
+}
+
+struct JoinableBox<T>(T);
+
+impl<'val, T> DynJoinable<'val> for JoinableBox<T>
+where
+    T: Joinable<'val>,
+{
+    fn build(self: Box<Self>, ctx: &mut Context<'val>) -> Result<(), Error> {
+        self.0.build(ctx)
+    }
+}
+
+pub fn joinable_box<'val, T>(joinable: T) -> Box<dyn DynJoinable<'val>>
+where
+    T: Joinable<'val> + 'static,
+{
+    Box::new(JoinableBox(joinable))
 }

@@ -239,3 +239,12 @@ where
         <Self as Expression<'a>>::build(self, ctx)
     }
 }
+
+impl<'a, T> Target<'a> for QueryStmt<T>
+where
+    T: Query<'a>,
+{
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        <Self as Expression<'a>>::build(self, ctx)
+    }
+}

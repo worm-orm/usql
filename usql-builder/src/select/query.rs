@@ -7,6 +7,7 @@ use crate::{
     expr::{Expression, Ident},
     select::{
         HavingSelect, Select, Selection, SortKey, SortSelect, Target,
+        apply::Apply,
         filter::FilterSelect,
         group::GroupSelect,
         join::{JoinSelect, Joinable},
@@ -65,6 +66,13 @@ pub trait GroupQuery<'a>: Query<'a> + Sized {
 pub trait QueryExt<'a>: Query<'a> + Sized {
     fn into_stmt(self) -> QueryStmt<Self> {
         QueryStmt::new(self)
+    }
+
+    fn apply<T>(self, apply: T) -> T::Output
+    where
+        T: Apply<'a, Self>,
+    {
+        apply.apply(self)
     }
 }
 
@@ -212,6 +220,10 @@ pub struct QueryStmt<T>(T);
 impl<T> QueryStmt<T> {
     pub fn new(query: T) -> QueryStmt<T> {
         QueryStmt(query)
+    }
+
+    pub fn into_inner(self) -> T {
+        self.0
     }
 }
 

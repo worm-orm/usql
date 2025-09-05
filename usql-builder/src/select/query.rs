@@ -39,10 +39,24 @@ pub trait FilterQuery<'a>: Query<'a> + Sized {
     }
 }
 
+impl<'a, L, R> FilterQuery<'a> for Either<L, R>
+where
+    L: FilterQuery<'a>,
+    R: FilterQuery<'a>,
+{
+}
+
 pub trait JoinQuery<'a>: Query<'a> + Sized {
     fn join<T: Joinable<'a>>(self, joinable: T) -> JoinSelect<Self, T> {
         JoinSelect::new(self, joinable)
     }
+}
+
+impl<'a, L, R> JoinQuery<'a> for Either<L, R>
+where
+    L: JoinQuery<'a>,
+    R: JoinQuery<'a>,
+{
 }
 
 pub trait SortQuery<'a>: Query<'a> + Sized {
@@ -51,16 +65,37 @@ pub trait SortQuery<'a>: Query<'a> + Sized {
     }
 }
 
+impl<'a, L, R> SortQuery<'a> for Either<L, R>
+where
+    L: SortQuery<'a>,
+    R: SortQuery<'a>,
+{
+}
+
 pub trait LimitQuery<'a>: Query<'a> + Sized {
     fn limit(self, offset: u64, limit: u64) -> LimitSelect<Self> {
         LimitSelect::new(self, offset, limit)
     }
 }
 
+impl<'a, L, R> LimitQuery<'a> for Either<L, R>
+where
+    L: LimitQuery<'a>,
+    R: LimitQuery<'a>,
+{
+}
+
 pub trait GroupQuery<'a>: Query<'a> + Sized {
     fn group_by<T>(self, grouping: T) -> GroupSelect<Self, T> {
         GroupSelect::new(self, grouping)
     }
+}
+
+impl<'a, L, R> GroupQuery<'a> for Either<L, R>
+where
+    L: GroupQuery<'a>,
+    R: GroupQuery<'a>,
+{
 }
 
 pub trait QueryExt<'a>: Query<'a> + Sized {

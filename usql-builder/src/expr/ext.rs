@@ -22,8 +22,13 @@ pub trait ExpressionExt<'val>: Expression<'val> + Sized {
     op_impl!(gt, Gt);
     op_impl!(gte, Gte);
     op_impl!(like, Like);
-    op_impl!(has, In);
+    op_impl!(not_like, NotLike);
+    op_impl!(contains, In);
     op_impl!(matching, Match);
+    op_impl!(add, Add);
+    op_impl!(sub, Sub);
+    op_impl!(mul, Mul);
+    op_impl!(div, Div);
 
     fn binary<'a, E: Expression<'a>>(
         self,

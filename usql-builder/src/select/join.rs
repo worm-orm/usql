@@ -146,7 +146,7 @@ impl JoinType {
     }
 }
 
-pub type BoxJoinable<'val> = Box<dyn DynJoinable<'val>>;
+pub type BoxJoinable<'val> = Box<dyn DynJoinable<'val> + 'val>;
 pub trait DynJoinable<'val> {
     fn build(self: Box<Self>, ctx: &mut Context<'val>) -> Result<(), Error>;
 }
@@ -174,9 +174,9 @@ where
     }
 }
 
-pub fn joinable_box<'val, T>(joinable: T) -> Box<dyn DynJoinable<'val>>
+pub fn joinable_box<'val, T>(joinable: T) -> Box<dyn DynJoinable<'val> + 'val>
 where
-    T: Joinable<'val> + 'static,
+    T: Joinable<'val> + 'val,
 {
     Box::new(JoinableBox(joinable))
 }

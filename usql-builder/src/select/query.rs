@@ -1,5 +1,7 @@
 use core::fmt::Write;
 
+use alloc::boxed::Box;
+
 use crate::{
     Either,
     context::Context,
@@ -307,5 +309,48 @@ where
 {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         <Self as Expression<'a>>::build(self, ctx)
+    }
+}
+
+pub trait DynQuery<'a> {
+    fn build(self: Box<Self>, ctx: &mut Context<'a>) -> Result<(), Error>;
+}
+
+pub struct DynamicQuery<T>(pub T);
+
+impl<T> DynamicQuery<T> {
+    pub fn boxed_local<'a>(self) -> Box<dyn DynQuery<'a> + 'a>
+    where
+        T: Query<'a> + 'a,
+    {
+        Box::new(self)
+    }
+
+    pub fn boxed<'a>(self) -> Box<dyn DynQuery<'a>>
+    where
+        T: Query<'a> + 'static,
+    {
+        Box::new(self)
+    }
+}
+
+impl<'a, T> DynQuery<'a> for DynamicQuery<T>
+where
+    T: Query<'a>,
+{
+    fn build(self: Box<Self>, ctx: &mut Context<'a>) -> Result<(), Error> {
+        <T as Query<'a>>::build(self.0, ctx)
+    }
+}
+
+impl<'a> DynQuery<'a> for Box<dyn DynQuery<'a>> {
+    fn build(self: Box<Self>, ctx: &mut Context<'a>) -> Result<(), Error> {
+        (*self).build(ctx)
+    }
+}
+
+impl<'a> Query<'a> for Box<dyn DynQuery<'a>> {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        self.build(ctx)
     }
 }

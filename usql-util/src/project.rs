@@ -31,7 +31,17 @@ impl<'a> Project<'a> {
         self
     }
 
+    pub fn add_field(&mut self, map: ProjectField<'a>) -> &mut Self {
+        self.fields.push(map);
+        self
+    }
+
     pub fn relation(mut self, relation: ProjectRelation<'a>) -> Self {
+        self.relations.push(relation);
+        self
+    }
+
+    pub fn add_relation(&mut self, relation: ProjectRelation<'a>) -> &mut Self {
         self.relations.push(relation);
         self
     }

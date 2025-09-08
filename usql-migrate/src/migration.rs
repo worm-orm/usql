@@ -1,4 +1,4 @@
-use crate::exec::Exec;
+use crate::{error::Error, exec::Exec};
 use chrono::NaiveDateTime;
 use futures_core::future::BoxFuture;
 use usql_core::{Connection, Connector};
@@ -77,10 +77,10 @@ where
     T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
     fn up<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error<B>>> {
-        Box::pin(async move { self.0.up(conn).await.map_err(Error::unknown) })
+        Box::pin(async move { self.0.up(conn).await.map_err(Error::load) })
     }
 
     fn down<'a>(&'a self, conn: &'a Exec<'_, B>) -> BoxFuture<'a, Result<(), Error<B>>> {
-        Box::pin(async move { self.0.down(conn).await.map_err(Error::unknown) })
+        Box::pin(async move { self.0.down(conn).await.map_err(Error::load) })
     }
 }

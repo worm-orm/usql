@@ -1,12 +1,13 @@
 use std::path::PathBuf;
 
+use usql_core::Connector;
 use usql_migrate::{Migrator, sql::SqlLoader};
 use usql_sqlite::{Sqlite, SqliteOptions};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
     //
-    let pool = usql::Pool::<Sqlite>::open(SqliteOptions::default()).await?;
+    let pool = Sqlite::create_pool(SqliteOptions::default()).await?;
 
     let migrator = Migrator::<Sqlite, _>::new(
         pool.clone(),

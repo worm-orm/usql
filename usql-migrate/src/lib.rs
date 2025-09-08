@@ -1,4 +1,5 @@
 mod data;
+mod error;
 mod exec;
 mod loader;
 mod migration;
@@ -8,6 +9,7 @@ mod migrator;
 pub mod sql;
 
 pub use self::{
+    error::Error,
     exec::Exec,
     loader::MigrationLoader,
     migration::{Migration, MigrationInfo, Runner},

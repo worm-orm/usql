@@ -10,10 +10,11 @@ use std::{
 // };
 
 use chrono::Utc;
-use usql_core::{Connection, Connector, Executor};
+use usql_core::{Connection, Connector, Executor, Pool, Transaction};
 
 use crate::{
     data::{Entry, ensure_table, get_entry, insert_migration, list_entries},
+    error::Error,
     exec::Exec,
     loader::MigrationLoader,
     migration::{Migration, MigrationInfo, Runner},
@@ -58,7 +59,7 @@ where
 
     pub async fn has_migrations(&self) -> Result<bool, Error<B>> {
         let migrations = self.load_migrations().await?;
-        let conn = self.pool.conn().await?;
+        let conn = self.pool.get().await.map_err(Error::Connector)?;
         let entries = self.load_entries(&conn).await?;
         let ret = if entries.len() > migrations.len() {
             false
@@ -72,7 +73,7 @@ where
     }
 
     pub async fn list_migrations(&self) -> Result<Vec<Migration<T::Migration>>, Error<B>> {
-        let conn = self.pool.conn().await?;
+        let conn = self.pool.get().await.map_err(Error::Connector)?;
 
         ensure_table(&conn, &self.table_name).await?;
 
@@ -93,14 +94,14 @@ where
 
     pub async fn migrate(&self) -> Result<bool, Error<B>> {
         let migrations = self.load_migrations().await?;
-        let mut conn = self.pool.conn().await?;
+        let mut conn = self.pool.get().await.map_err(Error::Connector)?;
         let ret = self.migration_one(&mut conn, &migrations).await?;
         Ok(ret)
     }
 
     pub async fn migrate_all(&self) -> Result<bool, Error<B>> {
         let migrations = self.load_migrations().await?;
-        let mut conn = self.pool.conn().await?;
+        let mut conn = self.pool.get().await.map_err(Error::Connector)?;
         let mut ret = false;
         loop {
             if !self.migration_one(&mut conn, &migrations).await? {
@@ -130,10 +131,10 @@ where
 {
     async fn migration_one(
         &self,
-        conn: &mut Conn<B>,
+        conn: &mut B::Connection,
         migrations: &Vec<MigrationInfo<T::Migration>>,
     ) -> Result<bool, Error<B>> {
-        let trans = conn.begin().await?;
+        let trans = conn.begin().await.map_err(Error::Connector)?;
 
         let entries = self.load_entries(&trans).await?;
 
@@ -153,7 +154,7 @@ where
 
         let exec = Exec::new(trans);
 
-        migration.runner.up(&exec).await.map_err(Error::unknown)?;
+        migration.runner.up(&exec).await.map_err(Error::load)?;
 
         insert_migration(
             &exec,
@@ -163,7 +164,7 @@ where
         )
         .await?;
 
-        exec.conn.commit().await?;
+        exec.conn.commit().await.map_err(Error::Connector)?;
 
         Ok(true)
     }
@@ -193,7 +194,7 @@ where
                 panic!("Migration is already defined")
             }
 
-            let runner = self.loader.load(&path).await.map_err(Error::unknown)?;
+            let runner = self.loader.load(&path).await.map_err(Error::load)?;
 
             seen.insert(name.clone());
 

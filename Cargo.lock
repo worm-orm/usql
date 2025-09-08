@@ -3025,6 +3025,7 @@ dependencies = [
  "chrono",
  "futures-core",
  "futures-executor",
+ "thiserror 2.0.12",
  "tokio",
  "usql-builder",
  "usql-core",

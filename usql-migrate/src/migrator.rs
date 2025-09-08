@@ -3,11 +3,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use usql::{
-    Conn, Error,
-    core::{Connection, Connector, Executor},
-    value::chrono::Utc,
-};
+// use usql::{
+//     Conn, Error,
+//     core::{Connection, Connector, Executor},
+//     value::chrono::Utc,
+// };
+
+use chrono::Utc;
+use usql_core::{Connection, Connector, Executor};
 
 use crate::{
     data::{Entry, ensure_table, get_entry, insert_migration, list_entries},
@@ -20,7 +23,7 @@ pub struct Migrator<B, T>
 where
     B: Connector,
 {
-    pool: usql::Pool<B>,
+    pool: B::Pool,
     loader: T,
     path: PathBuf,
     table_name: String,
@@ -40,12 +43,7 @@ where
     <T::Migration as Runner<B>>::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
     T::Error: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
-    pub fn new(
-        pool: usql::Pool<B>,
-        loader: T,
-        path: PathBuf,
-        table_name: String,
-    ) -> Migrator<B, T> {
+    pub fn new(pool: B::Pool, loader: T, path: PathBuf, table_name: String) -> Migrator<B, T> {
         Migrator {
             pool,
             loader,

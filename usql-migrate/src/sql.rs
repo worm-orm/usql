@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use tokio::fs;
-use usql::core::{Connection, Connector, DatabaseInfo, Executor, System};
+use usql_core::{Connection, Connector, DatabaseInfo, Executor, System};
 
 use crate::{Exec, MigrationLoader, Runner};
 

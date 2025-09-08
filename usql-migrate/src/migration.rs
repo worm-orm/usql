@@ -1,10 +1,7 @@
 use crate::exec::Exec;
 use chrono::NaiveDateTime;
 use futures_core::future::BoxFuture;
-use usql::{
-    Error,
-    core::{Connection, Connector},
-};
+use usql_core::{Connection, Connector};
 
 #[derive(Debug)]
 pub struct Migration<T> {

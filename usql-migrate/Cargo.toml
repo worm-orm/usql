@@ -8,7 +8,9 @@ default = ["sql"]
 sql = ["tokio"]
 
 [dependencies]
-usql = { path = "../usql" }
+usql-core = { path = "../usql-core" }
+usql-value = { path = "../usql-value" }
+usql-builder = { path = "../usql-builder" }
 futures-core = { version = "0.3" }
 chrono = { version = "0.4", features = ["now"] }
 

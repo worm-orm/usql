@@ -3026,8 +3026,10 @@ dependencies = [
  "futures-core",
  "futures-executor",
  "tokio",
- "usql",
+ "usql-builder",
+ "usql-core",
  "usql-sqlite",
+ "usql-value",
 ]
 
 [[package]]

@@ -1,14 +1,11 @@
-use usql::{
-    Trans,
-    core::{Connection, Connector, Executor},
-    value::ValueCow,
-};
+use usql_core::{Connection, Connector, Executor, QueryStream};
+use usql_value::ValueCow;
 
 pub struct Exec<'a, B: Connector>
 where
     B::Connection: 'a,
 {
-    pub(crate) conn: Trans<'a, B>,
+    pub(crate) conn: <B::Connection as Connection>::Transaction<'a>,
 }
 
 impl<'a, B> Exec<'a, B>
@@ -16,7 +13,7 @@ where
     B: Connector,
     B::Connection: 'a,
 {
-    pub fn new(conn: Trans<'a, B>) -> Exec<'a, B> {
+    pub fn new(conn: <B::Connection as Connection>::Transaction<'a>) -> Exec<'a, B> {
         Exec { conn }
     }
 }
@@ -49,7 +46,7 @@ where
         &'a self,
         stmt: &'a mut <Self::Connector as Connector>::Statement,
         params: Vec<ValueCow<'a>>,
-    ) -> usql::core::QueryStream<'a, Self::Connector> {
+    ) -> QueryStream<'a, Self::Connector> {
         self.conn.query(stmt, params)
     }
 

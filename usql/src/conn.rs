@@ -67,7 +67,7 @@ where
         })
     }
 
-    pub async fn fetch_one<'a, Q>(&self, query: Q) -> Result<Row<B>, Error<B>>
+    pub async fn fetch_one<'a, Q>(&'a self, query: Q) -> Result<Row<B>, Error<B>>
     where
         Q: IntoQuery<'a, B>,
     {
@@ -78,9 +78,9 @@ where
         }
     }
 
-    pub async fn exec<'a, Q>(&self, query: Q) -> Result<(), Error<B>>
+    pub async fn exec<'this, 'query, Q>(&'this self, query: Q) -> Result<(), Error<B>>
     where
-        Q: IntoQuery<'a, B>,
+        Q: IntoQuery<'query, B>,
     {
         let mut query = query.into_query(&self.conn).await?;
 

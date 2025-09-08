@@ -41,9 +41,9 @@ where
         }
     }
 
-    pub async fn exec<'a, Q>(&'a self, query: Q) -> Result<(), Error<B>>
+    pub async fn exec<Q>(&self, query: Q) -> Result<(), Error<B>>
     where
-        Q: IntoQuery<'a, B>,
+        for<'a> Q: IntoQuery<'a, B>,
     {
         match self {
             Self::Conn(conn) => conn.exec(query).await,

@@ -62,9 +62,9 @@ where
         }
     }
 
-    pub async fn exec<'a, Q>(&self, query: Q) -> Result<(), Error<B>>
+    pub async fn exec<Q>(&self, query: Q) -> Result<(), Error<B>>
     where
-        Q: IntoQuery<'a, B>,
+        for<'a> Q: IntoQuery<'a, B>,
     {
         let mut query = query.into_query(&self.trans).await?;
 

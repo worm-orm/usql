@@ -43,9 +43,14 @@ where
         Ok(Trans::new(trans))
     }
 
-    pub async fn fetch<'a, Q>(&'a self, query: Q) -> Result<QueryStream<'a, B>, Error<B>>
+    pub async fn fetch<'this, 'query, 'stream, Q>(
+        &'this self,
+        query: Q,
+    ) -> Result<QueryStream<'stream, B>, Error<B>>
     where
-        Q: IntoQuery<'a, B>,
+        Q: IntoQuery<'query, B>,
+        'query: 'stream,
+        'this: 'stream,
     {
         let mut query = query.into_query(&self.conn).await?;
 
@@ -62,7 +67,7 @@ where
         })
     }
 
-    pub async fn fetch_one<'a, Q>(&'a self, query: Q) -> Result<Row<B>, Error<B>>
+    pub async fn fetch_one<'a, Q>(&self, query: Q) -> Result<Row<B>, Error<B>>
     where
         Q: IntoQuery<'a, B>,
     {
@@ -73,7 +78,7 @@ where
         }
     }
 
-    pub async fn exec<'a, Q>(&'a self, query: Q) -> Result<(), Error<B>>
+    pub async fn exec<'a, Q>(&self, query: Q) -> Result<(), Error<B>>
     where
         Q: IntoQuery<'a, B>,
     {

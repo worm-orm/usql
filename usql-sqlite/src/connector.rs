@@ -5,6 +5,8 @@ use super::{
     statement::Statement,
 };
 use usql_core::{Connector, DatabaseInfo, System};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Sqlite;
 
 impl Connector for Sqlite {

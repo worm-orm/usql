@@ -1,3 +1,4 @@
+use futures::TryStreamExt;
 use std::{
     collections::HashSet,
     path::{Path, PathBuf},
@@ -170,12 +171,13 @@ where
     }
 
     async fn load_migrations(&self) -> Result<Vec<MigrationInfo<T::Migration>>, Error<B>> {
-        let mut readdir = std::fs::read_dir(&self.path)
-            .unwrap()
-            .into_iter()
-            .map(|m| m.map(|m| m.path()))
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
+        let readdir = tokio::fs::read_dir(&self.path).await.map_err(Error::load)?;
+
+        let mut readdir = tokio_stream::wrappers::ReadDirStream::new(readdir)
+            .map_ok(|m| m.path())
+            .try_collect::<Vec<_>>()
+            .await
+            .map_err(Error::load)?;
 
         readdir.sort();
 
@@ -191,7 +193,7 @@ where
             let name = path.file_stem().unwrap().to_string_lossy().to_string();
 
             if seen.contains(&name) {
-                panic!("Migration is already defined")
+                return Err(Error::load(format!("Migration '{}' already found", name)));
             }
 
             let runner = self.loader.load(&path).await.map_err(Error::load)?;

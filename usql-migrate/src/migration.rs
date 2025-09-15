@@ -1,6 +1,6 @@
 use crate::{error::Error, exec::Exec};
 use chrono::NaiveDateTime;
-use futures_core::future::BoxFuture;
+use futures::future::BoxFuture;
 use usql_core::{Connection, Connector};
 
 #[derive(Debug)]

@@ -4,19 +4,26 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["sql"]
-sql = ["tokio"]
+# default = ["sql"]
+sql = []
 
 [dependencies]
 usql-core = { path = "../usql-core" }
 usql-value = { path = "../usql-value" }
 usql-builder = { path = "../usql-builder" }
-futures-core = { version = "0.3" }
+futures = { version = "0.3" }
 chrono = { version = "0.4", features = ["now"] }
 
-tokio = { version = "1", features = ["fs"], optional = true }
+tokio = { version = "1", features = ["fs"] }
+tokio-stream = { version = "0.1", features = ["fs"] }
 thiserror = { version = "2" }
 
 [dev-dependencies]
 futures-executor = "0.3"
 usql-sqlite = { path = "../usql-sqlite" }
+
+
+[[example]]
+name = "migrate"
+path = "examples/migrate.rs"
+required-features = ["sql"]

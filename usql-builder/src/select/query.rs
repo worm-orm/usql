@@ -220,6 +220,13 @@ where
 {
 }
 
+impl<'a, T, S> GroupQuery<'a> for SortSelect<T, S>
+where
+    T: Query<'a>,
+    S: SortKey<'a>,
+{
+}
+
 // Group
 impl<'a, S, G> LimitQuery<'a> for GroupSelect<S, G>
 where

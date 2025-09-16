@@ -80,7 +80,7 @@ pub trait Connection: Executor + Send + Sync {
     ) -> impl Future<Output = Result<Self::Transaction<'_>, <Self::Connector as Connector>::Error>> + Send;
 }
 
-pub trait Transaction<'conn>: Executor {
+pub trait Transaction<'conn>: Executor + Send + Sync {
     fn commit(
         self,
     ) -> impl Future<Output = Result<(), <Self::Connector as Connector>::Error>> + Send;

@@ -1,0 +1,11 @@
+[package]
+name = "usql-project"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+usql-core = { path = "../usql-core" }
+usql-value = { path = "../usql-value", features = ["serde"] }
+futures = { version = "0.3" }
+async-stream = "0.3"
+nonempty = { version = "0.12" }

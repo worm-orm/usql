@@ -5,10 +5,10 @@ use futures::{
     Stream, StreamExt,
     stream::{BoxStream, LocalBoxStream},
 };
-use usql_core::{ColumnIndex, Connector, Row};
+use usql_core::{ColumnIndex, Connector, Row as _};
 use usql_value::{Type, Value, ValueCow};
 
-use crate::result::IntoResult;
+use crate::{result::IntoResult, row::Row};
 
 #[derive(Clone, Debug)]
 pub struct Project<'a> {
@@ -58,9 +58,9 @@ impl<'a> Project<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
         S: Stream + Send + Unpin + 'b,
         S::Item: IntoResult + Send,
-        <S::Item as IntoResult>::Ok: Row,
+        <S::Item as IntoResult>::Ok: usql_core::Row,
         <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
-        <<<S::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+        <<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
             core::error::Error + Send + Sync + 'static,
         'a: 'b,
     {
@@ -70,7 +70,7 @@ impl<'a> Project<'a> {
             let mut cache = Vec::new();
 
 
-            while let Some(next) = self.next_row_async(&output,&mut stream, &mut cache).await {
+            while let Some(next) = self.next_value_async(&output,&mut stream, &mut cache).await {
                 cache.clear();
                 yield next;
             }
@@ -90,9 +90,9 @@ impl<'a> Project<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
         S: Stream + Unpin + 'b,
         S::Item: IntoResult,
-        <S::Item as IntoResult>::Ok: Row,
+        <S::Item as IntoResult>::Ok: usql_core::Row,
         <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
-        <<<S::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+        <<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
             core::error::Error + Send + Sync + 'static,
         'a: 'b,
     {
@@ -101,7 +101,7 @@ impl<'a> Project<'a> {
         let stream = async_stream::stream! {
             let mut cache = Vec::new();
 
-            while let Some(next) = self.next_row_async(&output,&mut stream, &mut cache).await {
+            while let Some(next) = self.next_value_async(&output,&mut stream, &mut cache).await {
                 cache.clear();
                 yield next;
             }
@@ -142,7 +142,7 @@ impl<'a> ProjectField<'a> {
 impl<'a> ProjectField<'a> {
     fn write<O, R>(&self, row: &R, writer: &mut O::Writer) -> anyhow::Result<()>
     where
-        R: Row,
+        R: usql_core::Row,
         <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
         O: Output,
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
@@ -238,7 +238,7 @@ impl<'a> ProjectRelation<'a> {
 impl<'a> ProjectRelation<'a> {
     fn write<O, R>(&self, output: &O, rows: &[R], result: &mut O::Writer) -> anyhow::Result<()>
     where
-        R: Row,
+        R: usql_core::Row,
         <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
         O: Output,
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
@@ -406,7 +406,7 @@ impl<'a> Project<'a> {
     //     Some(Ok(output.finalize()?))
     // }
 
-    pub async fn next_row_async<O, T>(
+    pub async fn next_value_async<O, T>(
         &self,
         output: &O,
         iter: &mut futures::stream::Peekable<T>,
@@ -417,9 +417,9 @@ impl<'a> Project<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
         T: Stream + Unpin,
         T::Item: IntoResult,
-        <T::Item as IntoResult>::Ok: Row,
+        <T::Item as IntoResult>::Ok: usql_core::Row,
         <T::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
-        <<<T::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+        <<<T::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
             core::error::Error + Send + Sync + 'static,
     {
         let mut iter = Pin::new(iter);
@@ -474,6 +474,62 @@ impl<'a> Project<'a> {
         }
 
         Some(result.finalize().map_err(Into::into))
+    }
+
+    pub async fn next_row_async<T>(
+        &self,
+        iter: &mut futures::stream::Peekable<T>,
+    ) -> Option<anyhow::Result<Row<<T::Item as IntoResult>::Ok>>>
+    where
+        T: Stream + Unpin,
+        T::Item: IntoResult,
+        <T::Item as IntoResult>::Ok: usql_core::Row,
+        <T::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
+        <<<T::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
+            core::error::Error + Send + Sync + 'static,
+    {
+        let mut iter = Pin::new(iter);
+
+        let next = match iter.next().await?.into_result() {
+            Ok(ret) => ret,
+            Err(err) => return Some(Err(err.into())),
+        };
+
+        let pk = match next.get(self.pk) {
+            Ok(ret) => ret,
+            Err(err) => return Some(Err(err.into())),
+        };
+
+        let pk = pk.to_owned();
+
+        let mut result = vec![next];
+
+        loop {
+            if let Some(peek) = iter.as_mut().peek().await {
+                let Ok(ret) = peek.as_result() else {
+                    break;
+                };
+
+                let next_pk = match ret.get(self.pk) {
+                    Ok(ret) => ret,
+                    Err(_) => break,
+                };
+
+                if next_pk.as_ref() != pk.as_ref() {
+                    break;
+                }
+            }
+
+            let Some(next) = iter.next().await else {
+                break;
+            };
+
+            let next = ok_or!(next.into_result());
+
+            result.push(next);
+        }
+
+        Some(Ok(Row {}))
     }
 }
 

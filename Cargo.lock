@@ -2971,6 +2971,7 @@ dependencies = [
  "usql-builder",
  "usql-core",
  "usql-macros",
+ "usql-project",
  "usql-sqlite",
  "usql-util",
  "usql-value",
@@ -3070,6 +3071,8 @@ dependencies = [
  "async-stream",
  "futures",
  "nonempty",
+ "serde",
+ "thiserror 2.0.12",
  "usql-core",
  "usql-value",
 ]

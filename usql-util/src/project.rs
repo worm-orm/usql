@@ -475,62 +475,6 @@ impl<'a> Project<'a> {
 
         Some(result.finalize().map_err(Into::into))
     }
-
-    pub async fn next_row_async<T>(
-        &self,
-        iter: &mut futures::stream::Peekable<T>,
-    ) -> Option<anyhow::Result<Row<<T::Item as IntoResult>::Ok>>>
-    where
-        T: Stream + Unpin,
-        T::Item: IntoResult,
-        <T::Item as IntoResult>::Ok: usql_core::Row,
-        <T::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
-        <<<T::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
-            core::error::Error + Send + Sync + 'static,
-    {
-        let mut iter = Pin::new(iter);
-
-        let next = match iter.next().await?.into_result() {
-            Ok(ret) => ret,
-            Err(err) => return Some(Err(err.into())),
-        };
-
-        let pk = match next.get(self.pk) {
-            Ok(ret) => ret,
-            Err(err) => return Some(Err(err.into())),
-        };
-
-        let pk = pk.to_owned();
-
-        let mut result = vec![next];
-
-        loop {
-            if let Some(peek) = iter.as_mut().peek().await {
-                let Ok(ret) = peek.as_result() else {
-                    break;
-                };
-
-                let next_pk = match ret.get(self.pk) {
-                    Ok(ret) => ret,
-                    Err(_) => break,
-                };
-
-                if next_pk.as_ref() != pk.as_ref() {
-                    break;
-                }
-            }
-
-            let Some(next) = iter.next().await else {
-                break;
-            };
-
-            let next = ok_or!(next.into_result());
-
-            result.push(next);
-        }
-
-        Some(Ok(Row {}))
-    }
 }
 
 pub trait Output {

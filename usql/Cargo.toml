@@ -24,7 +24,7 @@ async-stream = { version = "0.3" }
 futures = { version = "0.3" }
 usql-sqlite = { path = "../usql-sqlite", features = ["bundled"] }
 serde_json = "1.0"
-
+usql-project = { path = "../usql-project" }
 
 [[example]]
 name = "usql"

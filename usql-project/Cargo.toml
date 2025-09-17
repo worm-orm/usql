@@ -3,9 +3,16 @@ name = "usql-project"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["serde"]
+serde = ["dep:serde", "usql-value/serde"]
+
 [dependencies]
 usql-core = { path = "../usql-core" }
-usql-value = { path = "../usql-value", features = ["serde"] }
+usql-value = { path = "../usql-value", features = [] }
 futures = { version = "0.3" }
 async-stream = "0.3"
 nonempty = { version = "0.12" }
+thiserror = { version = "2" }
+
+serde = { version = "1", features = ["derive"], optional = true }

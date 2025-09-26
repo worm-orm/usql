@@ -7,7 +7,10 @@ use futures::{Stream, StreamExt};
 use usql_core::{Connector, Row as _};
 use usql_value::Value;
 
-use crate::{UnpackError, error::Error, project::Project, result::IntoResult, row::Row};
+use crate::{
+    Output, RowWriter, Unpack, UnpackError, error::Error, project::Project, result::IntoResult,
+    row::Row,
+};
 
 impl<'a> Project<'a> {
     // pub async fn next_row_async<'b, T>(
@@ -101,6 +104,23 @@ where
     pk: Value,
 }
 
+impl<'a, 'b, S> ProjectionStream<'a, 'b, S>
+where
+    S: Stream + Unpin,
+    S::Item: IntoResult,
+    <S::Item as IntoResult>::Ok: usql_core::Row,
+    <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
+    <<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
+        core::error::Error + Send + Sync + 'static,
+{
+    pub fn unpack<O: Output>(self, output: O) -> WriteTo<'a, 'b, S, O> {
+        WriteTo {
+            stream: self,
+            output,
+        }
+    }
+}
+
 impl<'a, 'b, S> Stream for ProjectionStream<'a, 'b, S>
 where
     S: Stream + Unpin,
@@ -160,6 +180,49 @@ where
             }
 
             this.cache.push(ret);
+        }
+    }
+}
+
+#[pin_project::pin_project]
+pub struct WriteTo<'a, 'b, S, O>
+where
+    S: Stream + Unpin,
+    S::Item: IntoResult,
+{
+    #[pin]
+    stream: ProjectionStream<'a, 'b, S>,
+    output: O,
+}
+
+impl<'a, 'b, S, O> Stream for WriteTo<'a, 'b, S, O>
+where
+    S: Stream + Unpin,
+    S::Item: IntoResult,
+    <S::Item as IntoResult>::Ok: usql_core::Row,
+    <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
+    <<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
+        core::error::Error + Send + Sync + 'static,
+    O: Output,
+{
+    type Item = Result<
+        <O::Writer as RowWriter>::Output,
+        Error<<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector>,
+    >;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
+        let this = self.project();
+
+        match ready!(this.stream.poll_next(cx)) {
+            Some(Ok(ret)) => {
+                let ret = ret.unpack(this.output.create()).map_err(Into::into);
+                Poll::Ready(Some(ret))
+            }
+            Some(Err(err)) => Poll::Ready(Some(Err(err))),
+            None => Poll::Ready(None),
         }
     }
 }

@@ -1,8 +1,7 @@
-use std::{collections::HashMap, convert::Infallible};
+use std::collections::HashMap;
 
+use crate::UnpackError;
 use usql_value::{Value, ValueCow};
-
-use crate::{BoxError, UnpackError};
 
 pub trait Unpack {
     fn unpack<W: RowWriter>(&self, writer: W) -> Result<W::Output, UnpackError>;

@@ -8,7 +8,9 @@ use usql_builder::{
     select::{IdentExt, Join, JoinQuery, Order, QueryExt, SortQuery, TargetExt, select},
 };
 use usql_core::{Connector, System};
-use usql_project::{DefaultWriter, Output, Project, ProjectField, ProjectRelation, Unpack};
+use usql_project::{
+    DefaultOutput, DefaultWriter, Output, Project, ProjectField, ProjectRelation, Unpack,
+};
 use usql_sqlite::{Sqlite, SqliteOptions};
 
 #[derive(Debug, FromRow)]
@@ -158,13 +160,12 @@ fn main() {
 
         let stream = conn.fetch(stmt).await?;
 
-        let mut stream = project.wrap_stream(stream);
+        let mut stream = project.wrap_stream(stream).unpack(DefaultOutput::default());
 
         // let mut stream = project.wrap_stream(SerdeOutput, stream.map_ok(|m| m.into_inner()));
 
         while let Some(row) = stream.try_next().await.unwrap() {
-            let value = row.unpack(DefaultWriter::default()).unwrap();
-            println!("{}", serde_json::to_string_pretty(&value).unwrap());
+            println!("{}", serde_json::to_string_pretty(&row).unwrap());
         }
 
         Result::<_, Error<usql_sqlite::Sqlite>>::Ok(())

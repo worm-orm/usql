@@ -16,3 +16,5 @@ nonempty = { version = "0.12" }
 thiserror = { version = "2" }
 
 serde = { version = "1", features = ["derive"], optional = true }
+
+pin-project = { version = "1" }

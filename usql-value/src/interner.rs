@@ -12,11 +12,7 @@ type Lock<T> = parking_lot::RwLock<T>;
 #[cfg(not(feature = "std"))]
 type Lock<T> = spin::RwLock<T>;
 
-#[cfg(not(feature = "hash"))]
 type Set<T> = alloc::collections::btree_set::BTreeSet<T>;
-
-#[cfg(feature = "hash")]
-type Set<T> = hashbrown::HashSet<T>;
 
 #[derive(Debug, Default, Clone)]
 pub struct Interner {

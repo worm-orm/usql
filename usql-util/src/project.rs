@@ -1,14 +1,12 @@
-use std::{borrow::Cow, collections::HashMap, convert::Infallible, pin::Pin};
-
+use crate::result::IntoResult;
 use anyhow::Context;
 use futures::{
     Stream, StreamExt,
     stream::{BoxStream, LocalBoxStream},
 };
+use std::{borrow::Cow, collections::HashMap, convert::Infallible, pin::Pin};
 use usql_core::{ColumnIndex, Connector, Row as _};
 use usql_value::{Type, Value, ValueCow};
-
-use crate::{result::IntoResult, row::Row};
 
 #[derive(Clone, Debug)]
 pub struct Project<'a> {

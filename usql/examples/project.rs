@@ -1,17 +1,14 @@
 use futures::TryStreamExt;
-use usql::{Error, FromRow, IntoQuery};
+use usql::{Error, FromRow};
 use usql_builder::{
-    StatementExt,
     expr::{ExpressionExt, val},
     mutate::{Set, insert},
     schema::{Column, ColumnType, ForeignKey, create_table},
     select::{IdentExt, Join, JoinQuery, Order, QueryExt, SortQuery, TargetExt, select},
 };
-use usql_core::{Connector, System};
-use usql_project::{
-    DefaultOutput, DefaultWriter, Output, Project, ProjectField, ProjectRelation, Unpack,
-};
-use usql_sqlite::{Sqlite, SqliteOptions};
+use usql_core::Connector;
+use usql_project::{DefaultOutput, Project, ProjectField, ProjectRelation};
+use usql_sqlite::SqliteOptions;
 
 #[derive(Debug, FromRow)]
 struct User {

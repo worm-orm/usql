@@ -3,7 +3,6 @@ use futures::TryStreamExt;
 use futures_core::{Stream, ready, stream::BoxStream};
 use pin_project_lite::pin_project;
 use usql_core::Connector;
-use usql_util::{Output, Project, Writer};
 
 use crate::{FromRow, error::Error, row::Row};
 
@@ -29,19 +28,6 @@ impl<'a, B: Connector> QueryStream<'a, B> {
             stream: self,
             data: PhantomData,
         }
-    }
-
-    pub fn project_into<O>(self, project: Project<'a>, output: O) -> ProjectStream<'a, O>
-    where
-        B: 'static,
-        O: Output + Send + Sync + 'a,
-        O::Writer: Send,
-        <O::Writer as Writer>::Output: Send,
-        <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
-        B::Error: core::error::Error + Send + Sync + 'static,
-    {
-        let stream = project.wrap_stream(output, self.stream.map_ok(|m| m.into_inner()));
-        ProjectStream { stream }
     }
 }
 
@@ -90,34 +76,6 @@ where
             Some(Err(err)) => Poll::Ready(Some(Err(err))),
             None => Poll::Ready(None),
         }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.stream.size_hint()
-    }
-}
-
-pin_project! {
-    pub struct ProjectStream<'a, O>
-where
-    O: Output,
-{
-    #[pin]
-    stream: BoxStream<'a, usql_util::anyhow::Result<<O::Writer as Writer>::Output>>,
-}
-}
-
-impl<'a, O> Stream for ProjectStream<'a, O>
-where
-    O: Output,
-{
-    type Item = usql_util::anyhow::Result<<O::Writer as Writer>::Output>;
-
-    fn poll_next(
-        self: core::pin::Pin<&mut Self>,
-        cx: &mut core::task::Context<'_>,
-    ) -> Poll<Option<Self::Item>> {
-        self.project().stream.poll_next(cx)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

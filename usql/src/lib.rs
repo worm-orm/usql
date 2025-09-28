@@ -16,7 +16,6 @@ mod typed;
 
 pub use usql_builder as builder;
 pub use usql_core as core;
-pub use usql_util as util;
 pub use usql_value as value;
 
 pub use self::{
@@ -26,7 +25,7 @@ pub use self::{
     pool::Pool,
     query::IntoQuery,
     row::Row,
-    stream::{FromRowStream, ProjectStream, QueryStream},
+    stream::{FromRowStream, QueryStream},
     target::Target,
     trans::Trans,
     typed::Typed,

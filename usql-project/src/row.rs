@@ -1,17 +1,17 @@
 use crate::{
-    UnpackError,
+    ColumnIndex, UnpackError,
     error::Error,
     project::{Project, ProjectField, ProjectRelation, RelationKind},
     writer::{RowWriter, Unpack},
 };
-use usql_core::{ColumnIndex, Connector};
+use usql_core::Connector;
 
-pub struct Row<'a, 'b, T: usql_core::Row> {
+pub struct Row<'a, T: usql_core::Row> {
     pub(crate) rows: Vec<T>,
-    pub(crate) project: &'a Project<'b>,
+    pub(crate) project: &'a Project,
 }
 
-impl<'a, 'b, T: usql_core::Row> Unpack for Row<'a, 'b, T>
+impl<'a, T: usql_core::Row> Unpack for Row<'a, T>
 where
     <T::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
 {
@@ -22,7 +22,7 @@ where
     }
 }
 
-impl Project<'_> {
+impl Project {
     fn write<W: RowWriter, T: usql_core::Row>(
         &self,
         writer: &mut W,
@@ -48,7 +48,7 @@ impl Project<'_> {
     }
 }
 
-impl<'a> ProjectField<'a> {
+impl ProjectField {
     fn write<O, R>(&self, row: &R, writer: &mut O) -> Result<(), UnpackError>
     where
         R: usql_core::Row,
@@ -57,9 +57,9 @@ impl<'a> ProjectField<'a> {
     {
         let value = match &self.ty {
             Some(v) => row
-                .get_typed(self.index.clone(), v.clone())
+                .get_typed((&self.index).into(), v.clone())
                 .map_err(UnpackError::new)?,
-            None => row.get(self.index.clone()).map_err(UnpackError::new)?,
+            None => row.get((&self.index).into()).map_err(UnpackError::new)?,
         };
 
         let key = self
@@ -78,7 +78,7 @@ impl<'a> ProjectField<'a> {
     }
 }
 
-impl ProjectRelation<'_> {
+impl ProjectRelation {
     fn write<W, T>(&self, writer: &mut W, rows: &[T]) -> Result<(), UnpackError>
     where
         W: RowWriter,
@@ -94,7 +94,7 @@ impl ProjectRelation<'_> {
                 loop {
                     let Some((idx, row)) = iter.next() else { break };
 
-                    let pk = row.get(self.pk).map_err(UnpackError::new)?;
+                    let pk = row.get((&self.pk).into()).map_err(UnpackError::new)?;
 
                     if pk.as_ref().is_null() {
                         break;
@@ -106,7 +106,7 @@ impl ProjectRelation<'_> {
                             break;
                         };
 
-                        let next_pk = next.get(self.pk).map_err(UnpackError::new)?;
+                        let next_pk = next.get((&self.pk).into()).map_err(UnpackError::new)?;
 
                         if next_pk.as_ref().is_null() || next_pk != pk {
                             break;
@@ -136,7 +136,7 @@ impl ProjectRelation<'_> {
                     return Ok(());
                 };
 
-                let pk = row.get(self.pk).map_err(UnpackError::new)?;
+                let pk = row.get((&self.pk).into()).map_err(UnpackError::new)?;
 
                 if pk.as_ref().is_null() {
                     return Ok(());
@@ -148,7 +148,7 @@ impl ProjectRelation<'_> {
                         break;
                     };
 
-                    let next_pk = next.get(self.pk).map_err(UnpackError::new)?;
+                    let next_pk = next.get((&self.pk).into()).map_err(UnpackError::new)?;
 
                     if next_pk.as_ref().is_null() || next_pk != pk {
                         break;
@@ -178,9 +178,9 @@ impl ProjectRelation<'_> {
 }
 
 pub struct RowRef<'a, T: usql_core::Row> {
-    pub(crate) pk: &'a ColumnIndex<'a>,
-    pub(crate) relations: &'a Vec<ProjectRelation<'a>>,
-    pub(crate) fields: &'a Vec<ProjectField<'a>>,
+    pub(crate) pk: &'a ColumnIndex,
+    pub(crate) relations: &'a Vec<ProjectRelation>,
+    pub(crate) fields: &'a Vec<ProjectField>,
     pub(crate) rows: &'a [T],
 }
 

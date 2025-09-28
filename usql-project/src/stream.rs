@@ -12,7 +12,7 @@ use crate::{
     row::Row,
 };
 
-impl<'a> Project<'a> {
+impl Project {
     // pub async fn next_row_async<'b, T>(
     //     &'b self,
     //     iter: &mut futures::stream::Peekable<T>,
@@ -75,7 +75,7 @@ impl<'a> Project<'a> {
     //     }))
     // }
 
-    pub fn wrap_stream<'b, S>(&'b self, stream: S) -> ProjectionStream<'b, 'a, S>
+    pub fn wrap_stream<'b, S>(&'b self, stream: S) -> ProjectionStream<'b, S>
     where
         S: Stream + Unpin,
         S::Item: IntoResult,
@@ -93,18 +93,18 @@ impl<'a> Project<'a> {
     }
 }
 
-pub struct ProjectionStream<'a, 'b, S>
+pub struct ProjectionStream<'a, S>
 where
     S: Stream + Unpin,
     S::Item: IntoResult,
 {
     stream: S,
-    project: &'a Project<'b>,
+    project: &'a Project,
     cache: Vec<<S::Item as IntoResult>::Ok>,
     pk: Value,
 }
 
-impl<'a, 'b, S> ProjectionStream<'a, 'b, S>
+impl<'a, S> ProjectionStream<'a, S>
 where
     S: Stream + Unpin,
     S::Item: IntoResult,
@@ -113,7 +113,7 @@ where
     <<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
         core::error::Error + Send + Sync + 'static,
 {
-    pub fn unpack<O: Output>(self, output: O) -> WriteTo<'a, 'b, S, O> {
+    pub fn unpack<O: Output>(self, output: O) -> WriteTo<'a, S, O> {
         WriteTo {
             stream: self,
             output,
@@ -121,7 +121,7 @@ where
     }
 }
 
-impl<'a, 'b, S> Stream for ProjectionStream<'a, 'b, S>
+impl<'a, S> Stream for ProjectionStream<'a, S>
 where
     S: Stream + Unpin,
     S::Item: IntoResult,
@@ -131,7 +131,7 @@ where
         core::error::Error + Send + Sync + 'static,
 {
     type Item = Result<
-        Row<'a, 'b, <S::Item as IntoResult>::Ok>,
+        Row<'a, <S::Item as IntoResult>::Ok>,
         Error<<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector>,
     >;
 
@@ -163,7 +163,7 @@ where
                 Err(err) => return Poll::Ready(Some(Err(UnpackError::new(err).into()))),
             };
 
-            let pk = match ret.get(this.project.pk) {
+            let pk = match ret.get((&this.project.pk).into()) {
                 Ok(ret) => ret.to_owned(),
                 Err(err) => return Poll::Ready(Some(Err(Error::Connector(err)))),
             };
@@ -185,17 +185,17 @@ where
 }
 
 #[pin_project::pin_project]
-pub struct WriteTo<'a, 'b, S, O>
+pub struct WriteTo<'a, S, O>
 where
     S: Stream + Unpin,
     S::Item: IntoResult,
 {
     #[pin]
-    stream: ProjectionStream<'a, 'b, S>,
+    stream: ProjectionStream<'a, S>,
     output: O,
 }
 
-impl<'a, 'b, S, O> Stream for WriteTo<'a, 'b, S, O>
+impl<'a, S, O> Stream for WriteTo<'a, S, O>
 where
     S: Stream + Unpin,
     S::Item: IntoResult,

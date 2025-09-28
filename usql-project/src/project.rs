@@ -1,16 +1,52 @@
-use std::borrow::Cow;
+use usql_value::{Atom, Type};
 
-use usql_core::ColumnIndex;
-use usql_value::Type;
-
-pub struct Project<'a> {
-    pub(crate) pk: ColumnIndex<'a>,
-    pub(crate) fields: Vec<ProjectField<'a>>,
-    pub(crate) relations: Vec<ProjectRelation<'a>>,
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ColumnIndex {
+    Named(Atom),
+    Index(usize),
 }
 
-impl<'a> Project<'a> {
-    pub fn new(pk: impl Into<ColumnIndex<'a>>) -> Project<'a> {
+impl<'a> From<&'a ColumnIndex> for usql_core::ColumnIndex<'a> {
+    fn from(value: &'a ColumnIndex) -> Self {
+        match value {
+            ColumnIndex::Index(idx) => usql_core::ColumnIndex::Index(*idx),
+            ColumnIndex::Named(named) => usql_core::ColumnIndex::Named(named),
+        }
+    }
+}
+
+impl From<Atom> for ColumnIndex {
+    fn from(value: Atom) -> Self {
+        ColumnIndex::Named(value)
+    }
+}
+
+impl<'a> From<&'a str> for ColumnIndex {
+    fn from(value: &'a str) -> Self {
+        ColumnIndex::Named(value.into())
+    }
+}
+
+impl From<i32> for ColumnIndex {
+    fn from(value: i32) -> Self {
+        ColumnIndex::Index(value as _)
+    }
+}
+
+impl From<usize> for ColumnIndex {
+    fn from(value: usize) -> Self {
+        ColumnIndex::Index(value as _)
+    }
+}
+
+pub struct Project {
+    pub(crate) pk: ColumnIndex,
+    pub(crate) fields: Vec<ProjectField>,
+    pub(crate) relations: Vec<ProjectRelation>,
+}
+
+impl Project {
+    pub fn new(pk: impl Into<ColumnIndex>) -> Project {
         Project {
             pk: pk.into(),
             relations: Default::default(),
@@ -18,36 +54,36 @@ impl<'a> Project<'a> {
         }
     }
 
-    pub fn field(mut self, map: ProjectField<'a>) -> Self {
+    pub fn field(mut self, map: ProjectField) -> Self {
         self.fields.push(map);
         self
     }
 
-    pub fn add_field(&mut self, map: ProjectField<'a>) -> &mut Self {
+    pub fn add_field(&mut self, map: ProjectField) -> &mut Self {
         self.fields.push(map);
         self
     }
 
-    pub fn relation(mut self, relation: ProjectRelation<'a>) -> Self {
+    pub fn relation(mut self, relation: ProjectRelation) -> Self {
         self.relations.push(relation);
         self
     }
 
-    pub fn add_relation(&mut self, relation: ProjectRelation<'a>) -> &mut Self {
+    pub fn add_relation(&mut self, relation: ProjectRelation) -> &mut Self {
         self.relations.push(relation);
         self
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct ProjectField<'a> {
-    pub(crate) index: ColumnIndex<'a>,
-    pub(crate) map: Option<Cow<'a, str>>,
+pub struct ProjectField {
+    pub(crate) index: ColumnIndex,
+    pub(crate) map: Option<Atom>,
     pub(crate) ty: Option<Type>,
 }
 
-impl<'a> ProjectField<'a> {
-    pub fn new(index: impl Into<ColumnIndex<'a>>) -> ProjectField<'a> {
+impl ProjectField {
+    pub fn new(index: impl Into<ColumnIndex>) -> ProjectField {
         ProjectField {
             index: index.into(),
             map: None,
@@ -55,7 +91,7 @@ impl<'a> ProjectField<'a> {
         }
     }
 
-    pub fn map(mut self, mapping: impl Into<Cow<'a, str>>) -> Self {
+    pub fn map(mut self, mapping: impl Into<Atom>) -> Self {
         self.map = Some(mapping.into());
         self
     }
@@ -73,20 +109,20 @@ pub enum RelationKind {
 }
 
 #[derive(Clone, Debug)]
-pub struct ProjectRelation<'a> {
+pub struct ProjectRelation {
     pub(crate) kind: RelationKind,
-    pub(crate) pk: ColumnIndex<'a>,
-    pub(crate) name: Cow<'a, str>,
-    pub(crate) relations: Vec<ProjectRelation<'a>>,
-    pub(crate) fields: Vec<ProjectField<'a>>,
+    pub(crate) pk: ColumnIndex,
+    pub(crate) name: Atom,
+    pub(crate) relations: Vec<ProjectRelation>,
+    pub(crate) fields: Vec<ProjectField>,
 }
 
-impl<'a> ProjectRelation<'a> {
+impl ProjectRelation {
     pub fn from_project(
-        project: Project<'a>,
+        project: Project,
         kind: RelationKind,
-        name: impl Into<Cow<'a, str>>,
-    ) -> ProjectRelation<'a> {
+        name: impl Into<Atom>,
+    ) -> ProjectRelation {
         ProjectRelation {
             kind,
             pk: project.pk,
@@ -96,10 +132,7 @@ impl<'a> ProjectRelation<'a> {
         }
     }
 
-    pub fn single(
-        index: impl Into<ColumnIndex<'a>>,
-        name: impl Into<Cow<'a, str>>,
-    ) -> ProjectRelation<'a> {
+    pub fn single(index: impl Into<ColumnIndex>, name: impl Into<Atom>) -> ProjectRelation {
         ProjectRelation {
             kind: RelationKind::One,
             pk: index.into(),
@@ -109,10 +142,7 @@ impl<'a> ProjectRelation<'a> {
         }
     }
 
-    pub fn many(
-        index: impl Into<ColumnIndex<'a>>,
-        name: impl Into<Cow<'a, str>>,
-    ) -> ProjectRelation<'a> {
+    pub fn many(index: impl Into<ColumnIndex>, name: impl Into<Atom>) -> ProjectRelation {
         ProjectRelation {
             kind: RelationKind::Many,
             pk: index.into(),
@@ -122,12 +152,12 @@ impl<'a> ProjectRelation<'a> {
         }
     }
 
-    pub fn field(mut self, map: ProjectField<'a>) -> Self {
+    pub fn field(mut self, map: ProjectField) -> Self {
         self.fields.push(map);
         self
     }
 
-    pub fn relation(mut self, relation: ProjectRelation<'a>) -> Self {
+    pub fn relation(mut self, relation: ProjectRelation) -> Self {
         self.relations.push(relation);
         self
     }

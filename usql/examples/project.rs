@@ -1,15 +1,14 @@
 use futures::TryStreamExt;
-use usql::{Error, FromRow, IntoQuery};
+use usql::{Error, FromRow};
 use usql_builder::{
-    StatementExt,
     expr::{ExpressionExt, val},
     mutate::{Set, insert},
     schema::{Column, ColumnType, ForeignKey, create_table},
     select::{IdentExt, Join, JoinQuery, Order, QueryExt, SortQuery, TargetExt, select},
 };
-use usql_core::{Connector, System};
-use usql_sqlite::{Sqlite, SqliteOptions};
-use usql_util::{DefaultOutput, Output, Project, ProjectField, ProjectRelation, Writer};
+use usql_core::Connector;
+use usql_project::{DefaultOutput, Project, ProjectField, ProjectRelation};
+use usql_sqlite::SqliteOptions;
 
 #[derive(Debug, FromRow)]
 struct User {
@@ -156,17 +155,15 @@ fn main() {
 
         // println!("Stmt {}", stmt.to_sql(System::Sqlite).unwrap());
 
-        let mut stream = conn.fetch(stmt).await?.project_into(project, DefaultOutput);
+        let stream = conn.fetch(stmt).await?;
+
+        let mut stream = project.wrap_stream(stream).unpack(DefaultOutput::default());
 
         // let mut stream = project.wrap_stream(SerdeOutput, stream.map_ok(|m| m.into_inner()));
 
         while let Some(row) = stream.try_next().await.unwrap() {
             println!("{}", serde_json::to_string_pretty(&row).unwrap());
         }
-
-        let stmt = conn.fetch_one("SELECT vec_version()").await?;
-
-        println!("Vector {}", stmt.try_get::<String, _>(0).unwrap());
 
         Result::<_, Error<usql_sqlite::Sqlite>>::Ok(())
     })

@@ -1461,6 +1461,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "nonempty"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9737e026353e5cd0736f98eddae28665118eb6f6600902a7f50db585621fecb6"
+
+[[package]]
 name = "num-conv"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1657,6 +1663,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
 dependencies = [
  "siphasher",
+]
+
+[[package]]
+name = "pin-project"
+version = "1.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "677f1add503faace112b9f1373e43e9e054bfdd22ff1a63c1bc485eaec6a6a8a"
+dependencies = [
+ "pin-project-internal",
+]
+
+[[package]]
+name = "pin-project-internal"
+version = "1.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e918e4ff8c4549eb882f14b3a4bc8c8bc93de829416eacf579f1207a8fbf861"
+dependencies = [
+ "proc-macro2 1.0.95",
+ "quote 1.0.40",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -2965,8 +2991,8 @@ dependencies = [
  "usql-builder",
  "usql-core",
  "usql-macros",
+ "usql-project",
  "usql-sqlite",
- "usql-util",
  "usql-value",
 ]
 
@@ -3053,6 +3079,20 @@ dependencies = [
  "deadpool-postgres",
  "futures",
  "tokio-postgres",
+ "usql-core",
+ "usql-value",
+]
+
+[[package]]
+name = "usql-project"
+version = "0.1.0"
+dependencies = [
+ "async-stream",
+ "futures",
+ "nonempty",
+ "pin-project",
+ "serde",
+ "thiserror 2.0.12",
  "usql-core",
  "usql-value",
 ]

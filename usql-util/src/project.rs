@@ -1,14 +1,12 @@
-use std::{borrow::Cow, collections::HashMap, convert::Infallible, pin::Pin};
-
+use crate::result::IntoResult;
 use anyhow::Context;
 use futures::{
     Stream, StreamExt,
     stream::{BoxStream, LocalBoxStream},
 };
-use usql_core::{ColumnIndex, Connector, Row};
+use std::{borrow::Cow, collections::HashMap, convert::Infallible, pin::Pin};
+use usql_core::{ColumnIndex, Connector, Row as _};
 use usql_value::{Type, Value, ValueCow};
-
-use crate::result::IntoResult;
 
 #[derive(Clone, Debug)]
 pub struct Project<'a> {
@@ -58,9 +56,9 @@ impl<'a> Project<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
         S: Stream + Send + Unpin + 'b,
         S::Item: IntoResult + Send,
-        <S::Item as IntoResult>::Ok: Row,
+        <S::Item as IntoResult>::Ok: usql_core::Row,
         <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
-        <<<S::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+        <<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
             core::error::Error + Send + Sync + 'static,
         'a: 'b,
     {
@@ -70,7 +68,7 @@ impl<'a> Project<'a> {
             let mut cache = Vec::new();
 
 
-            while let Some(next) = self.next_row_async(&output,&mut stream, &mut cache).await {
+            while let Some(next) = self.next_value_async(&output,&mut stream, &mut cache).await {
                 cache.clear();
                 yield next;
             }
@@ -90,9 +88,9 @@ impl<'a> Project<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
         S: Stream + Unpin + 'b,
         S::Item: IntoResult,
-        <S::Item as IntoResult>::Ok: Row,
+        <S::Item as IntoResult>::Ok: usql_core::Row,
         <S::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
-        <<<S::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+        <<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
             core::error::Error + Send + Sync + 'static,
         'a: 'b,
     {
@@ -101,7 +99,7 @@ impl<'a> Project<'a> {
         let stream = async_stream::stream! {
             let mut cache = Vec::new();
 
-            while let Some(next) = self.next_row_async(&output,&mut stream, &mut cache).await {
+            while let Some(next) = self.next_value_async(&output,&mut stream, &mut cache).await {
                 cache.clear();
                 yield next;
             }
@@ -142,7 +140,7 @@ impl<'a> ProjectField<'a> {
 impl<'a> ProjectField<'a> {
     fn write<O, R>(&self, row: &R, writer: &mut O::Writer) -> anyhow::Result<()>
     where
-        R: Row,
+        R: usql_core::Row,
         <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
         O: Output,
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
@@ -238,7 +236,7 @@ impl<'a> ProjectRelation<'a> {
 impl<'a> ProjectRelation<'a> {
     fn write<O, R>(&self, output: &O, rows: &[R], result: &mut O::Writer) -> anyhow::Result<()>
     where
-        R: Row,
+        R: usql_core::Row,
         <R::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
         O: Output,
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
@@ -406,7 +404,7 @@ impl<'a> Project<'a> {
     //     Some(Ok(output.finalize()?))
     // }
 
-    pub async fn next_row_async<O, T>(
+    pub async fn next_value_async<O, T>(
         &self,
         output: &O,
         iter: &mut futures::stream::Peekable<T>,
@@ -417,9 +415,9 @@ impl<'a> Project<'a> {
         <O::Writer as Writer>::Error: core::error::Error + Send + Sync + 'static,
         T: Stream + Unpin,
         T::Item: IntoResult,
-        <T::Item as IntoResult>::Ok: Row,
+        <T::Item as IntoResult>::Ok: usql_core::Row,
         <T::Item as IntoResult>::Error: core::error::Error + Send + Sync + 'static,
-        <<<T::Item as IntoResult>::Ok as Row>::Connector as Connector>::Error:
+        <<<T::Item as IntoResult>::Ok as usql_core::Row>::Connector as Connector>::Error:
             core::error::Error + Send + Sync + 'static,
     {
         let mut iter = Pin::new(iter);

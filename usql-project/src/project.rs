@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use usql_value::{Atom, Type};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -39,38 +41,48 @@ impl From<usize> for ColumnIndex {
     }
 }
 
-pub struct Project {
+#[derive(Clone, Debug)]
+pub(crate) struct ProjectInner {
     pub(crate) pk: ColumnIndex,
     pub(crate) fields: Vec<ProjectField>,
     pub(crate) relations: Vec<ProjectRelation>,
 }
 
+#[derive(Clone, Debug)]
+pub struct Project(Arc<ProjectInner>);
+
+impl Project {
+    pub(crate) fn inner(&self) -> &ProjectInner {
+        &self.0
+    }
+}
+
 impl Project {
     pub fn new(pk: impl Into<ColumnIndex>) -> Project {
-        Project {
+        Project(Arc::new(ProjectInner {
             pk: pk.into(),
             relations: Default::default(),
             fields: Default::default(),
-        }
+        }))
     }
 
     pub fn field(mut self, map: ProjectField) -> Self {
-        self.fields.push(map);
+        Arc::make_mut(&mut self.0).fields.push(map);
         self
     }
 
     pub fn add_field(&mut self, map: ProjectField) -> &mut Self {
-        self.fields.push(map);
+        Arc::make_mut(&mut self.0).fields.push(map);
         self
     }
 
     pub fn relation(mut self, relation: ProjectRelation) -> Self {
-        self.relations.push(relation);
+        Arc::make_mut(&mut self.0).relations.push(relation);
         self
     }
 
     pub fn add_relation(&mut self, relation: ProjectRelation) -> &mut Self {
-        self.relations.push(relation);
+        Arc::make_mut(&mut self.0).relations.push(relation);
         self
     }
 }
@@ -123,6 +135,8 @@ impl ProjectRelation {
         kind: RelationKind,
         name: impl Into<Atom>,
     ) -> ProjectRelation {
+        let project = Arc::try_unwrap(project.0).unwrap_or_else(|m| (*m).clone());
+
         ProjectRelation {
             kind,
             pk: project.pk,

@@ -1,17 +1,16 @@
 use crate::{
     ColumnIndex, UnpackError,
-    error::Error,
     project::{Project, ProjectField, ProjectRelation, RelationKind},
     writer::{RowWriter, Unpack},
 };
 use usql_core::Connector;
 
-pub struct Row<'a, T: usql_core::Row> {
+pub struct Row<T: usql_core::Row> {
     pub(crate) rows: Vec<T>,
-    pub(crate) project: &'a Project,
+    pub(crate) project: Project,
 }
 
-impl<'a, T: usql_core::Row> Unpack for Row<'a, T>
+impl<T: usql_core::Row> Unpack for Row<T>
 where
     <T::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
 {
@@ -36,11 +35,11 @@ impl Project {
             todo!("Empty")
         };
 
-        for field in &self.fields {
+        for field in &self.inner().fields {
             field.write(first, writer)?;
         }
 
-        for relation in &self.relations {
+        for relation in &self.inner().relations {
             relation.write(writer, rows)?;
         }
 

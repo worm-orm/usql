@@ -3,7 +3,7 @@ use std::{
     task::{Poll, ready},
 };
 
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use usql_core::{Connector, Row as _};
 use usql_value::Value;
 
@@ -131,7 +131,7 @@ where
         core::error::Error + Send + Sync + 'static,
 {
     type Item = Result<
-        Row<'a, <S::Item as IntoResult>::Ok>,
+        Row<<S::Item as IntoResult>::Ok>,
         Error<<<S::Item as IntoResult>::Ok as usql_core::Row>::Connector>,
     >;
 
@@ -153,7 +153,7 @@ where
 
                     return Poll::Ready(Some(Ok(Row {
                         rows,
-                        project: this.project,
+                        project: this.project.clone(),
                     })));
                 }
             };
@@ -163,7 +163,7 @@ where
                 Err(err) => return Poll::Ready(Some(Err(UnpackError::new(err).into()))),
             };
 
-            let pk = match ret.get((&this.project.pk).into()) {
+            let pk = match ret.get((&this.project.inner().pk).into()) {
                 Ok(ret) => ret.to_owned(),
                 Err(err) => return Poll::Ready(Some(Err(Error::Connector(err)))),
             };
@@ -175,7 +175,7 @@ where
                 let rows = core::mem::replace(&mut this.cache, vec![ret]);
                 return Poll::Ready(Some(Ok(Row {
                     rows,
-                    project: this.project,
+                    project: this.project.clone(),
                 })));
             }
 

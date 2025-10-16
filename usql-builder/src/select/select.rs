@@ -44,13 +44,12 @@ mod tests {
     use crate::{
         context::Context,
         error::Error,
-        expr::Expression,
         select::{selection::Selection, target::Target},
     };
 
     struct MockTarget;
     struct MockSelection;
-    struct MockExpression;
+    // struct MockExpression;
 
     impl<'a> Target<'a> for MockTarget {
         fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
@@ -66,12 +65,12 @@ mod tests {
         }
     }
 
-    impl<'a> Expression<'a> for MockExpression {
-        fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
-            ctx.write_str("mock_expression")?;
-            Ok(())
-        }
-    }
+    // impl<'a> Expression<'a> for MockExpression {
+    //     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+    //         ctx.write_str("mock_expression")?;
+    //         Ok(())
+    //     }
+    // }
 
     #[test]
     fn test_select_build() {

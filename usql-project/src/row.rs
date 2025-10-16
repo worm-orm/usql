@@ -16,8 +16,7 @@ where
 {
     fn unpack<W: RowWriter>(&self, mut writer: W) -> Result<W::Output, UnpackError> {
         self.project.write(&mut writer, &self.rows)?;
-
-        writer.finish().map_err(UnpackError::new)
+        writer.finish()
     }
 }
 
@@ -32,7 +31,7 @@ impl Project {
         W: RowWriter,
     {
         let Some(first) = rows.first() else {
-            todo!("Empty")
+            return Err(UnpackError::new("Tried to unpack an empty row"));
         };
 
         for field in &self.inner().fields {
@@ -69,6 +68,7 @@ impl ProjectField {
                 ColumnIndex::Named(n) => Some(&*n),
                 ColumnIndex::Index(idx) => row.column_name(*idx),
             })
+            // Should never happen as we checked the validity of the index above
             .expect("key");
 
         writer.set_value(key, value)?;
@@ -117,7 +117,6 @@ impl ProjectRelation {
                     }
 
                     cache.push(RowRef {
-                        pk: &self.pk,
                         fields: &self.fields,
                         relations: &self.relations,
                         rows: &rows[idx..end],
@@ -162,7 +161,6 @@ impl ProjectRelation {
                     .set_one(
                         &self.name,
                         RowRef {
-                            pk: &self.pk,
                             relations: &self.relations,
                             fields: &self.fields,
                             rows: &rows[idx..end],
@@ -176,11 +174,10 @@ impl ProjectRelation {
     }
 }
 
-pub struct RowRef<'a, T: usql_core::Row> {
-    pub(crate) pk: &'a ColumnIndex,
-    pub(crate) relations: &'a Vec<ProjectRelation>,
-    pub(crate) fields: &'a Vec<ProjectField>,
-    pub(crate) rows: &'a [T],
+struct RowRef<'a, T: usql_core::Row> {
+    pub relations: &'a Vec<ProjectRelation>,
+    pub fields: &'a Vec<ProjectField>,
+    pub rows: &'a [T],
 }
 
 impl<'a, T: usql_core::Row> Unpack for RowRef<'a, T>
@@ -189,7 +186,7 @@ where
 {
     fn unpack<W: RowWriter>(&self, mut writer: W) -> Result<W::Output, UnpackError> {
         let Some(first) = self.rows.first() else {
-            todo!("Empty")
+            return Err(UnpackError::new("Tried to unpack an empty row"));
         };
 
         for field in self.fields {
@@ -204,90 +201,89 @@ where
     }
 }
 
-// #[cfg(feature = "serde")]
-// mod serialize {
+#[cfg(feature = "serde")]
+mod serialize {
 
-//     use serde::ser::{Serialize, SerializeMap, Serializer};
-//     use usql_core::Connector;
-//     use usql_value::ValueCow;
+    use serde::ser::{Error as _, Serialize, SerializeMap, Serializer};
+    use usql_core::Connector;
+    use usql_value::ValueCow;
 
-//     use crate::{RowWriter, Unpack, UnpackError};
+    use crate::{RowWriter, Unpack, UnpackError};
 
-//     use super::Row;
+    use super::Row;
 
-//     struct RowSerializer<S: SerializeMap> {
-//         s: S,
-//     }
+    struct RowSerializer<S: SerializeMap> {
+        s: S,
+    }
 
-//     struct RowRel<R: Unpack> {
-//         row: R,
-//     }
+    struct RowRel<R: Unpack> {
+        row: R,
+    }
 
-//     impl<S: SerializeMap> RowWriter for RowSerializer<S>
-//     where
-//         S::Error: core::error::Error + Send + Sync + 'static,
-//     {
-//         type Output = S::Ok;
-//         fn set_value(&mut self, field: &str, value: ValueCow<'_>) -> Result<(), UnpackError> {
-//             self.s
-//                 .serialize_entry(field, &value.to_owned())
-//                 .map_err(UnpackError::new)
-//         }
-//         fn set_many<I: Iterator>(&mut self, relation: &str, many: I) -> Result<(), UnpackError>
-//         where
-//             I::Item: Unpack,
-//         {
-//             self.s
-//                 .serialize_entry(
-//                     relation,
-//                     &many.map(|row| RowRel { row }).collect::<Vec<_>>(),
-//                 )
-//                 .map_err(UnpackError::new)?;
-//             Ok(())
-//         }
-//         fn set_one<O: Unpack>(&mut self, relation: &str, row: O) -> Result<(), UnpackError> {
-//             self.s
-//                 .serialize_entry(relation, &RowRel { row })
-//                 .map_err(UnpackError::new)?;
+    impl<S: SerializeMap> RowWriter for RowSerializer<S> {
+        type Output = S::Ok;
+        fn set_value(&mut self, field: &str, value: ValueCow<'_>) -> Result<(), UnpackError> {
+            self.s
+                .serialize_entry(field, &value.to_owned())
+                .map_err(|err| UnpackError::new(err.to_string()))
+        }
+        fn set_many<I: Iterator>(&mut self, relation: &str, many: I) -> Result<(), UnpackError>
+        where
+            I::Item: Unpack,
+        {
+            self.s
+                .serialize_entry(
+                    relation,
+                    &many.map(|row| RowRel { row }).collect::<Vec<_>>(),
+                )
+                .map_err(|err| UnpackError::new(err.to_string()))?;
+            Ok(())
+        }
+        fn set_one<O: Unpack>(&mut self, relation: &str, row: O) -> Result<(), UnpackError> {
+            self.s
+                .serialize_entry(relation, &RowRel { row })
+                .map_err(|err| UnpackError::new(err.to_string()))?;
 
-//             Ok(())
-//         }
+            Ok(())
+        }
 
-//         fn finish(self) -> Result<Self::Output, UnpackError> {
-//             self.s.end().map_err(UnpackError::new)
-//         }
-//     }
+        fn finish(self) -> Result<Self::Output, UnpackError> {
+            self.s
+                .end()
+                .map_err(|err| UnpackError::new(err.to_string()))
+        }
+    }
 
-//     impl<'a, 'b, T> Serialize for Row<'a, 'b, T>
-//     where
-//         T: usql_core::Row,
-//         <T::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
-//     {
-//         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//         where
-//             S: Serializer,
-//         {
-//             let ctx = RowSerializer {
-//                 s: serializer.serialize_map(None)?,
-//             };
+    impl<T> Serialize for Row<T>
+    where
+        T: usql_core::Row,
+        <T::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
+    {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let ctx = RowSerializer {
+                s: serializer.serialize_map(None)?,
+            };
 
-//             Ok(self.unpack(ctx).unwrap())
-//         }
-//     }
+            self.unpack(ctx).map_err(|err| S::Error::custom(err))
+        }
+    }
 
-//     impl<R> Serialize for RowRel<R>
-//     where
-//         R: Unpack,
-//     {
-//         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//         where
-//             S: Serializer,
-//         {
-//             let ctx = RowSerializer {
-//                 s: serializer.serialize_map(None)?,
-//             };
+    impl<R> Serialize for RowRel<R>
+    where
+        R: Unpack,
+    {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let ctx = RowSerializer {
+                s: serializer.serialize_map(None)?,
+            };
 
-//             Ok(self.row.unpack(ctx).unwrap())
-//         }
-//     }
-// }
+            Ok(self.row.unpack(ctx).unwrap())
+        }
+    }
+}

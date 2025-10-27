@@ -1,5 +1,5 @@
 use crate::{
-    ColumnIndex, UnpackError,
+    ColumnIndex, Error, UnpackError,
     project::{Project, ProjectField, ProjectRelation, RelationKind},
     writer::{RowWriter, Unpack},
 };
@@ -8,6 +8,43 @@ use usql_core::Connector;
 pub struct Row<T: usql_core::Row> {
     pub(crate) rows: Vec<T>,
     pub(crate) project: Project,
+}
+
+impl<T: usql_core::Row> Row<T> {
+    pub fn get(
+        &self,
+        idx: impl Into<ColumnIndex>,
+    ) -> Result<usql_value::ValueCow<'_>, Error<T::Connector>> {
+        let Some(row) = self.rows.first() else {
+            return Err(Error::Unpack(UnpackError::new("Rows")));
+        };
+
+        let idx = idx.into();
+
+        row.get((&idx).into()).map_err(Error::Connector)
+    }
+
+    pub fn get_typed(
+        &self,
+        idx: impl Into<ColumnIndex>,
+        ty: usql_value::Type,
+    ) -> Result<usql_value::ValueCow<'_>, Error<T::Connector>> {
+        let Some(row) = self.rows.first() else {
+            return Err(Error::Unpack(UnpackError::new("Rows")));
+        };
+
+        let idx = idx.into();
+        row.get_typed((&idx).into(), ty).map_err(Error::Connector)
+    }
+
+    pub fn pk(&self) -> Result<usql_value::ValueCow<'_>, Error<T::Connector>> {
+        let Some(row) = self.rows.first() else {
+            return Err(Error::Unpack(UnpackError::new("Rows")));
+        };
+
+        let pk = &self.project.inner().pk;
+        row.get(pk.into()).map_err(Error::Connector)
+    }
 }
 
 impl<T: usql_core::Row> Unpack for Row<T>

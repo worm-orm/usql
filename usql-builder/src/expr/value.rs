@@ -1,4 +1,4 @@
-use usql_value::{Value, ValueRef};
+use usql_value::{Value, ValueCow, ValueRef};
 
 use crate::expr::Expression;
 
@@ -29,6 +29,16 @@ impl<'a> Expression<'a> for &'a Value {
 
     fn is_null(&self) -> bool {
         matches!(self, Value::Null)
+    }
+}
+
+impl<'a> Expression<'a> for ValueCow<'a> {
+    fn build(self, ctx: &mut crate::Context<'a>) -> Result<(), crate::Error> {
+        ctx.push(self)
+    }
+
+    fn is_null(&self) -> bool {
+        matches!(self.as_ref(), ValueRef::Null)
     }
 }
 

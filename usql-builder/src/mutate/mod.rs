@@ -1,5 +1,6 @@
 mod delete;
 mod insert;
+mod insert_many;
 mod set;
 mod update;
 

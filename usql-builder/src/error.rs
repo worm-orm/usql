@@ -6,6 +6,7 @@ use alloc::string::String;
 pub enum Error {
     Write(fmt::Error),
     InvalidAutoType(String),
+    InvalidValueCount { expected: usize, found: usize },
 }
 
 impl From<fmt::Error> for Error {
@@ -19,6 +20,13 @@ impl fmt::Display for Error {
         match self {
             Self::Write(e) => e.fmt(f),
             Self::InvalidAutoType(ty) => write!(f, "Invalid auto type: {}", ty),
+            Self::InvalidValueCount { expected, found } => {
+                write!(
+                    f,
+                    "Invalid value count. Found: {}, expected: {}",
+                    expected, found
+                )
+            }
         }
     }
 }
@@ -27,7 +35,7 @@ impl core::error::Error for Error {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::Write(e) => Some(e),
-            Self::InvalidAutoType(_) => None,
+            _ => None,
         }
     }
 }

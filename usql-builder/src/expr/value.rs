@@ -1,4 +1,7 @@
+use core::fmt::Write;
 use usql_value::{Value, ValueCow, ValueRef};
+
+use alloc::vec::Vec;
 
 use crate::expr::Expression;
 
@@ -44,4 +47,24 @@ impl<'a> Expression<'a> for ValueCow<'a> {
 
 pub fn val<T: Into<Value>>(value: T) -> Value {
     value.into()
+}
+
+impl<'a> Expression<'a> for Vec<Value> {
+    fn build(self, ctx: &mut crate::Context<'a>) -> Result<(), crate::Error> {
+        ctx.write_char('(')?;
+        for (idx, item) in self.into_iter().enumerate() {
+            if idx > 0 {
+                ctx.write_char(',')?;
+            }
+            item.build(ctx)?;
+        }
+
+        ctx.write_char(')')?;
+
+        Ok(())
+    }
+
+    fn is_null(&self) -> bool {
+        false
+    }
 }

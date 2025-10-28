@@ -30,7 +30,7 @@ impl postgres_types::ToSql for ValueRef<'_> {
         }
     }
 
-    fn accepts(ty: &postgres_types::Type) -> bool
+    fn accepts(_ty: &postgres_types::Type) -> bool
     where
         Self: Sized,
     {
@@ -75,7 +75,7 @@ impl ToSql for Value {
         self.as_ref().to_sql(ty, out)
     }
 
-    fn accepts(ty: &postgres_types::Type) -> bool
+    fn accepts(_ty: &postgres_types::Type) -> bool
     where
         Self: Sized,
     {

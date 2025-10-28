@@ -1,5 +1,4 @@
 use core::{marker::PhantomData, task::Poll};
-use futures::TryStreamExt;
 use futures_core::{Stream, ready, stream::BoxStream};
 use pin_project_lite::pin_project;
 use usql_core::Connector;

@@ -107,3 +107,9 @@ impl From<Atom> for String {
         Arc::unwrap_or_clone(value.0)
     }
 }
+
+impl From<Atom> for Arc<String> {
+    fn from(value: Atom) -> Self {
+        value.0
+    }
+}

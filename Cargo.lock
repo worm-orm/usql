@@ -240,6 +240,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1628fb46dfa0b37568d12e5edd512553eccf6a22a78e8bde00bb4aed84d5bdbf"
 
 [[package]]
+name = "bycat-value"
+version = "0.1.0"
+source = "git+https://github.com/wilbur-org/bycat#f58f348ef760339c671936ef61fb20fc887edffa"
+dependencies = [
+ "chrono",
+ "udled 0.6.0",
+ "udled-tokenizers 0.4.0",
+ "uuid",
+]
+
+[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2110,8 +2121,8 @@ dependencies = [
  "chrono",
  "futures",
  "rquickjs",
- "udled",
- "udled-tokenizers",
+ "udled 0.3.1",
+ "udled-tokenizers 0.1.0",
  "vaerdi",
 ]
 
@@ -2903,12 +2914,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "udled"
+version = "0.6.0"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#2f749ae47a1faf04c3e20ff8963dc7deb5ab1b5a"
+
+[[package]]
 name = "udled-tokenizers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da8f61945861d20245844f18f05fd66e473ae107bfa2b487a61e13d1c0f4ff29"
 dependencies = [
- "udled",
+ "udled 0.3.1",
+]
+
+[[package]]
+name = "udled-tokenizers"
+version = "0.4.0"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#2f749ae47a1faf04c3e20ff8963dc7deb5ab1b5a"
+dependencies = [
+ "udled 0.6.0",
 ]
 
 [[package]]
@@ -3148,6 +3172,7 @@ dependencies = [
 name = "usql-value"
 version = "0.1.0"
 dependencies = [
+ "bycat-value",
  "bytes",
  "chrono",
  "libsql",
@@ -3192,8 +3217,8 @@ dependencies = [
  "bitflags",
  "chrono",
  "hashbrown 0.14.5",
- "udled",
- "udled-tokenizers",
+ "udled 0.3.1",
+ "udled-tokenizers 0.1.0",
  "uuid",
 ]
 

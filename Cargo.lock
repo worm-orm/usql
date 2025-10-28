@@ -230,6 +230,7 @@ version = "0.1.0"
 source = "git+https://github.com/wilbur-org/bycat#87e9453ddf85b364ffd650c9f886177a846e5e63"
 dependencies = [
  "chrono",
+ "klaver-util",
  "udled 0.6.0",
  "udled-tokenizers 0.4.0",
  "uuid",
@@ -3189,6 +3190,7 @@ dependencies = [
 name = "usql-quick"
 version = "0.1.0"
 dependencies = [
+ "bycat-value",
  "futures",
  "klaver",
  "klaver-modules",

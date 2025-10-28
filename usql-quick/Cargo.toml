@@ -10,8 +10,13 @@ klaver-util = { git = "https://github.com/fairy-render/klaver", features = [
 ] }
 klaver-modules = { git = " https://github.com/fairy-render/klaver" }
 usql-core = { path = "../usql-core" }
-usql-value = { path = "../usql-value" }
+usql-value = { path = "../usql-value", features = ["bycat-value"] }
 usql-any = { path = "../usql-any" }
+bycat-value = { git = "https://github.com/wilbur-org/bycat", features = [
+    "chrono",
+    "uuid",
+    "rquickjs",
+] }
 futures = { version = "0.3" }
 
 [dev-dependencies]

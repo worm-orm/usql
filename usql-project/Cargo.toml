@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["serde"]
 serde = ["dep:serde", "usql-value/serde"]
+bycat = ["bycat-value", "usql-value/bycat-value"]
 
 [dependencies]
 usql-core = { path = "../usql-core" }
@@ -18,3 +18,5 @@ thiserror = { version = "2" }
 serde = { version = "1", features = ["derive"], optional = true }
 
 pin-project = { version = "1" }
+
+bycat-value = { workspace = true, optional = true }

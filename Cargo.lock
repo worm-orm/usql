@@ -3177,6 +3177,7 @@ name = "usql-project"
 version = "0.1.0"
 dependencies = [
  "async-stream",
+ "bycat-value",
  "futures",
  "nonempty",
  "pin-project",

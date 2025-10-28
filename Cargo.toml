@@ -31,6 +31,12 @@ chrono = { version = "0.4", default-features = false, features = ["alloc"] }
 async-stream = { version = "0.3" }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
 
+bycat-value = { git = "https://github.com/wilbur-org/bycat", features = [
+  "chrono",
+  "uuid",
+] }
+
+
 
 [profile.release]
 codegen-units = 1           # reduces binary size by ~2%

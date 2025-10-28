@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
+use klaver_util::{StringRef, throw, throw_if};
 use rquickjs::{Ctx, FromJs, JsLifetime, Object, class::Trace};
-use rquickjs_util::{StringRef, throw, throw_if};
 use usql_any::{AnyPool, LibSqlConfig, SqliteConfig};
 use usql_core::Pool;
 

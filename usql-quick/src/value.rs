@@ -4,7 +4,7 @@ use rquickjs::{
     Array, FromJs, IntoJs, IteratorJs, String as JsString, Type, Value as JsValue, class::Trace,
 };
 
-use rquickjs_util::{Map as JsMap, Set as JsSet, date::Date};
+use klaver_util::{Date, Map as JsMap, Pair, Set as JsSet};
 use usql_value::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -62,25 +62,26 @@ fn from_js<'js>(
 
                 Ok(Val(Value::Timestamp(chrono_date.naive_utc())))
             } else if JsMap::is(ctx, &value)? {
-                let m = JsMap::from_js(ctx, value)?;
-                let mut map = BTreeMap::default();
-                for next in m.entries::<String, Val>()? {
-                    let (k, v) = next?;
-                    map.insert(k, v.0);
-                }
+                // let m = JsMap::from_js(ctx, value)?;
+                // let mut map = BTreeMap::default();
+                // for next in m.entries()? {
+                //     let Pair(k, v) = next?.get()?;
+                //     map.insert(k, v.0);
+                // }
 
                 todo!("map")
 
                 //Ok(Val(Value::Json(map.into())))
             } else if JsSet::is(ctx, &value)? {
-                let m = JsSet::from_js(ctx, value)?;
-                let mut list = Vec::default();
-                for next in m.entries::<Val>(ctx.clone())? {
-                    let (_, v) = next?;
-                    list.push(v.0);
-                }
+                // let m = JsSet::from_js(ctx, value)?;
+                // let mut list = Vec::default();
+                // for next in m.entries::<Val>(ctx.clone())? {
+                //     let (_, v) = next?;
+                //     list.push(v.0);
+                // }
 
-                Ok(Val(Value::Array(list)))
+                // Ok(Val(Value::Array(list)))
+                todo!("SET")
             } else {
                 // let object = un!(value.try_into_object())?;
 

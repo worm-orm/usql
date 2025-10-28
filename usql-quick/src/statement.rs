@@ -1,7 +1,7 @@
 use crate::{JsRow, Val};
 use futures::TryStreamExt;
+use klaver_util::{StringRef, throw, throw_if};
 use rquickjs::{Class, Ctx, FromJs, JsLifetime, class::Trace};
-use rquickjs_util::{StringRef, throw, throw_if};
 use usql_any::{AnyConnector, AnyStatement};
 use usql_core::Executor;
 

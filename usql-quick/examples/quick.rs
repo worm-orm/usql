@@ -2,7 +2,7 @@ use rquickjs::{CatchResultExt, Module};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let vm = klaver::Options::default()
+    let vm = klaver::Vm::new()
         .module::<usql_quick::Module>()
         .search_path(".")
         .build()

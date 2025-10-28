@@ -1,5 +1,5 @@
+use klaver_modules::module_info;
 use rquickjs::Class;
-use rquickjs_modules::module_info;
 
 use crate::{JsConn, JsPool, JsStatement};
 

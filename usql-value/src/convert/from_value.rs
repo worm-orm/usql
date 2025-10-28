@@ -155,22 +155,31 @@ where
 
 #[cfg(feature = "bycat-value")]
 mod bycat {
-    use core::num;
-
     use alloc::{
         string::{String, ToString},
         sync::Arc,
         vec::Vec,
     };
     use bycat_value::{Number, Value};
+    use core::fmt;
 
-    use crate::{
-        JsonValue,
-        convert::{FromValue, ValueConversionError},
-    };
+    use crate::{JsonValue, convert::FromValue};
+
+    #[derive(Debug)]
+    pub struct BycatConvertError {
+        message: &'static str,
+    }
+
+    impl fmt::Display for BycatConvertError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Could not convert value: {}", self.message)
+        }
+    }
+
+    impl core::error::Error for BycatConvertError {}
 
     impl FromValue for Value {
-        type Error = &'static str;
+        type Error = BycatConvertError;
 
         fn from_value(value: crate::Value) -> Result<Self, Self::Error> {
             let ret = match value {
@@ -207,6 +216,13 @@ mod bycat {
         }
     }
 
+    impl TryFrom<crate::Value> for Value {
+        type Error = BycatConvertError;
+        fn try_from(value: crate::Value) -> Result<Self, Self::Error> {
+            Value::from_value(value)
+        }
+    }
+
     impl From<JsonValue> for Value {
         fn from(value: JsonValue) -> Self {
             match value {
@@ -216,7 +232,7 @@ mod bycat {
                 JsonValue::Integer(i) => Value::Number(i.into()),
                 JsonValue::String(s) => Value::String(s.into()),
                 JsonValue::Array(json_values) => {
-                    let mut list = bycat_value::List::<Value>::default();
+                    let mut list = bycat_value::List::<Value>::with_capacity(json_values.len());
 
                     for v in json_values {
                         list.push(v);
@@ -268,7 +284,7 @@ mod bycat {
     }
 
     impl TryFrom<Value> for crate::Value {
-        type Error = ValueConversionError;
+        type Error = BycatConvertError;
         fn try_from(value: Value) -> Result<Self, Self::Error> {
             let ret = match value {
                 Value::Bool(b) => crate::Value::Bool(b),
@@ -297,13 +313,36 @@ mod bycat {
                 Value::DateTime(date_time) => crate::Value::Timestamp(
                     date_time
                         .try_into()
-                        .map_err(|_err| ValueConversionError::NotTimestamp)?,
+                        .map_err(|message| BycatConvertError { message })?,
                 ),
                 Value::Date(date) => {
-                    todo!()
+                    let Some(date) = chrono::NaiveDate::from_ymd_opt(
+                        date.year() as _,
+                        date.month() as _,
+                        date.day() as _,
+                    ) else {
+                        return Err(BycatConvertError {
+                            message: "Not a valid date",
+                        });
+                    };
+
+                    crate::Value::Date(date)
                 }
-                Value::Time(time) => todo!(),
-                Value::Null => todo!(),
+                Value::Time(time) => {
+                    let Some(time) = chrono::NaiveTime::from_hms_nano_opt(
+                        time.hour(),
+                        time.minute(),
+                        time.second(),
+                        time.nanosecond(),
+                    ) else {
+                        return Err(BycatConvertError {
+                            message: "Not a valid time",
+                        });
+                    };
+
+                    crate::Value::Time(time)
+                }
+                Value::Null => crate::Value::Null,
             };
 
             Ok(ret)

@@ -1,5 +1,5 @@
+use klaver_util::StringRef;
 use rquickjs::{Ctx, FromJs, JsLifetime, Object, atom::PredefinedAtom, class::Trace};
-use rquickjs_util::StringRef;
 use usql_any::AnyRow;
 use usql_core::{ColumnIndex, Row};
 use usql_value::Value;

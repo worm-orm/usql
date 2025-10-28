@@ -1,7 +1,7 @@
 use usql_builder::{
     StatementExt,
     expr::*,
-    mutate::{Set, insert, update},
+    mutate::{Returning, Set, insert, update},
     schema::{Column, ColumnType, CreateIndex, create_table},
     select::{
         FilterQuery, GroupQuery, IdentExt, Join, JoinQuery, LimitQuery, Order, QueryExt, SortQuery,

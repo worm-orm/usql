@@ -154,7 +154,7 @@ where
 }
 
 #[cfg(feature = "bycat-value")]
-mod bycat {
+pub(crate) mod bycat {
     use alloc::{
         string::{String, ToString},
         sync::Arc,

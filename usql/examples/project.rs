@@ -157,7 +157,7 @@ fn main() {
 
         let stream = conn.fetch(stmt).await?;
 
-        let mut stream = project.wrap_stream(stream).unpack(DefaultOutput::default());
+        let mut stream = project.wrap_stream(stream);
 
         // let mut stream = project.wrap_stream(SerdeOutput, stream.map_ok(|m| m.into_inner()));
 

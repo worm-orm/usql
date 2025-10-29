@@ -37,6 +37,14 @@ impl<T: usql_core::Row> Row<T> {
         row.get_typed((&idx).into(), ty).map_err(Error::Connector)
     }
 
+    pub fn len(&self) -> usize {
+        let Some(row) = self.rows.first() else {
+            return 0;
+        };
+
+        row.len()
+    }
+
     pub fn pk(&self) -> Result<usql_value::ValueCow<'_>, Error<T::Connector>> {
         let Some(row) = self.rows.first() else {
             return Err(Error::Unpack(UnpackError::new("Rows")));

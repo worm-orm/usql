@@ -1,11 +1,6 @@
-use std::collections::HashMap;
-
 use anyhow::Context;
 use clap::Args;
-use futures::TryStreamExt;
-use usql::core::Row as _;
 use usql_any::AnyConnector;
-use usql_value::Value;
 
 #[derive(Args)]
 pub struct ExecCli {

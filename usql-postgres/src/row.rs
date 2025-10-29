@@ -1,4 +1,3 @@
-use usql_core::ColumnIndex;
 
 use crate::connector::Postgres;
 

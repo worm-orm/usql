@@ -17,7 +17,7 @@ pub enum ColumnType<'a> {
     Date,
     DateTime,
     Time,
-    Binary,
+    Blob,
     Uuid,
     Json,
     Other(Cow<'a, str>),
@@ -38,7 +38,7 @@ fn sqlite(kind: &ColumnType<'_>, out: &mut dyn Write) -> fmt::Result {
         | ColumnType::Time
         | ColumnType::VarChar(_)
         | ColumnType::Char(_) => out.write_str("TEXT"),
-        ColumnType::Binary => out.write_str("BLOB"),
+        ColumnType::Blob => out.write_str("BLOB"),
         ColumnType::Float | ColumnType::Double => out.write_str("REAL"),
         ColumnType::Uuid => out.write_str("BLOB"),
         ColumnType::Json => out.write_str("TEXT"),

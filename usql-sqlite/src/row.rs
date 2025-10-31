@@ -225,13 +225,13 @@ fn get_typed<'a>(value: ValueCow<'a>, ty: Type) -> Result<ValueCow<'a>, Error> {
                 });
             }
         },
-        Type::Real => match value.as_ref() {
+        Type::Float => match value.as_ref() {
             ValueRef::Float(f) => Value::Double((*f as f64).into()).into(),
             ValueRef::Double(f) => Value::Double(f).into(),
             _ => {
                 return Err(Error::Convert {
                     found: value.as_ref().get_type(),
-                    expected: Type::Real,
+                    expected: Type::Float,
                 });
             }
         },

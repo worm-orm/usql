@@ -15,7 +15,7 @@ pub enum Type {
     Date,
     DateTime,
     Json,
-    Real,
+    Float,
     Double,
     Uuid,
     Bool,
@@ -57,7 +57,7 @@ impl Type {
     }
 
     pub fn is_real(&self) -> bool {
-        matches!(self, Type::Real)
+        matches!(self, Type::Float)
     }
 
     pub fn is_double(&self) -> bool {
@@ -89,7 +89,7 @@ impl core::fmt::Display for Type {
             Type::Date => write!(f, "date"),
             Type::DateTime => write!(f, "date-time"),
             Type::Json => write!(f, "json"),
-            Type::Real => write!(f, "real"),
+            Type::Float => write!(f, "float"),
             Type::Double => write!(f, "double"),
             Type::Uuid => write!(f, "uuid"),
             Type::Bool => write!(f, "bool"),
@@ -133,7 +133,7 @@ impl core::str::FromStr for Type {
             "date" => Ok(Type::Date),
             "date-time" => Ok(Type::DateTime),
             "json" => Ok(Type::Json),
-            "real" => Ok(Type::Real),
+            "real" => Ok(Type::Float),
             "double" => Ok(Type::Double),
             "uuid" => Ok(Type::Uuid),
             "bool" => Ok(Type::Bool),
@@ -164,7 +164,7 @@ mod tests {
         assert_eq!(Type::Date.to_string(), "date");
         assert_eq!(Type::DateTime.to_string(), "date-time");
         assert_eq!(Type::Json.to_string(), "json");
-        assert_eq!(Type::Real.to_string(), "real");
+        assert_eq!(Type::Float.to_string(), "real");
         assert_eq!(Type::Double.to_string(), "double");
         assert_eq!(Type::Uuid.to_string(), "uuid");
         assert_eq!(Type::Bool.to_string(), "bool");
@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(Type::from_str("date").unwrap(), Type::Date);
         assert_eq!(Type::from_str("date-time").unwrap(), Type::DateTime);
         assert_eq!(Type::from_str("json").unwrap(), Type::Json);
-        assert_eq!(Type::from_str("real").unwrap(), Type::Real);
+        assert_eq!(Type::from_str("real").unwrap(), Type::Float);
         assert_eq!(Type::from_str("double").unwrap(), Type::Double);
         assert_eq!(Type::from_str("uuid").unwrap(), Type::Uuid);
         assert_eq!(Type::from_str("bool").unwrap(), Type::Bool);

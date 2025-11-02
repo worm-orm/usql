@@ -7,6 +7,7 @@ use core::convert::TryFrom;
 use ordered_float::OrderedFloat;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum JsonValue {
     Null,

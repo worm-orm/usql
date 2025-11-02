@@ -12,8 +12,8 @@ use ordered_float::OrderedFloat;
 pub enum JsonValue {
     Null,
     Bool(bool),
-    Float(OrderedFloat<f64>),
     Integer(i64),
+    Float(OrderedFloat<f64>),
     String(String),
     Array(Vec<JsonValue>),
     Object(BTreeMap<String, JsonValue>),

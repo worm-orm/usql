@@ -3131,7 +3131,6 @@ version = "0.1.0"
 dependencies = [
  "futures-core",
  "pin-project-lite",
- "tokio",
  "usql-value",
 ]
 

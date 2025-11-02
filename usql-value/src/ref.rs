@@ -44,7 +44,7 @@ impl ValueRef<'_> {
             Self::SmallInt(_) => Some(Type::SmallInt),
             Self::Int(_) => Some(Type::SmallInt),
             Self::BigInt(_) => Some(Type::BigInt),
-            Self::Float(_) => Some(Type::Real),
+            Self::Float(_) => Some(Type::Float),
             Self::Double(_) => Some(Type::Double),
             Self::Text(_) => Some(Type::Text),
             Self::ByteArray(_) => Some(Type::Blob),

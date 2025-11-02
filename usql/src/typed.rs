@@ -25,7 +25,7 @@ types!(
   u32 => Int,
   u64 => BigInt,
   i64 => BigInt,
-  f32 => Real,
+  f32 => Float,
   f64 => Double,
   bool => Bool,
   String => Text,

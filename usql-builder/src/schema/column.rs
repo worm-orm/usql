@@ -97,8 +97,9 @@ impl<'a> Column<'a> {
             if self.required && self.default.is_none() {
                 ctx.write_str(" NOT NULL")?;
             } else if let Some(default) = &self.default {
-                ctx.write_str(" DEFAULT ")?;
+                ctx.write_str(" DEFAULT (")?;
                 default.clone().build(ctx)?;
+                ctx.write_char(')')?;
             } else {
                 ctx.write_str(" DEFAULT NULL")?;
             }

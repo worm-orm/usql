@@ -139,7 +139,7 @@ impl fmt::Display for ValueRef<'_> {
             ValueRef::BigInt(i) => write!(f, "{}", i),
             ValueRef::Float(flt) => write!(f, "{}", flt),
             ValueRef::Double(dbl) => write!(f, "{}", dbl),
-            ValueRef::Text(s) => write!(f, "\"{}\"", s),
+            ValueRef::Text(s) => write!(f, "'{}'", s.replace('\'', "''")),
             ValueRef::ByteArray(b) => write!(f, "{:?}", b),
             ValueRef::Date(d) => write!(f, "{}", d),
             ValueRef::Time(t) => write!(f, "{}", t),

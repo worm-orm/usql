@@ -94,7 +94,7 @@ impl<'a> Column<'a> {
         }
 
         if !(self.auto && dialect == System::Sqlite) {
-            if self.required {
+            if self.required && self.default.is_none() {
                 ctx.write_str(" NOT NULL")?;
             } else if let Some(default) = &self.default {
                 ctx.write_str(" DEFAULT ")?;

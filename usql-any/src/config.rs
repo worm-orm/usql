@@ -37,14 +37,8 @@ impl From<SqliteConfig> for crate::AnyOptions {
     fn from(value: SqliteConfig) -> Self {
         use usql_sqlite::SqliteOptions;
         let opts = match value {
-            SqliteConfig::Memory => SqliteOptions {
-                path: None,
-                flags: Default::default(),
-            },
-            SqliteConfig::Path { path } => SqliteOptions {
-                path: Some(path),
-                flags: Default::default(),
-            },
+            SqliteConfig::Memory => SqliteOptions::default(),
+            SqliteConfig::Path { path } => SqliteOptions::default().path(path),
         };
 
         opts.into()

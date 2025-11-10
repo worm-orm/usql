@@ -24,3 +24,5 @@ pub fn init_vector() {
         )));
     }
 }
+
+pub use rusqlite::OpenFlags;

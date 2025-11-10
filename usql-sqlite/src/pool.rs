@@ -4,6 +4,7 @@ use std::{
 };
 
 use async_lock::Mutex;
+use dyn_clone::DynClone;
 use uuid::Uuid;
 
 use super::{
@@ -17,6 +18,21 @@ use usql_value::ValueCow;
 
 // pub type PooledConn = deadpool::managed::Object<Manager>;
 
+pub trait SetupFunction: DynClone {
+    fn call(&self, conn: &rusqlite::Connection) -> Result<(), rusqlite::Error>;
+}
+
+dyn_clone::clone_trait_object!(SetupFunction);
+
+impl<F> SetupFunction for F
+where
+    F: Fn(&rusqlite::Connection) -> Result<(), rusqlite::Error> + Clone,
+{
+    fn call(&self, conn: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
+        (self)(conn)
+    }
+}
+
 #[derive(Debug)]
 enum Source {
     Memory(Uuid),
@@ -25,14 +41,36 @@ enum Source {
 
 #[derive(Default, Clone)]
 pub struct ManagerOptions {
-    pub path: Option<PathBuf>,
-    pub flags: rusqlite::OpenFlags,
+    path: Option<PathBuf>,
+    flags: rusqlite::OpenFlags,
+    setup: Option<Box<dyn SetupFunction + Send + Sync>>,
+}
+
+impl ManagerOptions {
+    pub fn path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.path = Some(path.into());
+        self
+    }
+
+    pub fn flags(mut self, flags: rusqlite::OpenFlags) -> Self {
+        self.flags = flags;
+        self
+    }
+
+    pub fn setup<T>(mut self, func: T) -> Self
+    where
+        T: Fn(&rusqlite::Connection) -> rusqlite::Result<()> + Clone + Send + Sync + 'static,
+    {
+        self.setup = Some(Box::new(func));
+        self
+    }
 }
 
 pub struct Manager {
     source: Source,
     flags: rusqlite::OpenFlags,
     _persist: Mutex<Option<Conn>>,
+    setup: Option<Box<dyn SetupFunction + Send + Sync>>,
 }
 
 impl Manager {
@@ -40,6 +78,7 @@ impl Manager {
         Manager::new(ManagerOptions {
             path: Some(path.as_ref().to_path_buf()),
             flags: rusqlite::OpenFlags::default(),
+            setup: None,
         })
     }
 
@@ -47,6 +86,7 @@ impl Manager {
         Manager::new(ManagerOptions {
             path: None,
             flags: rusqlite::OpenFlags::default(),
+            setup: None,
         })
     }
 
@@ -59,6 +99,7 @@ impl Manager {
         Manager {
             source,
             flags: options.flags,
+            setup: options.setup,
             _persist: Mutex::new(None),
         }
     }
@@ -71,7 +112,7 @@ impl deadpool::managed::Manager for Manager {
 
     fn create(&self) -> impl futures_core::Future<Output = Result<Self::Type, Self::Error>> + Send {
         async move {
-            match &self.source {
+            let conn = match &self.source {
                 Source::Path(path) => Conn::open(path, self.flags).await,
                 Source::Memory(id) => {
                     let connection =
@@ -86,7 +127,14 @@ impl deadpool::managed::Manager for Manager {
 
                     connection().await
                 }
+            }?;
+
+            if let Some(setup) = &self.setup {
+                let setup = setup.clone();
+                conn.with(move |conn| setup.call(conn)).await?;
             }
+
+            Ok(conn)
         }
     }
 

@@ -24,6 +24,7 @@ async-stream = { workspace = true }
 async-lock = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
+dyn-clone = { version = "1" }
 
 serde_json = { workspace = true }
 

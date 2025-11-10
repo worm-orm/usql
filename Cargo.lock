@@ -3210,6 +3210,7 @@ dependencies = [
  "async-stream",
  "chrono",
  "deadpool",
+ "dyn-clone",
  "flume",
  "futures-channel",
  "futures-core",

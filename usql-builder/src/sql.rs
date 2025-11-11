@@ -5,7 +5,7 @@ use alloc::{
 };
 use usql_value::ValueCow;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SqlStmt<'a> {
     pub sql: String,
     pub bindings: Vec<ValueCow<'a>>,

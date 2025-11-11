@@ -1,5 +1,6 @@
 use alloc::boxed::Box;
 use bytes::Bytes;
+use geo_types::Geometry;
 use ordered_float::OrderedFloat;
 
 use crate::{JsonValue, Value};
@@ -17,7 +18,7 @@ macro_rules! impl_is {
     };
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ValueRef<'a> {
     Null,
     Bool(bool),
@@ -34,6 +35,7 @@ pub enum ValueRef<'a> {
     Uuid(uuid::Uuid),
     Json(&'a JsonValue),
     Array(&'a [Value]),
+    Geometry(&'a Geometry),
 }
 
 impl ValueRef<'_> {
@@ -60,6 +62,7 @@ impl ValueRef<'_> {
                     None
                 }
             }
+            Self::Geometry(_) => Some(Type::Geometry),
         }
     }
 
@@ -103,6 +106,7 @@ impl<'a> From<&'a Value> for ValueRef<'a> {
             Value::Uuid(u) => ValueRef::Uuid(*u),
             Value::Json(j) => ValueRef::Json(j),
             Value::Array(arr) => ValueRef::Array(arr),
+            Value::Geometry(geo) => ValueRef::Geometry(geo),
         }
     }
 }
@@ -125,6 +129,7 @@ impl<'a> From<ValueRef<'a>> for Value {
             ValueRef::Uuid(u) => Value::Uuid(u),
             ValueRef::Json(j) => Value::Json(j.clone()),
             ValueRef::Array(arr) => Value::Array(arr.to_vec()),
+            ValueRef::Geometry(geo) => Value::Geometry(geo.clone()),
         }
     }
 }
@@ -146,6 +151,14 @@ impl fmt::Display for ValueRef<'_> {
             ValueRef::Timestamp(ts) => write!(f, "{}", ts),
             ValueRef::Uuid(u) => write!(f, "{}", u),
             ValueRef::Json(j) => write!(f, "{}", j),
+            ValueRef::Geometry(geo) => {
+                #[cfg(feature = "std")]
+                write!(f, "{}", wkt::ToWkt::wkt_string(*geo))?;
+
+                #[cfg(not(feature = "std"))]
+                write!(f, "{:?}", geo)?;
+                Ok(())
+            }
             ValueRef::Array(arr) => {
                 write!(f, "[")?;
                 for (i, value) in arr.iter().enumerate() {

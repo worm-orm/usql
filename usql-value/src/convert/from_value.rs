@@ -210,6 +210,9 @@ pub(crate) mod bycat {
 
                     list.into()
                 }
+                crate::Value::Geometry(geo) => {
+                    todo!()
+                }
             };
 
             Ok(ret)

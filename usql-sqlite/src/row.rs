@@ -1,4 +1,5 @@
 use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
+use geozero::ToGeo;
 use rusqlite::types::{FromSql, FromSqlError, Value as SqliteValue, ValueRef as SqliteValueRef};
 use std::{borrow::Cow, collections::HashMap, string::String, sync::Arc, vec::Vec};
 use usql_core::Connector;
@@ -287,6 +288,31 @@ fn get_typed<'a>(value: ValueCow<'a>, ty: Type) -> Result<ValueCow<'a>, Error> {
                 }
             }
         }
+        Type::Geometry => match value.as_ref() {
+            ValueRef::ByteArray(bs) => {
+                let reader = geozero::wkb::SpatiaLiteWkb(bs);
+                let geo = reader.to_geo().map_err(|err| Error::Convert {
+                    found: Some(Type::Blob),
+                    expected: Type::Geometry,
+                })?;
+                Value::Geometry(geo).into()
+            }
+            ValueRef::Text(text) => {
+                let reader = geozero::wkt::Wkt(text);
+
+                let geo = reader.to_geo().map_err(|err| Error::Convert {
+                    found: Some(Type::Blob),
+                    expected: Type::Geometry,
+                })?;
+                Value::Geometry(geo).into()
+            }
+            v => {
+                return Err(Error::Convert {
+                    found: v.get_type(),
+                    expected: Type::Bool,
+                });
+            }
+        },
         Type::Any => value,
     };
 

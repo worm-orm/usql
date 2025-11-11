@@ -36,6 +36,14 @@ bycat-value = { git = "https://github.com/wilbur-org/bycat", features = [
   "uuid",
 ] }
 
+geo-types = { version = "0.7", default-features = false }
+wkt = { version = "0.14" }
+wkb = { version  ="0.9" }
+geozero = { version = "0.14", features = [
+  "with-geo",
+  "with-wkt",
+  "with-wkb"
+] }
 
 
 [profile.release]

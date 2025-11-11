@@ -1,6 +1,6 @@
 use super::{Value, ValueRef};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ValueCow<'a> {
     Ref(ValueRef<'a>),
     Owned(Value),

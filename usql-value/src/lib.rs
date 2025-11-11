@@ -5,6 +5,7 @@ extern crate alloc;
 mod atom;
 pub mod convert;
 mod cow;
+mod geometry;
 mod json;
 mod owned;
 mod r#ref;

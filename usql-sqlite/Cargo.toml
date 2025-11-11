@@ -29,3 +29,5 @@ dyn-clone = { version = "1" }
 serde_json = { workspace = true }
 
 sqlite-vec = { version = "0.1", optional = true }
+
+geozero.workspace = true

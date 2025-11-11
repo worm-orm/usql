@@ -20,6 +20,7 @@ pub enum Type {
     Uuid,
     Bool,
     Array(Box<Type>),
+    Geometry,
     Any,
 }
 
@@ -75,6 +76,10 @@ impl Type {
     pub fn is_array(&self) -> bool {
         matches!(self, Type::Array(_))
     }
+
+    pub fn is_geometry(&self) -> bool {
+        matches!(self, Type::Geometry)
+    }
 }
 
 impl core::fmt::Display for Type {
@@ -94,6 +99,7 @@ impl core::fmt::Display for Type {
             Type::Uuid => write!(f, "uuid"),
             Type::Bool => write!(f, "bool"),
             Type::Array(inner) => write!(f, "{}[]", inner),
+            Type::Geometry => write!(f, "geometry"),
             Type::Any => write!(f, "any"),
         }
     }
@@ -137,6 +143,7 @@ impl core::str::FromStr for Type {
             "double" => Ok(Type::Double),
             "uuid" => Ok(Type::Uuid),
             "bool" => Ok(Type::Bool),
+            "geometry" => Ok(Type::Geometry),
             s if s.ends_with("[]") => {
                 let inner = &s[..s.len() - 2];
                 inner

@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-postgres = ["postgres-types", "serde"]
+default = ["std"]
+postgres = ["postgres-types", "serde", "geozero"]
 libsql = ["dep:libsql", "serde", "serde_json"]
 serde = [
   "dep:serde",
@@ -12,8 +13,9 @@ serde = [
   "chrono/serde",
   "ordered-float/serde",
   "uuid/serde",
+  "geo-types/serde",
 ]
-std = ["parking_lot"]
+std = ["parking_lot", "serde?/std", "geo-types/std", "wkt"]
 
 
 [dependencies]
@@ -21,11 +23,18 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 ordered-float = { version = "5", default-features = false, features = [] }
 bytes = { version = "1", default-features = false }
+geo-types = { version = "0.7", default-features = false }
+wkt = { version = "0.14", optional = true }
+geozero = { version = "0.14", features = [
+  "with-postgis-postgres",
+  "with-geo",
+], optional = true }
 
 postgres-types = { version = "0.2", features = [
   "with-uuid-1",
   "with-chrono-0_4",
   "with-serde_json-1",
+  "with-geo-types-0_7",
 ], optional = true }
 libsql = { version = "0.9", default-features = false, features = [
   "core",

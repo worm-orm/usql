@@ -2,7 +2,7 @@ use klaver_util::throw_if;
 use rquickjs::{FromJs, IntoJs, Value as JsValue, class::Trace};
 use usql_value::Value;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Val(pub usql_value::Value);
 
 impl core::ops::Deref for Val {

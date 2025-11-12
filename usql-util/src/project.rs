@@ -537,7 +537,7 @@ impl Writer for DefaultWriter {
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize)]
 #[serde(untagged)]
 pub enum DefaultValue {
     Map(HashMap<String, DefaultValue>),

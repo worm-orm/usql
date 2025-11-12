@@ -1,14 +1,12 @@
 use alloc::{string::String, vec::Vec};
 use bytes::Bytes;
-use core::hash::Hash;
-use geo_types::Geometry;
 use ordered_float::OrderedFloat;
 
-use crate::{Atom, convert::FromValue};
+use crate::{Atom, convert::FromValue, geometry::Geom};
 
 use super::{JsonValue, Type, ValueRef};
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -27,7 +25,7 @@ pub enum Value {
     Uuid(uuid::Uuid),
     Json(JsonValue),
     Array(Vec<Value>),
-    Geometry(Geometry),
+    Geometry(Geom),
 }
 
 impl Value {

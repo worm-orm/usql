@@ -3,7 +3,7 @@ use bytes::Bytes;
 use geo_types::Geometry;
 use ordered_float::OrderedFloat;
 
-use crate::{JsonValue, Value};
+use crate::{JsonValue, Value, geometry::Geom};
 use core::fmt;
 
 use super::Type;
@@ -35,7 +35,7 @@ pub enum ValueRef<'a> {
     Uuid(uuid::Uuid),
     Json(&'a JsonValue),
     Array(&'a [Value]),
-    Geometry(&'a Geometry),
+    Geometry(&'a Geom),
 }
 
 impl ValueRef<'_> {
@@ -153,7 +153,7 @@ impl fmt::Display for ValueRef<'_> {
             ValueRef::Json(j) => write!(f, "{}", j),
             ValueRef::Geometry(geo) => {
                 #[cfg(feature = "std")]
-                write!(f, "{}", wkt::ToWkt::wkt_string(*geo))?;
+                write!(f, "{}", geo)?;
 
                 #[cfg(not(feature = "std"))]
                 write!(f, "{:?}", geo)?;

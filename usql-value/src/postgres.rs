@@ -27,7 +27,7 @@ impl postgres_types::ToSql for ValueRef<'_> {
             ValueRef::Uuid(uuid) => uuid.to_sql(ty, out),
             ValueRef::Json(json_value) => Json(*json_value).to_sql(ty, out),
             ValueRef::Array(values) => values.to_sql(ty, out),
-            ValueRef::Geometry(geo) => geozero::wkb::Encode((*geo).clone()).to_sql_checked(ty, out),
+            ValueRef::Geometry(geo) => geozero::wkb::Encode(geo.ewkb()).to_sql_checked(ty, out),
         }
     }
 
@@ -60,7 +60,7 @@ impl postgres_types::ToSql for ValueRef<'_> {
             ValueRef::Uuid(uuid) => uuid.to_sql_checked(ty, out),
             ValueRef::Json(json_value) => Json(*json_value).to_sql_checked(ty, out),
             ValueRef::Array(values) => values.to_sql_checked(ty, out),
-            ValueRef::Geometry(geo) => geozero::wkb::Encode((*geo).clone()).to_sql_checked(ty, out),
+            ValueRef::Geometry(geo) => geozero::wkb::Encode(geo.ewkb()).to_sql_checked(ty, out),
         }
     }
 }

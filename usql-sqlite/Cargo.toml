@@ -9,7 +9,7 @@ vector = ["bundled", "sqlite-vec"]
 
 [dependencies]
 usql-core = { path = "../usql-core" }
-usql-value = { path = "../usql-value", features = ["serde"] }
+usql-value = { path = "../usql-value", features = ["serde", "sqlite"] }
 
 rusqlite = { version = "0.37" }
 flume = { version = "0.11" }
@@ -29,5 +29,3 @@ dyn-clone = { version = "1" }
 serde_json = { workspace = true }
 
 sqlite-vec = { version = "0.1", optional = true }
-
-geozero.workspace = true

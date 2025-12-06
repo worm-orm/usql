@@ -5,8 +5,9 @@ edition = "2024"
 
 [features]
 default = ["std", "postgres"]
-postgres = ["postgres-types", "serde", "geozero"]
+postgres = ["postgres-types", "serde"]
 libsql = ["dep:libsql", "serde", "serde_json"]
+sqlite = ["geob/sqlite"]
 serde = [
   "dep:serde",
   "bytes/serde",
@@ -14,6 +15,7 @@ serde = [
   "ordered-float/serde",
   "uuid/serde",
   "geo-types/serde",
+  "geob/serde",
 ]
 std = ["parking_lot", "serde?/std", "geo-types/std", "wkt"]
 
@@ -23,12 +25,15 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 ordered-float = { version = "5", default-features = false, features = [] }
 bytes = { version = "1", default-features = false }
-geo-types = { version = "0.7", default-features = false }
+geob = { git = "https://github.com/worm-orm/geob", features = ["geo-traits"] }
+geo-types = { version = "0.7", features = [], default-features = false }
+geo-traits = { version = "0.3", features = [], default-features = false }
+
 wkt = { version = "0.14", optional = true }
-geozero = { version = "0.14", features = [
-  "with-postgis-postgres",
-  "with-geo",
-], optional = true }
+# geozero = { version = "0.14", features = [
+#   "with-postgis-postgres",
+#   "with-geo",
+# ], optional = true }
 
 postgres-types = { version = "0.2", features = [
   "with-uuid-1",

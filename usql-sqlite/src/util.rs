@@ -1,4 +1,3 @@
-use geozero::{GeozeroGeometry, ToWkb};
 use usql_value::{Value, ValueRef};
 
 pub fn sqlite_ref_to_usql(value: &rusqlite::types::Value) -> ValueRef<'_> {
@@ -12,7 +11,7 @@ pub fn sqlite_ref_to_usql(value: &rusqlite::types::Value) -> ValueRef<'_> {
 }
 
 pub fn usql_to_sqlite(value: Value) -> rusqlite::types::Value {
-    match value {
+    let val = match value {
         Value::Bool(b) => rusqlite::types::Value::Integer((b).into()),
         Value::Text(s) => rusqlite::types::Value::Text(s.into()),
         Value::Array(list) => {
@@ -34,14 +33,8 @@ pub fn usql_to_sqlite(value: Value) -> rusqlite::types::Value {
             rusqlite::types::Value::Text(string)
         }
         Value::Null => rusqlite::types::Value::Null,
-        Value::Geometry(geo) => {
-            let mut output = Vec::new();
-            let mut writer =
-                geozero::wkb::WkbWriter::new(&mut output, geozero::wkb::WkbDialect::SpatiaLite);
+        Value::Geometry(geo) => geo.into(),
+    };
 
-            geo.process_geom(&mut writer).unwrap();
-
-            rusqlite::types::Value::Blob(output)
-        }
-    }
+    val
 }

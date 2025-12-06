@@ -1,9 +1,11 @@
 use super::{connector::Sqlite, error::Error, util::sqlite_ref_to_usql};
-use geozero::ToGeo;
 use rusqlite::types::{FromSql, FromSqlError, Value as SqliteValue, ValueRef as SqliteValueRef};
 use std::{borrow::Cow, collections::HashMap, string::String, sync::Arc, vec::Vec};
 use usql_core::Connector;
-use usql_value::{JsonValue, Type, Value, ValueCow, ValueRef};
+use usql_value::{
+    JsonValue, Type, Value, ValueCow, ValueRef,
+    geob::{self, Geob},
+};
 
 pub trait ColumnIndex {
     fn get<'a>(&self, row: &'a Row) -> Option<&'a SqliteValue>;
@@ -290,20 +292,18 @@ fn get_typed<'a>(value: ValueCow<'a>, ty: Type) -> Result<ValueCow<'a>, Error> {
         }
         Type::Geometry => match value.as_ref() {
             ValueRef::ByteArray(bs) => {
-                let reader = geozero::wkb::SpatiaLiteWkb(bs);
-                let geo = reader.to_geo().map_err(|err| Error::Convert {
+                let geo = geob::types::GeobRef::from_bytes(bs).map_err(|_| Error::Convert {
                     found: Some(Type::Blob),
                     expected: Type::Geometry,
                 })?;
-                Value::Geometry(geo).into()
+                Value::Geometry(geo.to_owned()).into()
             }
             ValueRef::Text(text) => {
-                let reader = geozero::wkt::Wkt(text);
-
-                let geo = reader.to_geo().map_err(|err| Error::Convert {
-                    found: Some(Type::Blob),
+                let geo = Geob::from_text(text).map_err(|_| Error::Convert {
+                    found: Some(Type::Text),
                     expected: Type::Geometry,
                 })?;
+
                 Value::Geometry(geo).into()
             }
             v => {

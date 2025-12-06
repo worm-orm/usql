@@ -5,7 +5,6 @@ extern crate alloc;
 mod atom;
 pub mod convert;
 mod cow;
-mod geometry;
 mod json;
 mod owned;
 mod r#ref;
@@ -21,3 +20,5 @@ mod postgres;
 pub use self::{atom::Atom, cow::*, interner::Interner, json::*, owned::*, r#ref::*, ty::*};
 
 pub use chrono;
+
+pub use geob;

@@ -1,10 +1,9 @@
+use super::{JsonValue, Type, ValueRef};
+use crate::{Atom, convert::FromValue};
 use alloc::{string::String, vec::Vec};
 use bytes::Bytes;
+use geob::Geob;
 use ordered_float::OrderedFloat;
-
-use crate::{Atom, convert::FromValue, geometry::Geom};
-
-use super::{JsonValue, Type, ValueRef};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
@@ -25,7 +24,7 @@ pub enum Value {
     Uuid(uuid::Uuid),
     Json(JsonValue),
     Array(Vec<Value>),
-    Geometry(Geom),
+    Geometry(Geob),
 }
 
 impl Value {
@@ -172,5 +171,33 @@ where
 {
     fn from(value: Vec<T>) -> Self {
         Value::Array(value.into_iter().map(Into::into).collect())
+    }
+}
+
+macro_rules! geo_impl {
+    ($($ty: ty),+) => {
+        $(
+            impl From<$ty> for Value {
+                fn from(value: $ty) -> Value {
+                    Value::Geometry(Geob::from_geo_type(&value, 0))
+                }
+            }
+        )*
+    };
+}
+
+geo_impl!(
+    geo_types::Point<f64>,
+    geo_types::MultiPoint<f64>,
+    geo_types::LineString<f64>,
+    geo_types::MultiLineString<f64>,
+    geo_types::Polygon<f64>,
+    geo_types::MultiPolygon<f64>,
+    geo_types::Geometry<f64>
+);
+
+impl From<Geob> for Value {
+    fn from(value: Geob) -> Self {
+        Value::Geometry(value)
     }
 }

@@ -31,7 +31,7 @@ impl Geom {
     }
 
     pub fn from_bytes(bytes: Vec<u8>) {
-        geozero::wkb::Decode(bytes);
+        todo!()
     }
 
     pub fn epsg(&self) -> Option<EPSG> {

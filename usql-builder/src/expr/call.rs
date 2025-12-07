@@ -11,8 +11,8 @@ pub fn call<T, A>(func: T, args: A) -> Call<T, A> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Call<T, A> {
-    func: T,
-    args: A,
+    pub func: T,
+    pub args: A,
 }
 
 impl<T, A> Call<T, A> {

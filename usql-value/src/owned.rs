@@ -5,7 +5,7 @@ use bytes::Bytes;
 use geob::Geob;
 use ordered_float::OrderedFloat;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {

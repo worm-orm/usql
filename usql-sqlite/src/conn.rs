@@ -11,10 +11,17 @@ use super::{
 use futures_channel::oneshot;
 use futures_core::{Stream, ready};
 use pin_project_lite::pin_project;
-use rusqlite::OpenFlags;
-use std::{any::Any, boxed::Box, marker::PhantomData, path::Path, string::ToString, task::Poll};
+use rusqlite::{LoadExtensionGuard, OpenFlags};
+use std::{
+    any::Any,
+    boxed::Box,
+    marker::PhantomData,
+    path::{Path, PathBuf},
+    string::ToString,
+    task::Poll,
+};
 use usql_core::{Connection, Connector, Executor};
-use usql_value::ValueCow;
+use usql_value::{ValueCow, geob};
 
 pub struct Conn {
     channel: flume::Sender<Request>,
@@ -22,15 +29,25 @@ pub struct Conn {
 
 impl Conn {
     pub async fn open(path: impl AsRef<Path>, flags: OpenFlags) -> Result<Conn, Error> {
-        let channel = open_worker(flags, Some(path.as_ref().to_path_buf())).await?;
-
-        Ok(Conn { channel })
+        Self::open_private(flags, Some(path.as_ref().to_path_buf())).await
     }
 
     pub async fn open_memory(flags: OpenFlags) -> Result<Conn, Error> {
-        let channel = open_worker(flags, None).await?;
+        Self::open_private(flags, None).await
+    }
 
-        Ok(Conn { channel })
+    async fn open_private(flags: OpenFlags, path: Option<PathBuf>) -> Result<Conn, Error> {
+        let channel = open_worker(flags, path).await?;
+        let conn = Conn { channel };
+
+        #[cfg(feature = "geometry")]
+        conn.with(|conn| {
+            rusqlite_geob::register(conn)?;
+            Ok(())
+        })
+        .await?;
+
+        Ok(conn)
     }
 
     pub async fn begin_transaction(&mut self) -> Result<Transaction<'_>, Error> {

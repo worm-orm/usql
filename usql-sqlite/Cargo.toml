@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
+default = ["geometry"]
 bundled = ["rusqlite/bundled-full"]
 vector = ["bundled", "sqlite-vec"]
+geometry = ["rusqlite-geob"]
 
 [dependencies]
 usql-core = { path = "../usql-core" }
@@ -29,3 +31,4 @@ dyn-clone = { version = "1" }
 serde_json = { workspace = true }
 
 sqlite-vec = { version = "0.1", optional = true }
+rusqlite-geob = { git = "https://github.com/worm-orm/geob", optional = true }

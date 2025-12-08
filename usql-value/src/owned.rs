@@ -179,7 +179,7 @@ macro_rules! geo_impl {
         $(
             impl From<$ty> for Value {
                 fn from(value: $ty) -> Value {
-                    Value::Geometry(Geob::from_geo_type(&value, 0))
+                    Value::Geometry(Geob::from_geo_type(&value, geob::SRID::UNKNOWN))
                 }
             }
         )*

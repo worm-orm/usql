@@ -3,7 +3,7 @@ use crate::{JsonValue, Value};
 use alloc::boxed::Box;
 use bytes::Bytes;
 use core::fmt;
-use geob::{Geob, types::GeobRef};
+use geob::types::GeobRef;
 use ordered_float::OrderedFloat;
 
 macro_rules! impl_is {

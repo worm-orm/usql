@@ -679,6 +679,9 @@ name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
+dependencies = [
+ "getrandom 0.2.16",
+]
 
 [[package]]
 name = "filetime"
@@ -717,6 +720,18 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "nanorand",
+ "spin 0.9.8",
+]
+
+[[package]]
+name = "flume"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e139bc46ca777eb5efaf62df0ab8cc5fd400866427e56c68b22e414e53bd3be"
+dependencies = [
+ "fastrand",
+ "futures-core",
+ "futures-sink",
  "spin 0.9.8",
 ]
 
@@ -938,7 +953,7 @@ dependencies = [
 [[package]]
 name = "geob"
 version = "0.1.0"
-source = "git+https://github.com/worm-orm/geob#fbb677c07274c51a570d39272aafee077f247c1b"
+source = "git+https://github.com/worm-orm/geob#1f5f84a97a2f52a8a2ef763c4995a508a3af9a18"
 dependencies = [
  "byteorder",
  "geo",
@@ -1555,7 +1570,7 @@ dependencies = [
  "dyn-clone",
  "encoding_rs",
  "event-listener",
- "flume",
+ "flume 0.11.1",
  "futures",
  "indexmap",
  "klaver-modules",
@@ -1572,7 +1587,7 @@ version = "0.1.0"
 source = "git+https://github.com/fairy-render/klaver#2ad55ea2de10b02eee119c7be15bd9d15bc40307"
 dependencies = [
  "bytes",
- "flume",
+ "flume 0.11.1",
  "form_urlencoded",
  "futures",
  "http",
@@ -2689,7 +2704,7 @@ dependencies = [
 [[package]]
 name = "rusqlite-geob"
 version = "0.1.0"
-source = "git+https://github.com/worm-orm/geob#fbb677c07274c51a570d39272aafee077f247c1b"
+source = "git+https://github.com/worm-orm/geob#1f5f84a97a2f52a8a2ef763c4995a508a3af9a18"
 dependencies = [
  "bitflags",
  "geo",
@@ -3761,7 +3776,7 @@ dependencies = [
  "chrono",
  "deadpool",
  "dyn-clone",
- "flume",
+ "flume 0.12.0",
  "futures-channel",
  "futures-core",
  "pin-project-lite",

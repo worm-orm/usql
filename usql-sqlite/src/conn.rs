@@ -8,10 +8,12 @@ use super::{
     transaction::Transaction,
     worker::{Request, open_worker},
 };
+#[cfg(feature = "geometry")]
+use ::rusqlite::LoadExtensionGuard;
 use futures_channel::oneshot;
 use futures_core::{Stream, ready};
 use pin_project_lite::pin_project;
-use rusqlite::{LoadExtensionGuard, OpenFlags};
+use rusqlite::OpenFlags;
 use std::{
     any::Any,
     boxed::Box,
@@ -21,7 +23,7 @@ use std::{
     task::Poll,
 };
 use usql_core::{Connection, Connector, Executor};
-use usql_value::{ValueCow, geob};
+use usql_value::ValueCow;
 
 pub struct Conn {
     channel: flume::Sender<Request>,
@@ -42,7 +44,10 @@ impl Conn {
 
         #[cfg(feature = "geometry")]
         conn.with(|conn| {
-            rusqlite_geob::register(conn)?;
+            unsafe {
+                let _guard = LoadExtensionGuard::new(conn)?;
+                rusqlite_geob::register(conn)?;
+            }
             Ok(())
         })
         .await?;

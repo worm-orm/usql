@@ -190,10 +190,7 @@ pub(crate) mod bycat {
                 crate::Value::BigInt(e) => Value::Number(e.into()),
                 crate::Value::Float(ordered_float) => Value::Number((*ordered_float).into()),
                 crate::Value::Double(ordered_float) => Value::Number((*ordered_float).into()),
-                crate::Value::Text(atom) => {
-                    let s: Arc<String> = atom.into();
-                    Value::String(s.into())
-                }
+                crate::Value::Text(atom) => Value::String(atom),
                 crate::Value::ByteArray(bytes) => Value::Bytes(bytes.to_vec().into()),
                 crate::Value::Date(naive_date) => Value::Date(naive_date.into()),
                 crate::Value::Time(naive_time) => Value::Time(naive_time.into()),

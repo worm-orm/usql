@@ -5,7 +5,7 @@ edition = "2024"
 
 [features]
 serde = ["dep:serde", "usql-value/serde"]
-bycat = ["bycat-value", "usql-value/bycat-value"]
+bycat = ["bycat-value"]
 
 [dependencies]
 usql-core = { path = "../usql-core" }

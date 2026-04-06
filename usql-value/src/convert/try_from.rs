@@ -1,7 +1,6 @@
-use alloc::string::String;
 use bytes::Bytes;
 
-use crate::{Atom, JsonValue, Value};
+use crate::{JsonValue, Value};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValueConversionError {
@@ -100,7 +99,7 @@ impl TryFrom<Value> for f64 {
     }
 }
 
-impl TryFrom<Value> for String {
+impl TryFrom<Value> for alloc::string::String {
     type Error = ValueConversionError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
@@ -112,7 +111,7 @@ impl TryFrom<Value> for String {
     }
 }
 
-impl TryFrom<Value> for Atom {
+impl TryFrom<Value> for bycat_value::String {
     type Error = ValueConversionError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {

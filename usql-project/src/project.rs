@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use usql_value::{Atom, Type};
+use usql_value::{String as Atom, Type};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ColumnIndex {

@@ -1,6 +1,7 @@
 use super::{JsonValue, Type, ValueRef};
-use crate::{Atom, convert::FromValue};
-use alloc::{string::String, vec::Vec};
+use crate::convert::FromValue;
+use alloc::vec::Vec;
+use bycat_value::String;
 use bytes::Bytes;
 use geob::Geob;
 use ordered_float::OrderedFloat;
@@ -16,7 +17,7 @@ pub enum Value {
     BigInt(i64),
     Float(OrderedFloat<f32>),
     Double(OrderedFloat<f64>),
-    Text(Atom),
+    Text(String),
     ByteArray(Bytes),
     Date(chrono::NaiveDate),
     Time(chrono::NaiveTime),
@@ -113,7 +114,7 @@ impl From<f64> for Value {
 
 impl From<String> for Value {
     fn from(value: String) -> Self {
-        Value::Text(value.into())
+        Value::Text(value)
     }
 }
 
@@ -162,6 +163,12 @@ impl From<uuid::Uuid> for Value {
 impl From<JsonValue> for Value {
     fn from(value: JsonValue) -> Self {
         Value::Json(value)
+    }
+}
+
+impl From<alloc::string::String> for Value {
+    fn from(value: alloc::string::String) -> Self {
+        Value::Text(value.into())
     }
 }
 

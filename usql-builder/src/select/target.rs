@@ -1,7 +1,7 @@
 use core::fmt::Write;
 
 use alloc::string::String;
-use usql_value::Atom;
+use usql_value::String as Atom;
 
 use crate::{
     context::Context,

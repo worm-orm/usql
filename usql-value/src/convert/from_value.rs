@@ -1,4 +1,5 @@
-use alloc::{string::String, vec::Vec};
+use alloc::vec::Vec;
+use bycat_value::String;
 
 use super::ValueConversionError;
 use crate::Value;
@@ -80,7 +81,7 @@ impl FromValue for String {
     }
 }
 
-impl FromValue for crate::Atom {
+impl FromValue for alloc::string::String {
     type Error = ValueConversionError;
 
     fn from_value(value: Value) -> Result<Self, Self::Error> {
@@ -153,7 +154,6 @@ where
     }
 }
 
-#[cfg(feature = "bycat-value")]
 pub(crate) mod bycat {
     use alloc::{
         string::{String, ToString},

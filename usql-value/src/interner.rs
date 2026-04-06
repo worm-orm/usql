@@ -1,8 +1,7 @@
 use core::hash::Hash;
 
 use alloc::sync::Arc;
-
-use crate::atom::Atom;
+use bycat_value::String;
 
 extern crate alloc;
 
@@ -16,13 +15,13 @@ type Set<T> = alloc::collections::btree_set::BTreeSet<T>;
 
 #[derive(Debug, Default, Clone)]
 pub struct Interner {
-    files: Arc<Lock<Set<Atom>>>,
+    files: Arc<Lock<Set<String>>>,
 }
 
 impl Interner {
-    pub fn get_or_intern<S>(&self, string: S) -> Atom
+    pub fn get_or_intern<S>(&self, string: S) -> String
     where
-        S: Into<Atom> + Hash + AsRef<str> + ?Sized,
+        S: Into<String> + Hash + AsRef<str> + ?Sized,
     {
         if let Some(found) = self.files.read().get(string.as_ref()).cloned() {
             found

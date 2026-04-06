@@ -1,7 +1,6 @@
 use core::fmt;
 
-use alloc::string::String;
-use usql_value::Atom;
+use usql_value::String as Atom;
 
 use crate::{context::Context, error::Error};
 
@@ -15,7 +14,7 @@ impl<'a, 'b> Alias<'a> for &'b str {
     }
 }
 
-impl<'a> Alias<'a> for String {
+impl<'a> Alias<'a> for alloc::string::String {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(&self)
     }

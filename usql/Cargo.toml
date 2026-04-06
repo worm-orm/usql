@@ -25,6 +25,6 @@ usql-sqlite = { path = "../usql-sqlite", features = ["bundled"] }
 serde_json = "1.0"
 usql-project = { path = "../usql-project" }
 
-[[example]]
-name = "usql"
-path = "examples/usql.rs"
+# [[example]]
+# name = "usql"
+# path = "examples/usql.rs"

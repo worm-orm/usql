@@ -261,6 +261,7 @@ source = "git+https://github.com/wilbur-org/bycat#87e9453ddf85b364ffd650c9f88617
 dependencies = [
  "chrono",
  "klaver-util",
+ "serde",
  "udled 0.6.0",
  "udled-tokenizers 0.4.0",
  "uuid",

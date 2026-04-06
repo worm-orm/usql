@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use alloc::boxed::Box;
 use dyn_clone::DynClone;
-use usql_value::Atom;
+use usql_value::String as Atom;
 
 use crate::{context::Context, error::Error};
 
@@ -39,6 +39,12 @@ impl<'a> Expression<'a> for Atom {
 impl<'a, 'b> Expression<'a> for &'b Atom {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(self.as_str())
+    }
+}
+
+impl<'a> Expression<'a> for alloc::string::String {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(&self)
     }
 }
 

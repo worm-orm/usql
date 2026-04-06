@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-mod atom;
+// mod atom;
 pub mod convert;
 mod cow;
 mod json;
@@ -17,7 +17,9 @@ mod libsql;
 #[cfg(feature = "postgres")]
 mod postgres;
 
-pub use self::{atom::Atom, cow::*, interner::Interner, json::*, owned::*, r#ref::*, ty::*};
+pub use self::{cow::*, interner::Interner, json::*, owned::*, r#ref::*, ty::*};
+
+pub use bycat_value::String;
 
 pub use chrono;
 

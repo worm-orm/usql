@@ -1,4 +1,4 @@
-use usql_value::Atom;
+use usql_value::String as Atom;
 
 use crate::{Context, Error};
 

@@ -1,5 +1,6 @@
 use core::fmt::Write;
 
+use alloc::string::String;
 use usql_value::Atom;
 
 use crate::{
@@ -16,6 +17,12 @@ pub trait Target<'a> {
 impl<'a, 'b> Target<'a> for &'b str {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(self)
+    }
+}
+
+impl<'a> Target<'a> for String {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(&self)
     }
 }
 

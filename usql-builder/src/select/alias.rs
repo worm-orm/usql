@@ -1,5 +1,6 @@
 use core::fmt;
 
+use alloc::string::String;
 use usql_value::Atom;
 
 use crate::{context::Context, error::Error};
@@ -11,6 +12,12 @@ pub trait Alias<'a>: fmt::Display {
 impl<'a, 'b> Alias<'a> for &'b str {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(self)
+    }
+}
+
+impl<'a> Alias<'a> for String {
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        ctx.push_identifier(&self)
     }
 }
 

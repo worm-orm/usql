@@ -76,21 +76,34 @@ where
     fn build(self: Box<Self>, ctx: &mut Context<'a>) -> Result<(), Error> {
         self.expr.build(ctx)
     }
+
+    fn is_null(&self) -> bool {
+        self.expr.is_null()
+    }
 }
 
 pub trait ExprBox<'a>: DynClone {
     fn build(self: Box<Self>, ctx: &mut Context<'a>) -> Result<(), Error>;
+    fn is_null(&self) -> bool;
 }
 
 impl<'a> Expression<'a> for Box<dyn ExprBox<'a> + 'a> {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         self.build(ctx)
     }
+
+    fn is_null(&self) -> bool {
+        (**self).is_null()
+    }
 }
 
 impl<'a> Expression<'a> for Box<dyn ExprBox<'a> + Send + Sync + 'a> {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         self.build(ctx)
+    }
+
+    fn is_null(&self) -> bool {
+        (**self).is_null()
     }
 }
 

@@ -74,7 +74,7 @@ where
         ctx.write_str(" ")?;
         if self.operator == BinaryOperator::Eq && self.right.is_null() {
             ctx.write_str("IS NULL")?;
-        } else if self.operator == BinaryOperator::Eq && self.right.is_null() {
+        } else if self.operator == BinaryOperator::NotEq && self.right.is_null() {
             ctx.write_str("IS NOT NULL")?;
         } else {
             build_binary_operator(ctx, self.operator)?;

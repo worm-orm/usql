@@ -31,6 +31,10 @@ where
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         (*self).build(ctx)
     }
+
+    fn is_null(&self) -> bool {
+        (**self).is_null()
+    }
 }
 
 impl<'a, 'b> Expression<'a> for &'b str {

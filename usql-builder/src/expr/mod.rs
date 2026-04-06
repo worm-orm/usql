@@ -24,6 +24,15 @@ pub trait Expression<'a> {
     }
 }
 
+impl<'a, T> Expression<'a> for Box<T>
+where
+    T: Expression<'a>,
+{
+    fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
+        (*self).build(ctx)
+    }
+}
+
 impl<'a, 'b> Expression<'a> for &'b str {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error> {
         ctx.push_identifier(self)

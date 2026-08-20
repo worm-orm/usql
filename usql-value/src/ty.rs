@@ -3,6 +3,7 @@ use alloc::{
     format,
     string::{String, ToString},
 };
+use geob::GeoType;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
@@ -20,7 +21,7 @@ pub enum Type {
     Uuid,
     Bool,
     Array(Box<Type>),
-    Geometry,
+    Geometry(GeoType),
     Any,
 }
 
@@ -78,7 +79,7 @@ impl Type {
     }
 
     pub fn is_geometry(&self) -> bool {
-        matches!(self, Type::Geometry)
+        matches!(self, Type::Geometry(_))
     }
 }
 
@@ -99,7 +100,7 @@ impl core::fmt::Display for Type {
             Type::Uuid => write!(f, "uuid"),
             Type::Bool => write!(f, "bool"),
             Type::Array(inner) => write!(f, "{}[]", inner),
-            Type::Geometry => write!(f, "geometry"),
+            Type::Geometry(m) => write!(f, "geometry::{m}"),
             Type::Any => write!(f, "any"),
         }
     }
@@ -131,6 +132,13 @@ impl core::str::FromStr for Type {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            s if s.ends_with("[]") => {
+                let inner = &s[..s.len() - 2];
+                inner
+                    .parse()
+                    .map(|t| Type::Array(Box::new(t)))
+                    .map_err(|e| ParseTypeError::new(&e.to_string()))
+            }
             "text" => Ok(Type::Text),
             "small-int" => Ok(Type::SmallInt),
             "big-int" => Ok(Type::BigInt),
@@ -143,14 +151,23 @@ impl core::str::FromStr for Type {
             "double" => Ok(Type::Double),
             "uuid" => Ok(Type::Uuid),
             "bool" => Ok(Type::Bool),
-            "geometry" => Ok(Type::Geometry),
-            s if s.ends_with("[]") => {
-                let inner = &s[..s.len() - 2];
-                inner
-                    .parse()
-                    .map(|t| Type::Array(Box::new(t)))
-                    .map_err(|e| ParseTypeError::new(&e.to_string()))
+            s if s.starts_with("geometry::") => {
+                let geom_type = &s["geometry::".len()..];
+                match geom_type {
+                    "point" => Ok(Type::Geometry(GeoType::Point)),
+                    "linestring" => Ok(Type::Geometry(GeoType::LineString)),
+                    "polygon" => Ok(Type::Geometry(GeoType::Polygon)),
+                    "multipoint" => Ok(Type::Geometry(GeoType::MultiPoint)),
+                    "multilinestring" => Ok(Type::Geometry(GeoType::MultiLineString)),
+                    "multipolygon" => Ok(Type::Geometry(GeoType::MultiPolygon)),
+                    "collection" => Ok(Type::Geometry(GeoType::Collection)),
+                    _ => Err(ParseTypeError::new(&format!(
+                        "Unknown geometry type: {}",
+                        geom_type
+                    ))),
+                }
             }
+
             _ => Err(ParseTypeError::new(&format!("Unknown type: {}", s))),
         }
     }

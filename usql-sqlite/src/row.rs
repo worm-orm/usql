@@ -290,19 +290,33 @@ fn get_typed<'a>(value: ValueCow<'a>, ty: Type) -> Result<ValueCow<'a>, Error> {
                 }
             }
         }
-        Type::Geometry => match value.as_ref() {
+        Type::Geometry(geo_ty) => match value.as_ref() {
             ValueRef::ByteArray(bs) => {
                 let geo = geob::types::GeobRef::from_bytes(bs).map_err(|_| Error::Convert {
                     found: Some(Type::Blob),
-                    expected: Type::Geometry,
+                    expected: Type::Geometry(geo_ty),
                 })?;
+                if !geo.is(geo_ty) {
+                    return Err(Error::Convert {
+                        found: Some(Type::Geometry(geo.ty())),
+                        expected: Type::Geometry(geo_ty),
+                    });
+                }
+
                 Value::Geometry(geo.to_owned()).into()
             }
             ValueRef::Text(text) => {
                 let geo = Geob::from_text(text).map_err(|_| Error::Convert {
                     found: Some(Type::Text),
-                    expected: Type::Geometry,
+                    expected: Type::Geometry(geo_ty),
                 })?;
+
+                if !geo.is(geo_ty) {
+                    return Err(Error::Convert {
+                        found: Some(Type::Geometry(geo.as_ref().ty())),
+                        expected: Type::Geometry(geo_ty),
+                    });
+                }
 
                 Value::Geometry(geo).into()
             }

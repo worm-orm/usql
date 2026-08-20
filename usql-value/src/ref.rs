@@ -3,7 +3,7 @@ use crate::{JsonValue, Value};
 use alloc::boxed::Box;
 use bytes::Bytes;
 use core::fmt;
-use geob::types::GeobRef;
+use geob::types::{GeoType, GeobRef, GeometryRef};
 use ordered_float::OrderedFloat;
 
 macro_rules! impl_is {
@@ -60,7 +60,15 @@ impl ValueRef<'_> {
                     None
                 }
             }
-            Self::Geometry(_) => Some(Type::Geometry),
+            Self::Geometry(geo) => match geo.geometry() {
+                GeometryRef::Point(_) => Some(Type::Geometry(GeoType::Point)),
+                GeometryRef::LineString(_) => Some(Type::Geometry(GeoType::LineString)),
+                GeometryRef::Polygon(_) => Some(Type::Geometry(GeoType::Polygon)),
+                GeometryRef::MultiPoint(_) => Some(Type::Geometry(GeoType::MultiPoint)),
+                GeometryRef::MultiLineString(_) => Some(Type::Geometry(GeoType::MultiLineString)),
+                GeometryRef::MultiPolygon(_) => Some(Type::Geometry(GeoType::MultiPolygon)),
+                GeometryRef::Collection(_) => Some(Type::Geometry(GeoType::Collection)),
+            },
         }
     }
 
@@ -78,7 +86,8 @@ impl ValueRef<'_> {
         is_time => Time,
         is_uuid => Uuid,
         is_json => Json,
-        is_array => Array
+        is_array => Array,
+        is_geometry => Geometry
     );
 
     pub fn is_null(&self) -> bool {

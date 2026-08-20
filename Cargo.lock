@@ -885,7 +885,7 @@ dependencies = [
 [[package]]
 name = "geob"
 version = "0.1.0"
-source = "git+https://github.com/worm-orm/geob#0e463a767ec14aa1c886f0e843d85c3cc2b22f74"
+source = "git+https://github.com/worm-orm/geob#7c2870f78a622f708d62b75b00bdb6ba056dd110"
 dependencies = [
  "byteorder",
  "geo",
@@ -2590,7 +2590,7 @@ dependencies = [
 [[package]]
 name = "rusqlite-geob"
 version = "0.1.0"
-source = "git+https://github.com/worm-orm/geob#0e463a767ec14aa1c886f0e843d85c3cc2b22f74"
+source = "git+https://github.com/worm-orm/geob#7c2870f78a622f708d62b75b00bdb6ba056dd110"
 dependencies = [
  "bitflags",
  "geo",

@@ -41,6 +41,7 @@ impl<'a> fmt::Display for SqlStmt<'a> {
                 uppercase: Some(true),
                 lines_between_queries: 1,
                 ignore_case_convert: None,
+                ..Default::default()
             },
         );
 

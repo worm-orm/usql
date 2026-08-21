@@ -155,11 +155,7 @@ where
 }
 
 pub(crate) mod bycat {
-    use alloc::{
-        string::{String, ToString},
-        sync::Arc,
-        vec::Vec,
-    };
+    use alloc::{string::ToString, vec::Vec};
     use bycat_value::{Number, Value};
     use core::fmt;
 
@@ -207,9 +203,7 @@ pub(crate) mod bycat {
 
                     list.into()
                 }
-                crate::Value::Geometry(geo) => {
-                    todo!()
-                }
+                crate::Value::Geometry(geo) => Value::String(geo.to_string().into()),
             };
 
             Ok(ret)

@@ -23,8 +23,25 @@ pub enum ColumnType<'a> {
     Other(Cow<'a, str>),
 }
 
-fn postgres(_kind: &ColumnType<'_>, _out: &mut dyn Write) -> fmt::Result {
-    todo!()
+fn postgres(kind: &ColumnType<'_>, _out: &mut dyn Write) -> fmt::Result {
+    match kind {
+        ColumnType::Bool => _out.write_str("BOOLEAN"),
+        ColumnType::SmallInt => _out.write_str("SMALLINT"),
+        ColumnType::Int => _out.write_str("INTEGER"),
+        ColumnType::BigInt => _out.write_str("BIGINT"),
+        ColumnType::Char(size) => write!(_out, "CHAR({size})"),
+        ColumnType::VarChar(size) => write!(_out, "VARCHAR({size})"),
+        ColumnType::Text => _out.write_str("TEXT"),
+        ColumnType::Float => _out.write_str("REAL"),
+        ColumnType::Double => _out.write_str("DOUBLE PRECISION"),
+        ColumnType::Date => _out.write_str("DATE"),
+        ColumnType::DateTime => _out.write_str("TIMESTAMP"),
+        ColumnType::Time => _out.write_str("TIME"),
+        ColumnType::Blob => _out.write_str("BYTEA"),
+        ColumnType::Uuid => _out.write_str("UUID"),
+        ColumnType::Json => _out.write_str("JSONB"),
+        ColumnType::Other(other) => _out.write_str(other),
+    }
 }
 
 fn sqlite(kind: &ColumnType<'_>, out: &mut dyn Write) -> fmt::Result {
@@ -42,7 +59,7 @@ fn sqlite(kind: &ColumnType<'_>, out: &mut dyn Write) -> fmt::Result {
         ColumnType::Float | ColumnType::Double => out.write_str("REAL"),
         ColumnType::Uuid => out.write_str("BLOB"),
         ColumnType::Json => out.write_str("TEXT"),
-        _ => unreachable!(),
+        ColumnType::Other(other) => out.write_str(other),
     }
 }
 

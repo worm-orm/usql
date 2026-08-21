@@ -470,7 +470,18 @@ version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ed5957ff93768adf7a65ab167a17835c3d2c3c50d084fe305174c112f468e2f"
 dependencies = [
- "deadpool-runtime",
+ "deadpool-runtime 0.1.4",
+ "num_cpus",
+ "tokio",
+]
+
+[[package]]
+name = "deadpool"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "883466cb8db62725aee5f4a6011e8a5d42912b42632df32aad57fc91127c6e04"
+dependencies = [
+ "deadpool-runtime 0.3.1",
  "num_cpus",
  "tokio",
 ]
@@ -482,7 +493,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d697d376cbfa018c23eb4caab1fd1883dd9c906a8c034e8d9a3cb06a7e0bef9"
 dependencies = [
  "async-trait",
- "deadpool",
+ "deadpool 0.12.2",
  "getrandom 0.2.16",
  "tokio",
  "tokio-postgres",
@@ -497,6 +508,12 @@ checksum = "092966b41edc516079bdf31ec78a2e0588d1d0c08f78b91d8307215928642b2b"
 dependencies = [
  "tokio",
 ]
+
+[[package]]
+name = "deadpool-runtime"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2657f61fb1dd8bf37a8d51093cc7cee4e77125b22f7753f49b289f831bec2bae"
 
 [[package]]
 name = "deranged"
@@ -2956,22 +2973,12 @@ dependencies = [
 
 [[package]]
 name = "sqlformat"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0d7b3e8a3b6f2ee93ac391a0f757c13790caa0147892e3545cd549dd5b54bc0"
-dependencies = [
- "unicode_categories",
- "winnow 0.6.26",
-]
-
-[[package]]
-name = "sqlformat"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0705994df478b895f05b8e290e0d46e53187b26f8d889d37b2a0881234922d94"
 dependencies = [
  "unicode_categories",
- "winnow 0.7.13",
+ "winnow",
 ]
 
 [[package]]
@@ -3299,7 +3306,7 @@ dependencies = [
  "indexmap",
  "toml_datetime",
  "toml_parser",
- "winnow 0.7.13",
+ "winnow",
 ]
 
 [[package]]
@@ -3308,7 +3315,7 @@ version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0cbe268d35bdb4bb5a56a2de88d0ad0eb70af5384a99d648cd4b3d04039800e"
 dependencies = [
- "winnow 0.7.13",
+ "winnow",
 ]
 
 [[package]]
@@ -3547,8 +3554,7 @@ name = "usql-builder"
 version = "0.1.0"
 dependencies = [
  "dyn-clone",
- "sqlformat 0.3.5",
- "sqlformat 0.5.0",
+ "sqlformat",
  "usql-core",
  "usql-value",
  "zerocopy 0.8.25",
@@ -3653,7 +3659,7 @@ dependencies = [
  "async-lock",
  "async-stream",
  "chrono",
- "deadpool",
+ "deadpool 0.13.0",
  "dyn-clone",
  "flume 0.12.0",
  "futures-channel",
@@ -4203,15 +4209,6 @@ name = "windows_x86_64_msvc"
 version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
-
-[[package]]
-name = "winnow"
-version = "0.6.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e90edd2ac1aa278a5c4599b1d89cf03074b610800f866d4026dc199d7929a28"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "winnow"

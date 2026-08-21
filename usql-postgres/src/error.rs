@@ -4,19 +4,19 @@ use deadpool_postgres::{CreatePoolError, PoolError};
 pub struct Error {}
 
 impl From<CreatePoolError> for Error {
-    fn from(value: CreatePoolError) -> Self {
+    fn from(_value: CreatePoolError) -> Self {
         Error {}
     }
 }
 
 impl From<PoolError> for Error {
-    fn from(value: PoolError) -> Self {
+    fn from(_value: PoolError) -> Self {
         todo!()
     }
 }
 
 impl From<tokio_postgres::Error> for Error {
-    fn from(value: tokio_postgres::Error) -> Self {
+    fn from(_value: tokio_postgres::Error) -> Self {
         todo!()
     }
 }

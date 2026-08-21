@@ -7,7 +7,7 @@ use usql_builder::{
     select::{IdentExt, Join, JoinQuery, Order, QueryExt, SortQuery, TargetExt, select},
 };
 use usql_core::Connector;
-use usql_project::{DefaultOutput, Project, ProjectField, ProjectRelation};
+use usql_project::{Project, ProjectField, ProjectRelation};
 use usql_sqlite::SqliteOptions;
 
 #[derive(Debug, FromRow)]

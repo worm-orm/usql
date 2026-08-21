@@ -29,7 +29,7 @@ impl<'conn> Executor for Transaction<'conn> {
 
     fn prepare<'a>(
         &'a self,
-        query: &'a str,
+        _query: &'a str,
     ) -> impl Future<
         Output = Result<
             <Self::Connector as usql_core::Connector>::Statement,
@@ -42,16 +42,16 @@ impl<'conn> Executor for Transaction<'conn> {
 
     fn query<'a>(
         &'a self,
-        stmt: &'a mut <Self::Connector as usql_core::Connector>::Statement,
-        params: Vec<usql_value::ValueCow<'a>>,
+        _stmt: &'a mut <Self::Connector as usql_core::Connector>::Statement,
+        _params: Vec<usql_value::ValueCow<'a>>,
     ) -> usql_core::QueryStream<'a, Self::Connector> {
         todo!()
     }
 
     fn exec<'a>(
         &'a self,
-        stmt: &'a mut <Self::Connector as usql_core::Connector>::Statement,
-        params: Vec<usql_value::ValueCow<'a>>,
+        _stmt: &'a mut <Self::Connector as usql_core::Connector>::Statement,
+        _params: Vec<usql_value::ValueCow<'a>>,
     ) -> impl Future<Output = Result<(), <Self::Connector as usql_core::Connector>::Error>> + Send + 'a
     {
         async move { todo!() }
@@ -59,7 +59,7 @@ impl<'conn> Executor for Transaction<'conn> {
 
     fn exec_batch<'a>(
         &'a self,
-        stmt: &'a str,
+        _stmt: &'a str,
     ) -> impl Future<Output = Result<(), <Self::Connector as usql_core::Connector>::Error>> + Send + 'a
     {
         async move { todo!() }

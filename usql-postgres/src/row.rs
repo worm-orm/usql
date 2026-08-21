@@ -8,15 +8,15 @@ impl usql_core::Row for Row {
 
     fn get<'a>(
         &'a self,
-        index: usql_core::ColumnIndex<'_>,
+        _index: usql_core::ColumnIndex<'_>,
     ) -> Result<usql_value::ValueCow<'a>, <Self::Connector as usql_core::Connector>::Error> {
         todo!()
     }
 
     fn get_typed<'a>(
         &'a self,
-        index: usql_core::ColumnIndex<'_>,
-        ty: usql_value::Type,
+        _index: usql_core::ColumnIndex<'_>,
+        _ty: usql_value::Type,
     ) -> Result<usql_value::ValueCow<'a>, <Self::Connector as usql_core::Connector>::Error> {
         todo!()
     }

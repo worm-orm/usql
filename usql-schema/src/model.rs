@@ -6,7 +6,7 @@ macro_rules! model {
     ($($(#[$meta: meta])* pub struct $name: ident { $($(#[$fmeta: meta])* pub $field: ident: $ty: ty,)* })*) => {
         $(
             $(#[$meta])*
-            #[derive(Debug, Clone, PartialEq)]
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
             #[cfg_attr(feature = "serde", derive(serde::Serialize))]
             #[non_exhaustive]
             pub struct $name {
@@ -142,7 +142,7 @@ model! {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 #[non_exhaustive]
@@ -153,7 +153,7 @@ pub enum TableKind {
     Foreign,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 #[non_exhaustive]

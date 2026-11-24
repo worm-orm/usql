@@ -31,7 +31,7 @@ impl<'a> ForeignKey<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ReferentialAction {
     Cascade,
     Restrict,

@@ -1,0 +1,21 @@
+[package]
+name = "usql-schema"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+serde = ["dep:serde"]
+
+[dependencies]
+usql-core = { path = "../usql-core" }
+usql-value = { path = "../usql-value" }
+usql-builder = { path = "../usql-builder" }
+futures = { version = "0.3" }
+thiserror = { version = "2" }
+serde = { version = "1", features = ["derive"], optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+usql-any = { path = "../usql-any", features = ["sqlite", "postgres"] }
+usql-postgres = { path = "../usql-postgres" }
+usql-sqlite = { path = "../usql-sqlite", features = ["bundled"] }

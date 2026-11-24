@@ -82,14 +82,20 @@ pub fn write_identifier<W>(ident: &str, dialect: &System, out: &mut W) -> fmt::R
 where
     W: Write + ?Sized,
 {
-    match dialect {
-        &System::Mysql => {
-            write!(out, "`{ident}`")
+    let quote = match dialect {
+        System::Mysql => '`',
+        System::Sqlite | System::LibSql | System::Postgres => '"',
+    };
+    out.write_char(quote)?;
+    for (idx, part) in ident.split(quote).enumerate() {
+        if idx > 0 {
+            // Escaped by doubling it
+            out.write_char(quote)?;
+            out.write_char(quote)?;
         }
-        &System::Sqlite | &System::LibSql | &System::Postgres => {
-            write!(out, "\"{ident}\"")
-        }
+        out.write_str(part)?;
     }
+    out.write_char(quote)
 }
 
 // pub fn write_identifier_escape<W>(dialect: &System, out: &mut W) -> fmt::Result
@@ -111,8 +117,9 @@ mod tests {
     use super::*;
     use crate::{
         StatementExt,
+        expr::raw,
         mutate::{Set, insert},
-        schema::{Column, ColumnType, create_table},
+        schema::{Column, ColumnType, Constraint, create_table},
     };
     use usql_value::Value;
 
@@ -158,6 +165,42 @@ mod tests {
         assert_eq!(
             build(ColumnType::Int, System::Sqlite),
             r#"CREATE TABLE IF NOT EXISTS "test" ("id" INTEGER PRIMARY KEY AUTOINCREMENT)"#
+        );
+    }
+
+    #[test]
+    fn identifiers() {
+        for (system, name, expected) in [
+            (System::Postgres, "test", "\"test\""),
+            (System::Sqlite, "a\"b`", "\"a\"\"b`\""),
+            (System::Mysql, "a\"b`", "`a\"b```"),
+        ] {
+            let mut ctx = Context::new(system);
+            ctx.push_identifier(name).unwrap();
+            assert_eq!(ctx.build().sql, expected);
+        }
+    }
+
+    #[test]
+    fn defaults_and_constraints() {
+        let sql = create_table("test")
+            .column(
+                Column::new("a", ColumnType::Int)
+                    .required(true)
+                    .default(raw("1 + 1")),
+            )
+            .column(Column::new("b", ColumnType::Int).required(true))
+            .column(Column::new("c", ColumnType::Int))
+            .constraint(Constraint::primary_key(
+                "pk",
+                alloc::vec!["a".into(), "b".into()],
+            ))
+            .to_sql(System::Postgres)
+            .unwrap()
+            .sql;
+        assert_eq!(
+            sql,
+            r#"CREATE TABLE IF NOT EXISTS "test" ("a" INTEGER NOT NULL DEFAULT (1 + 1), "b" INTEGER NOT NULL, "c" INTEGER DEFAULT NULL, CONSTRAINT "pk" PRIMARY KEY ("a","b"))"#
         );
     }
 }

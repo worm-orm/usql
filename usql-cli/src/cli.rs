@@ -4,7 +4,7 @@ use anyhow::Context;
 use clap::{Parser, Subcommand};
 use usql_any::AnyConnector;
 
-use crate::{exec::ExecCli, fetch::FetchCli};
+use crate::{exec::ExecCli, fetch::FetchCli, schema::SchemaCli};
 
 #[derive(Parser)]
 pub struct Cli {
@@ -18,6 +18,8 @@ pub struct Cli {
 pub enum Commands {
     Fetch(FetchCli),
     Exec(ExecCli),
+    /// Print the tables, views and so on as json
+    Schema(SchemaCli),
 }
 
 impl Cli {
@@ -49,6 +51,9 @@ impl Cli {
             }
             Commands::Exec(exec) => {
                 exec.run(pool).await?;
+            }
+            Commands::Schema(schema) => {
+                schema.run(pool).await?;
             }
         }
 

@@ -12,9 +12,10 @@ mod call;
 mod case;
 mod ext;
 mod ident;
+mod raw;
 mod value;
 
-pub use self::{binary::*, call::*, case::*, ext::*, ident::Ident, value::val};
+pub use self::{binary::*, call::*, case::*, ext::*, ident::Ident, raw::{Raw, raw}, value::val};
 
 pub trait Expression<'a> {
     fn build(self, ctx: &mut Context<'a>) -> Result<(), Error>;

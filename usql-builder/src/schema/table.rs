@@ -102,8 +102,8 @@ impl<'val> Statement<'val> for CreateTable<'val> {
         }
 
         for (idx, pkg) in self.constraints.into_iter().enumerate() {
-            if idx > 0 {
-                write!(ctx, ",")?;
+            if idx > 0 || !self.fields.is_empty() {
+                write!(ctx, ", ")?;
             }
             pkg.build(ctx)?;
         }

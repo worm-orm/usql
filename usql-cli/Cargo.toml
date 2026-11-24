@@ -20,6 +20,7 @@ clap = { version = "4", features = ["derive"] }
 usql = { path = "../usql" }
 usql-any = { path = "../usql-any" }
 usql-value = { path = "../usql-value" }
+usql-schema = { path = "../usql-schema", features = ["serde"] }
 usql-sqlite = { path = "../usql-sqlite", features = [
   "vector",
 ], optional = true }

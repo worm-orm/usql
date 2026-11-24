@@ -21,6 +21,7 @@ toolkit with a query builder, value types, migrations and row projection.
 | `usql-project` | Row projection into nested results; `serde` and `bycat` features. |
 | `usql-util` | Utilities, including another projection implementation. |
 | `usql-quick` | QuickJS bindings (rquickjs, klaver). Types in `usql.d.ts`. |
+| `usql-schema` | Reads metadata (tables, keys, indexes, views, triggers, enums) with `Inspector`, and converts tables to builder statements. Feature: `serde`. |
 | `usql-cli` | The `usql` binary. |
 | `usql-libsql` | libSQL driver. **Not a workspace member**, so it is not compiled. |
 
@@ -44,7 +45,7 @@ cargo fmt -p <crate>
 - There are few tests. For builder changes, add unit tests asserting on the
   generated SQL.
 
-- The tests in `usql-postgres/tests` skip themselves (and pass) unless
+- The Postgres tests in `usql-postgres` and `usql-schema` skip themselves (and pass) unless
   `USQL_POSTGRES_URL` points at a disposable database with PostGIS. The TLS test
   also needs `--features rustls` and `USQL_POSTGRES_CA`, the path of a PEM certificate.
 
@@ -62,6 +63,9 @@ cargo fmt -p <crate>
 - PostgreSQL parameters are converted to the type the server expects, and an
   error if they don't fit (`usql-value/src/postgres`). `NUMERIC` is read as text,
   and `TIMESTAMPTZ` as a naive timestamp in UTC.
+- `usql-schema` has one module per database and no changes to the driver traits.
+  Schema and table names are bound, or quoted where SQLite requires an identifier.
+  What `to_builder` can't express must be added to `omitted`.
 - Branch on `Context::dialect()` where SQL differs between systems.
 - The SQLite connection lives on a dedicated thread (`usql-sqlite/src/worker.rs`)
   and is driven by messages. New operations need a `Request` variant, and a

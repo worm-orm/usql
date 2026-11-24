@@ -94,13 +94,14 @@ impl<'a> Column<'a> {
         }
 
         if !(self.auto && matches!(dialect, System::Sqlite | System::Postgres)) {
-            if self.required && self.default.is_none() {
+            if self.required {
                 ctx.write_str(" NOT NULL")?;
-            } else if let Some(default) = &self.default {
+            }
+            if let Some(default) = &self.default {
                 ctx.write_str(" DEFAULT (")?;
                 default.clone().build(ctx)?;
                 ctx.write_char(')')?;
-            } else {
+            } else if !self.required {
                 ctx.write_str(" DEFAULT NULL")?;
             }
         }

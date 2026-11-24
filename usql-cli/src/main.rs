@@ -3,6 +3,7 @@ use crate::cli::Cli;
 mod cli;
 mod exec;
 mod fetch;
+mod schema;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {

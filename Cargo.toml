@@ -17,6 +17,7 @@ members = [
     "usql-util",
     "usql-cli",
     "usql-project",
+    "usql-schema",
 ]
 
 

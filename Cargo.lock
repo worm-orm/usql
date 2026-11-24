@@ -3701,6 +3701,7 @@ dependencies = [
  "tokio",
  "usql",
  "usql-any",
+ "usql-schema",
  "usql-sqlite",
  "usql-value",
 ]
@@ -3789,6 +3790,22 @@ dependencies = [
  "tokio",
  "usql-any",
  "usql-core",
+ "usql-value",
+]
+
+[[package]]
+name = "usql-schema"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "serde",
+ "thiserror 2.0.20",
+ "tokio",
+ "usql-any",
+ "usql-builder",
+ "usql-core",
+ "usql-postgres",
+ "usql-sqlite",
  "usql-value",
 ]
 

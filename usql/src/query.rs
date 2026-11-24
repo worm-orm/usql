@@ -83,7 +83,10 @@ where
         E: Executor<Connector = B> + Sync + Send,
     {
         async move {
-            let stmt = executor.prepare(&self.sql).await.unwrap();
+            let stmt = executor
+                .prepare(&self.sql)
+                .await
+                .map_err(Error::connector)?;
             Ok(Query {
                 stmt: StmtRef::Owned(Some(stmt)),
                 bindings: self.bindings,

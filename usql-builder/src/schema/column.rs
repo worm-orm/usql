@@ -81,7 +81,7 @@ impl<'a> Column<'a> {
             write_sql_type(&self.kind, ctx, dialect)?;
         } else {
             let kind = match &self.kind {
-                ColumnType::SmallInt => "SMALLINT",
+                ColumnType::SmallInt => "SMALLSERIAL",
                 ColumnType::Int => "SERIAL",
                 ColumnType::BigInt => "BIGSERIAL",
                 ty => return Err(Error::InvalidAutoType(format!("{:?}", ty))),
@@ -93,7 +93,7 @@ impl<'a> Column<'a> {
             write!(ctx, " PRIMARY KEY")?;
         }
 
-        if !(self.auto && dialect == System::Sqlite) {
+        if !(self.auto && matches!(dialect, System::Sqlite | System::Postgres)) {
             if self.required && self.default.is_none() {
                 ctx.write_str(" NOT NULL")?;
             } else if let Some(default) = &self.default {

@@ -35,7 +35,7 @@ impl<'a> Context<'a> {
             match self.system {
                 System::Mysql | System::LibSql | System::Sqlite => self.write_str("?"),
                 System::Postgres => {
-                    write!(self.output, "${}", self.output.len())
+                    write!(self.output, "${}", self.bindings.len())
                 }
             }?;
         } else {
@@ -105,3 +105,59 @@ where
 //         }
 //     }
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        StatementExt,
+        mutate::{Set, insert},
+        schema::{Column, ColumnType, create_table},
+    };
+    use usql_value::Value;
+
+    #[test]
+    fn placeholders() {
+        let build = |system| {
+            insert("test")
+                .with("a", Value::Int(1))
+                .with("b", Value::Null)
+                .with("c", Value::Int(2))
+                .to_sql(system)
+                .unwrap()
+        };
+        let sql = build(System::Postgres);
+        assert_eq!(
+            sql.sql,
+            r#"INSERT INTO "test" ("a","b","c") VALUES ($1,NULL,$2)"#
+        );
+        assert_eq!(sql.bindings.len(), 2);
+        assert_eq!(
+            build(System::Sqlite).sql,
+            r#"INSERT INTO "test" ("a","b","c") VALUES (?,NULL,?)"#
+        );
+    }
+
+    #[test]
+    fn auto_columns() {
+        let build = |kind, system| {
+            create_table("test")
+                .column(Column::new("id", kind).primary_key().auto(true))
+                .to_sql(system)
+                .unwrap()
+                .sql
+        };
+        assert_eq!(
+            build(ColumnType::SmallInt, System::Postgres),
+            r#"CREATE TABLE IF NOT EXISTS "test" ("id" SMALLSERIAL PRIMARY KEY)"#
+        );
+        assert_eq!(
+            build(ColumnType::Int, System::Postgres),
+            r#"CREATE TABLE IF NOT EXISTS "test" ("id" SERIAL PRIMARY KEY)"#
+        );
+        assert_eq!(
+            build(ColumnType::Int, System::Sqlite),
+            r#"CREATE TABLE IF NOT EXISTS "test" ("id" INTEGER PRIMARY KEY AUTOINCREMENT)"#
+        );
+    }
+}

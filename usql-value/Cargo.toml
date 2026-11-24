@@ -5,7 +5,7 @@ edition = "2024"
 
 [features]
 default = []
-postgres = ["postgres-types", "serde"]
+postgres = ["postgres-types", "serde", "geob/postgres"]
 libsql = ["dep:libsql", "serde", "serde_json"]
 sqlite = ["geob/sqlite"]
 serde = [

@@ -10,6 +10,7 @@ path = "src/main.rs"
 [features]
 default = ["sqlite"]
 sqlite = ["usql-any/sqlite-vector", "usql-sqlite"]
+postgres = ["usql-any/postgres"]
 # libsql = ["usql-any/libsql"]
 
 [dependencies]

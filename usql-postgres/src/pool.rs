@@ -1,5 +1,6 @@
 use crate::{conn::Conn, connector::Postgres};
 
+#[derive(Clone)]
 pub struct Pool(pub(crate) deadpool_postgres::Pool);
 
 impl usql_core::Pool for Pool {

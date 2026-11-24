@@ -3,6 +3,9 @@ name = "usql-postgres"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+rustls = ["dep:rustls", "dep:rustls-native-certs", "dep:tokio-postgres-rustls"]
+
 [dependencies]
 usql-core = { path = "../usql-core" }
 usql-value = { path = "../usql-value", features = ["postgres"] }
@@ -16,3 +19,21 @@ deadpool-postgres = { version = "0.14", features = [] }
 
 async-stream = { version = "0.3" }
 futures = { version = "0.3" }
+
+chrono = { workspace = true }
+uuid = { workspace = true }
+serde_json = { workspace = true }
+
+rustls = { version = "0.23", default-features = false, features = [
+    "ring",
+    "std",
+    "tls12",
+], optional = true }
+rustls-native-certs = { version = "0.8", optional = true }
+tokio-postgres-rustls = { version = "0.13", default-features = false, optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+usql = { path = "../usql" }
+usql-any = { path = "../usql-any", features = ["postgres"] }
+usql-migrate = { path = "../usql-migrate", features = ["sql"] }

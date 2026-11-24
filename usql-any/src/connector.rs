@@ -3,14 +3,17 @@ use core::task::{Poll, ready};
 use futures_core::{Stream, stream::BoxStream};
 use pin_project_lite::pin_project;
 
-#[cfg(feature = "postgres")]
-use super::postgres_impl::*;
 use usql_core::{ColumnIndex, Connector, Executor, QueryStream, Transaction};
 use usql_core::{Connection, DatabaseInfo, Pool, Row, Statement};
 #[cfg(feature = "libsql")]
 use usql_libsql::{
     Conn as LibSqlConn, Error as LibSqlError, LibSql, LibSqlInfo, Options as LibSqlOptions,
     Pool as LibSqlPool, Row as LibSqlRow, Stmt as LibSqlStatement, Trans as LibSqlTransaction,
+};
+#[cfg(feature = "postgres")]
+use usql_postgres::{
+    Postgres, PostgresConn, PostgresDatabaseInfo, PostgresError, PostgresOptions, PostgresPool,
+    PostgresRow, PostgresStatement, PostgresTransaction,
 };
 #[cfg(feature = "sqlite")]
 use usql_sqlite::{
@@ -21,7 +24,7 @@ use usql_value::{Type, ValueCow};
 
 macro_rules! missing_db {
     () => {
-        panic!("Enable at least one of the following features: sqlite, libsql")
+        panic!("Enable at least one of the following features: sqlite, libsql, postgres")
     };
 }
 
@@ -58,6 +61,11 @@ impl Connector for AnyConnector {
                     .await
                     .map(AnyPool::Libsql)
                     .map_err(AnyError::LibSql),
+                #[cfg(feature = "postgres")]
+                AnyOptions::Postgres(options) => Postgres::create_pool(options)
+                    .await
+                    .map(AnyPool::Postgres)
+                    .map_err(AnyError::Postgres),
                 _ => missing_db!(),
             }
         }
@@ -71,6 +79,8 @@ pub enum AnyOptions {
     Sqlite(SqliteOptions),
     #[cfg(feature = "libsql")]
     Libsql(LibSqlOptions),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresOptions),
 }
 
 #[cfg(feature = "sqlite")]
@@ -87,6 +97,13 @@ impl From<LibSqlOptions> for AnyOptions {
     }
 }
 
+#[cfg(feature = "postgres")]
+impl From<PostgresOptions> for AnyOptions {
+    fn from(value: PostgresOptions) -> Self {
+        Self::Postgres(value)
+    }
+}
+
 #[derive(Clone)]
 #[non_exhaustive]
 pub enum AnyPool {
@@ -94,6 +111,8 @@ pub enum AnyPool {
     Sqlite(SqlitePool),
     #[cfg(feature = "libsql")]
     Libsql(LibSqlPool),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresPool),
 }
 
 impl Pool for AnyPool {
@@ -122,6 +141,12 @@ impl Pool for AnyPool {
                     .await
                     .map(AnyConn::Libsql)
                     .map_err(AnyError::LibSql),
+                #[cfg(feature = "postgres")]
+                AnyPool::Postgres(pool) => pool
+                    .get()
+                    .await
+                    .map(AnyConn::Postgres)
+                    .map_err(AnyError::Postgres),
                 _ => missing_db!(),
             }
         }
@@ -134,6 +159,8 @@ pub enum AnyInfo {
     Sqlite(SqliteDatabaseInfo),
     #[cfg(feature = "libsql")]
     Libsql(LibSqlInfo),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresDatabaseInfo),
 }
 
 impl DatabaseInfo for AnyInfo {
@@ -144,6 +171,8 @@ impl DatabaseInfo for AnyInfo {
             AnyInfo::Sqlite(_) => usql_core::System::Sqlite,
             #[cfg(feature = "libsql")]
             AnyInfo::Libsql(_) => usql_core::System::LibSql,
+            #[cfg(feature = "postgres")]
+            AnyInfo::Postgres(_) => usql_core::System::Postgres,
             _ => missing_db!(),
         }
     }
@@ -155,6 +184,8 @@ pub enum AnyConn {
     Sqlite(SqliteConn),
     #[cfg(feature = "libsql")]
     Libsql(LibSqlConn),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresConn),
 }
 
 impl Connection for AnyConn {
@@ -179,6 +210,12 @@ impl Connection for AnyConn {
                     .await
                     .map(AnyTransaction::LibSql)
                     .map_err(AnyError::LibSql),
+                #[cfg(feature = "postgres")]
+                Self::Postgres(conn) => conn
+                    .begin()
+                    .await
+                    .map(AnyTransaction::Postgres)
+                    .map_err(AnyError::Postgres),
                 _ => missing_db!(),
             }
         }
@@ -195,6 +232,8 @@ impl Executor for AnyConn {
             Self::Sqlite(info) => AnyInfo::Sqlite(info.db_info()),
             #[cfg(feature = "libsql")]
             Self::Libsql(info) => AnyInfo::Libsql(info.db_info()),
+            #[cfg(feature = "postgres")]
+            Self::Postgres(info) => AnyInfo::Postgres(info.db_info()),
             _ => missing_db!(),
         }
     }
@@ -225,6 +264,12 @@ impl Executor for AnyConn {
                     .await
                     .map(AnyStatement::LibSql)
                     .map_err(AnyError::LibSql),
+                #[cfg(feature = "postgres")]
+                Self::Postgres(conn) => conn
+                    .prepare(query)
+                    .await
+                    .map(AnyStatement::Postgres)
+                    .map_err(AnyError::Postgres),
                 _ => missing_db!(),
             }
         }
@@ -254,6 +299,15 @@ impl Executor for AnyConn {
                 };
                 Box::pin(AnyQueryStream::<LibSql> {
                     stream: <LibSqlConn as Executor>::query(libsql, stmt, params),
+                })
+            }
+            #[cfg(feature = "postgres")]
+            Self::Postgres(postgres) => {
+                let AnyStatement::Postgres(stmt) = stmt else {
+                    panic!("Statement mismatch")
+                };
+                Box::pin(AnyQueryStream::<Postgres> {
+                    stream: <PostgresConn as Executor>::query(postgres, stmt, params),
                 })
             }
             _ => missing_db!(),
@@ -287,6 +341,15 @@ impl Executor for AnyConn {
                         .await
                         .map_err(Into::into)
                 }
+                #[cfg(feature = "postgres")]
+                Self::Postgres(postgres) => {
+                    let AnyStatement::Postgres(stmt) = stmt else {
+                        panic!("Statement mismatch")
+                    };
+                    <PostgresConn as Executor>::exec(postgres, stmt, params)
+                        .await
+                        .map_err(Into::into)
+                }
                 _ => missing_db!(),
             }
         }
@@ -308,6 +371,10 @@ impl Executor for AnyConn {
                 Self::Libsql(libsql) => <LibSqlConn as Executor>::exec_batch(libsql, stmt)
                     .await
                     .map_err(Into::into),
+                #[cfg(feature = "postgres")]
+                Self::Postgres(postgres) => <PostgresConn as Executor>::exec_batch(postgres, stmt)
+                    .await
+                    .map_err(Into::into),
                 _ => missing_db!(),
             }
         }
@@ -320,6 +387,8 @@ pub enum AnyRow {
     Sqlite(SqliteRow),
     #[cfg(feature = "libsql")]
     Libsql(LibSqlRow),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresRow),
 }
 
 #[allow(unused_variables, unreachable_patterns)]
@@ -335,6 +404,10 @@ impl Row for AnyRow {
             AnyRow::Sqlite(row) => <SqliteRow as Row>::get(row, index).map_err(AnyError::Sqlite),
             #[cfg(feature = "libsql")]
             AnyRow::Libsql(row) => <LibSqlRow as Row>::get(row, index).map_err(AnyError::LibSql),
+            #[cfg(feature = "postgres")]
+            AnyRow::Postgres(row) => {
+                <PostgresRow as Row>::get(row, index).map_err(AnyError::Postgres)
+            }
             _ => missing_db!(),
         }
     }
@@ -353,6 +426,10 @@ impl Row for AnyRow {
             AnyRow::Libsql(row) => {
                 <LibSqlRow as Row>::get_typed(row, index, ty).map_err(AnyError::LibSql)
             }
+            #[cfg(feature = "postgres")]
+            AnyRow::Postgres(row) => {
+                <PostgresRow as Row>::get_typed(row, index, ty).map_err(AnyError::Postgres)
+            }
             _ => missing_db!(),
         }
     }
@@ -364,6 +441,8 @@ impl Row for AnyRow {
             AnyRow::Sqlite(row) => row.len(),
             #[cfg(feature = "libsql")]
             AnyRow::Libsql(row) => row.len(),
+            #[cfg(feature = "postgres")]
+            AnyRow::Postgres(row) => row.len(),
             _ => missing_db!(),
         }
     }
@@ -376,6 +455,8 @@ impl Row for AnyRow {
             AnyRow::Sqlite(row) => row.column_name(idx),
             #[cfg(feature = "libsql")]
             AnyRow::Libsql(row) => <LibSqlRow as Row>::column_name(row, idx),
+            #[cfg(feature = "postgres")]
+            AnyRow::Postgres(row) => <PostgresRow as Row>::column_name(row, idx),
             _ => missing_db!(),
         }
     }
@@ -395,12 +476,21 @@ impl From<LibSqlRow> for AnyRow {
     }
 }
 
+#[cfg(feature = "postgres")]
+impl From<PostgresRow> for AnyRow {
+    fn from(value: PostgresRow) -> Self {
+        Self::Postgres(value)
+    }
+}
+
 #[non_exhaustive]
 pub enum AnyStatement {
     #[cfg(feature = "sqlite")]
     Sqlite(SqliteStatement),
     #[cfg(feature = "libsql")]
     LibSql(LibSqlStatement),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresStatement),
 }
 
 impl Statement for AnyStatement {
@@ -413,6 +503,8 @@ impl Statement for AnyStatement {
             Self::Sqlite(stmt) => stmt.finalize().map_err(AnyError::Sqlite),
             #[cfg(feature = "libsql")]
             Self::LibSql(stmt) => stmt.finalize().map_err(AnyError::LibSql),
+            #[cfg(feature = "postgres")]
+            Self::Postgres(stmt) => stmt.finalize().map_err(AnyError::Postgres),
             _ => missing_db!(),
         }
     }
@@ -425,8 +517,8 @@ pub enum AnyTransaction<'conn> {
     #[cfg(feature = "libsql")]
     LibSql(LibSqlTransaction),
     #[cfg(feature = "postgres")]
-    Postgres(PgTrans<'conn>),
-    #[cfg(all(not(feature = "sqlite"), not(feature = "postgres")))]
+    Postgres(PostgresTransaction<'conn>),
+    #[cfg(not(any(feature = "sqlite", feature = "postgres")))]
     Invariant(core::marker::PhantomData<&'conn ()>),
 }
 
@@ -443,6 +535,10 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                     .map_err(Into::into),
                 #[cfg(feature = "libsql")]
                 Self::LibSql(tx) => <LibSqlTransaction as Transaction>::commit(tx)
+                    .await
+                    .map_err(Into::into),
+                #[cfg(feature = "postgres")]
+                Self::Postgres(tx) => <PostgresTransaction as Transaction>::commit(tx)
                     .await
                     .map_err(Into::into),
                 _ => missing_db!(),
@@ -464,6 +560,10 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                 Self::LibSql(tx) => <LibSqlTransaction as Transaction>::rollback(tx)
                     .await
                     .map_err(Into::into),
+                #[cfg(feature = "postgres")]
+                Self::Postgres(tx) => <PostgresTransaction as Transaction>::rollback(tx)
+                    .await
+                    .map_err(Into::into),
                 _ => missing_db!(),
             }
         }
@@ -480,6 +580,8 @@ impl Executor for AnyTransaction<'_> {
             Self::Sqlite(info) => AnyInfo::Sqlite(info.db_info()),
             #[cfg(feature = "libsql")]
             Self::LibSql(info) => AnyInfo::Libsql(info.db_info()),
+            #[cfg(feature = "postgres")]
+            Self::Postgres(info) => AnyInfo::Postgres(info.db_info()),
             _ => missing_db!(),
         }
     }
@@ -508,6 +610,12 @@ impl Executor for AnyTransaction<'_> {
                     .await
                     .map(AnyStatement::LibSql)
                     .map_err(AnyError::LibSql),
+                #[cfg(feature = "postgres")]
+                Self::Postgres(conn) => conn
+                    .prepare(query)
+                    .await
+                    .map(AnyStatement::Postgres)
+                    .map_err(AnyError::Postgres),
                 _ => missing_db!(),
             }
         }
@@ -535,6 +643,15 @@ impl Executor for AnyTransaction<'_> {
                 };
                 Box::pin(AnyQueryStream::<LibSql> {
                     stream: <LibSqlTransaction as Executor>::query(libsql, stmt, params),
+                })
+            }
+            #[cfg(feature = "postgres")]
+            Self::Postgres(postgres) => {
+                let AnyStatement::Postgres(stmt) = stmt else {
+                    panic!("Statement mismatch")
+                };
+                Box::pin(AnyQueryStream::<Postgres> {
+                    stream: <PostgresTransaction as Executor>::query(postgres, stmt, params),
                 })
             }
             _ => missing_db!(),
@@ -567,6 +684,15 @@ impl Executor for AnyTransaction<'_> {
                         .await
                         .map_err(Into::into)
                 }
+                #[cfg(feature = "postgres")]
+                Self::Postgres(postgres) => {
+                    let AnyStatement::Postgres(stmt) = stmt else {
+                        panic!("Statement mismatch")
+                    };
+                    <PostgresTransaction as Executor>::exec(postgres, stmt, params)
+                        .await
+                        .map_err(Into::into)
+                }
                 _ => missing_db!(),
             }
         }
@@ -587,6 +713,12 @@ impl Executor for AnyTransaction<'_> {
                 Self::LibSql(libsql) => <LibSqlTransaction as Executor>::exec_batch(libsql, stmt)
                     .await
                     .map_err(Into::into),
+                #[cfg(feature = "postgres")]
+                Self::Postgres(postgres) => {
+                    <PostgresTransaction as Executor>::exec_batch(postgres, stmt)
+                        .await
+                        .map_err(Into::into)
+                }
                 _ => missing_db!(),
             }
         }
@@ -600,6 +732,8 @@ pub enum AnyError {
     Sqlite(SqliteError),
     #[cfg(feature = "libsql")]
     LibSql(LibSqlError),
+    #[cfg(feature = "postgres")]
+    Postgres(PostgresError),
     Message(&'static str),
 }
 
@@ -612,6 +746,8 @@ impl core::fmt::Display for AnyError {
             AnyError::Sqlite(err) => write!(f, "{}", err),
             #[cfg(feature = "libsql")]
             AnyError::LibSql(err) => write!(f, "{}", err),
+            #[cfg(feature = "postgres")]
+            AnyError::Postgres(err) => write!(f, "{}", err),
             AnyError::Message(msg) => msg.fmt(f),
             _ => missing_db!(),
         }
@@ -626,6 +762,8 @@ impl core::error::Error for AnyError {
             AnyError::Sqlite(err) => Some(err),
             #[cfg(feature = "libsql")]
             AnyError::LibSql(err) => Some(err),
+            #[cfg(feature = "postgres")]
+            AnyError::Postgres(err) => Some(err),
             _ => None,
         }
     }
@@ -642,6 +780,13 @@ impl From<SqliteError> for AnyError {
 impl From<LibSqlError> for AnyError {
     fn from(value: LibSqlError) -> Self {
         Self::LibSql(value)
+    }
+}
+
+#[cfg(feature = "postgres")]
+impl From<PostgresError> for AnyError {
+    fn from(value: PostgresError) -> Self {
+        Self::Postgres(value)
     }
 }
 

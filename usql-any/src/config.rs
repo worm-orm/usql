@@ -22,6 +22,7 @@ pub struct Config {
 pub enum DatabaseConfig {
     Sqlite(SqliteConfig),
     LibSql(LibSqlConfig),
+    Postgres(PostgresConfig),
 }
 
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
@@ -72,6 +73,35 @@ impl From<LibSqlConfig> for AnyOptions {
     }
 }
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PostgresConfig {
+    pub url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_connections: Option<usize>,
+}
+
+// The url may contain a password
+impl core::fmt::Debug for PostgresConfig {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("PostgresConfig")
+            .field("max_connections", &self.max_connections)
+            .finish_non_exhaustive()
+    }
+}
+
+#[cfg(feature = "postgres")]
+impl From<PostgresConfig> for AnyOptions {
+    fn from(value: PostgresConfig) -> Self {
+        let mut opts = usql_postgres::PostgresOptions::from_url(value.url);
+        if let Some(max) = value.max_connections {
+            opts = opts.max_size(max);
+        }
+
+        opts.into()
+    }
+}
+
 impl Config {
     #[allow(unused)]
     pub async fn crate_pool(self) -> Result<AnyPool, AnyError> {
@@ -91,6 +121,13 @@ impl Config {
                 let pool = AnyConnector::create_pool(lib_sql_config.into()).await;
                 #[cfg(not(feature = "libsql"))]
                 let pool = Err(AnyError::Message("Libsql feature not enabled"));
+                pool
+            }
+            DatabaseConfig::Postgres(postgres_config) => {
+                #[cfg(feature = "postgres")]
+                let pool = AnyConnector::create_pool(postgres_config.into()).await;
+                #[cfg(not(feature = "postgres"))]
+                let pool = Err(AnyError::Message("Postgres feature not enabled"));
                 pool
             }
         }

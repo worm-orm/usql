@@ -2,6 +2,7 @@ use usql_core::{Connector, DatabaseInfo, System};
 
 use crate::{conn::Conn, error::Error, options::Options, pool::Pool, row::Row, stmt::Statement};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Postgres;
 
 impl Connector for Postgres {
@@ -22,10 +23,7 @@ impl Connector for Postgres {
     fn create_pool(
         options: Self::Options,
     ) -> impl Future<Output = Result<Self::Pool, Self::Error>> + Send {
-        async move {
-            let pool = options.create_pool()?;
-            Ok(pool)
-        }
+        async move { options.create_pool() }
     }
 }
 

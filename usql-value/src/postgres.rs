@@ -1,94 +1,10 @@
-use postgres_types::{IsNull, Json, ToSql};
+//! Conversion to and from PostgreSQL's binary format.
 
-use crate::{Value, ValueRef};
+mod decode;
+mod encode;
+mod numeric;
 
-impl postgres_types::ToSql for ValueRef<'_> {
-    fn to_sql(
-        &self,
-        ty: &postgres_types::Type,
-        out: &mut bytes::BytesMut,
-    ) -> Result<postgres_types::IsNull, alloc::boxed::Box<dyn core::error::Error + Sync + Send>>
-    where
-        Self: Sized,
-    {
-        match self {
-            ValueRef::Null => Ok(IsNull::Yes),
-            ValueRef::Bool(b) => b.to_sql(ty, out),
-            ValueRef::SmallInt(i) => i.to_sql(ty, out),
-            ValueRef::Int(i) => i.to_sql(ty, out),
-            ValueRef::BigInt(i) => i.to_sql(ty, out),
-            ValueRef::Float(ordered_float) => ordered_float.to_sql(ty, out),
-            ValueRef::Double(ordered_float) => ordered_float.to_sql(ty, out),
-            ValueRef::Text(text) => text.to_sql(ty, out),
-            ValueRef::ByteArray(items) => items.to_sql(ty, out),
-            ValueRef::Date(naive_date) => naive_date.to_sql(ty, out),
-            ValueRef::Time(naive_time) => naive_time.to_sql(ty, out),
-            ValueRef::Timestamp(naive_date_time) => naive_date_time.to_sql(ty, out),
-            ValueRef::Uuid(uuid) => uuid.to_sql(ty, out),
-            ValueRef::Json(json_value) => Json(*json_value).to_sql(ty, out),
-            ValueRef::Array(values) => values.to_sql(ty, out),
-            ValueRef::Geometry(_) => todo!("Geometry"), // ValueRef::Geometry(geo) => geozero::wkb::Encode(geo.ewkb()).to_sql_checked(ty, out),
-        }
-    }
+type BoxError = alloc::boxed::Box<dyn core::error::Error + Sync + Send>;
 
-    fn accepts(_ty: &postgres_types::Type) -> bool
-    where
-        Self: Sized,
-    {
-        true
-    }
-
-    fn to_sql_checked(
-        &self,
-        ty: &postgres_types::Type,
-        out: &mut bytes::BytesMut,
-    ) -> Result<postgres_types::IsNull, alloc::boxed::Box<dyn core::error::Error + Sync + Send>>
-    {
-        match self {
-            ValueRef::Null => Ok(IsNull::Yes),
-            ValueRef::Bool(b) => b.to_sql_checked(ty, out),
-            ValueRef::SmallInt(i) => i.to_sql_checked(ty, out),
-            ValueRef::Int(i) => i.to_sql_checked(ty, out),
-            ValueRef::BigInt(i) => i.to_sql_checked(ty, out),
-            ValueRef::Float(ordered_float) => ordered_float.to_sql_checked(ty, out),
-            ValueRef::Double(ordered_float) => ordered_float.to_sql_checked(ty, out),
-            ValueRef::Text(text) => text.to_sql_checked(ty, out),
-            ValueRef::ByteArray(items) => items.to_sql_checked(ty, out),
-            ValueRef::Date(naive_date) => naive_date.to_sql_checked(ty, out),
-            ValueRef::Time(naive_time) => naive_time.to_sql_checked(ty, out),
-            ValueRef::Timestamp(naive_date_time) => naive_date_time.to_sql_checked(ty, out),
-            ValueRef::Uuid(uuid) => uuid.to_sql_checked(ty, out),
-            ValueRef::Json(json_value) => Json(*json_value).to_sql_checked(ty, out),
-            ValueRef::Array(values) => values.to_sql_checked(ty, out),
-            ValueRef::Geometry(_) => todo!("Geometry"), // ValueRef::Geometry(geo) => geozero::wkb::Encode(geo.ewkb()).to_sql_checked(ty, out),
-        }
-    }
-}
-
-impl ToSql for Value {
-    fn to_sql(
-        &self,
-        ty: &postgres_types::Type,
-        out: &mut bytes::BytesMut,
-    ) -> Result<IsNull, alloc::boxed::Box<dyn core::error::Error + Sync + Send>>
-    where
-        Self: Sized,
-    {
-        self.as_ref().to_sql(ty, out)
-    }
-
-    fn accepts(_ty: &postgres_types::Type) -> bool
-    where
-        Self: Sized,
-    {
-        true
-    }
-
-    fn to_sql_checked(
-        &self,
-        ty: &postgres_types::Type,
-        out: &mut bytes::BytesMut,
-    ) -> Result<IsNull, alloc::boxed::Box<dyn core::error::Error + Sync + Send>> {
-        self.as_ref().to_sql_checked(ty, out)
-    }
-}
+#[cfg(test)]
+mod tests;

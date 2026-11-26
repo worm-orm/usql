@@ -6,7 +6,12 @@ use alloc::string::String;
 pub enum Error {
     Write(fmt::Error),
     InvalidAutoType(String),
-    InvalidValueCount { expected: usize, found: usize },
+    InvalidValueCount {
+        expected: usize,
+        found: usize,
+    },
+    /// Not supported by the dialect
+    Unsupported(&'static str),
 }
 
 impl From<fmt::Error> for Error {
@@ -27,6 +32,7 @@ impl fmt::Display for Error {
                     expected, found
                 )
             }
+            Self::Unsupported(what) => write!(f, "Unsupported: {}", what),
         }
     }
 }

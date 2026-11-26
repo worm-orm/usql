@@ -8,6 +8,7 @@ sqlite = ["usql-sqlite"]
 sqlite-vector = ["sqlite", "usql-sqlite/vector"]
 # libsql = ["usql-libsql"]
 postgres = ["usql-postgres"]
+mysql = ["usql-mysql"]
 
 jsonschema = ["schemars"]
 
@@ -19,6 +20,7 @@ usql-value = { path = "../usql-value" }
 usql-sqlite = { path = "../usql-sqlite", optional = true }
 # usql-libsql = { path = "../usql-libsql", optional = true }
 usql-postgres = { path = "../usql-postgres", optional = true }
+usql-mysql = { path = "../usql-mysql", optional = true }
 
 pin-project-lite = { workspace = true }
 futures-core = { workspace = true }

@@ -77,6 +77,16 @@ impl<'a> Column<'a> {
 
         let dialect = ctx.dialect();
 
+        if self.auto
+            && dialect == System::Mysql
+            && !matches!(
+                self.kind,
+                ColumnType::SmallInt | ColumnType::Int | ColumnType::BigInt
+            )
+        {
+            return Err(Error::InvalidAutoType(format!("{:?}", self.kind)));
+        }
+
         if !(self.auto && dialect == System::Postgres) {
             write_sql_type(&self.kind, ctx, dialect)?;
         } else {
@@ -93,7 +103,7 @@ impl<'a> Column<'a> {
             write!(ctx, " PRIMARY KEY")?;
         }
 
-        if !(self.auto && matches!(dialect, System::Sqlite | System::Postgres)) {
+        if !(self.auto && matches!(dialect, System::Sqlite | System::Postgres | System::Mysql)) {
             if self.required {
                 ctx.write_str(" NOT NULL")?;
             }
@@ -111,8 +121,19 @@ impl<'a> Column<'a> {
             ctx.write_str(" AUTOINCREMENT")?;
         }
 
+        if self.auto && dialect == System::Mysql {
+            ctx.write_str(" AUTO_INCREMENT")?;
+        }
+
         if let Some(foreign_k) = &self.foreign_key {
             if fk {
+                if dialect == System::Mysql {
+                    // MySQL ignores REFERENCES in a column definition
+                    ctx.write_str(", ADD FOREIGN KEY (")?;
+                    ctx.push_identifier(&self.name)?;
+                    ctx.write_char(')')?;
+                }
+
                 ctx.write_str(" REFERENCES ")?;
 
                 ctx.push_identifier(&foreign_k.table)?;

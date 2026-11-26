@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use klaver_util::{StringRef, throw, throw_if};
 use rquickjs::{Ctx, FromJs, JsLifetime, Object, class::Trace};
-use usql_any::{AnyPool, LibSqlConfig, SqliteConfig};
+use usql_any::{AnyPool, LibSqlConfig, MysqlConfig, SqliteConfig};
 use usql_core::Pool;
 
 use crate::JsConn;
@@ -70,11 +70,22 @@ impl<'js> FromJs<'js> for Config {
                     ),
                 }
             }
+            "mysql" => {
+                let url: String = obj.get("url")?;
+                let max_connections: Option<usize> = obj.get("maxConnections")?;
+                usql_any::Config {
+                    workers: None,
+                    kind: usql_any::DatabaseConfig::Mysql(MysqlConfig {
+                        url,
+                        max_connections,
+                    }),
+                }
+            }
             _ => {
                 return Err(rquickjs::Error::new_from_js_message(
                     "string",
                     "database type",
-                    "Sqlite, libsql or postgres",
+                    "Sqlite, libsql or mysql",
                 ));
             }
         };

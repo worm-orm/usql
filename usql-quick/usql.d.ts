@@ -81,4 +81,5 @@ export class Pool {
  */
 export type Config =
   | { type: "sqlite"; path?: string }
-  | { type: "libsql"; path?: string };
+  | { type: "libsql"; path?: string }
+  | { type: "mysql"; url: string; maxConnections?: number };

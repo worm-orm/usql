@@ -23,6 +23,7 @@ pub enum DatabaseConfig {
     Sqlite(SqliteConfig),
     LibSql(LibSqlConfig),
     Postgres(PostgresConfig),
+    Mysql(MysqlConfig),
 }
 
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
@@ -102,6 +103,35 @@ impl From<PostgresConfig> for AnyOptions {
     }
 }
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct MysqlConfig {
+    pub url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_connections: Option<usize>,
+}
+
+// The url may contain a password
+impl core::fmt::Debug for MysqlConfig {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("MysqlConfig")
+            .field("max_connections", &self.max_connections)
+            .finish_non_exhaustive()
+    }
+}
+
+#[cfg(feature = "mysql")]
+impl From<MysqlConfig> for AnyOptions {
+    fn from(value: MysqlConfig) -> Self {
+        let mut opts = usql_mysql::MysqlOptions::from_url(value.url);
+        if let Some(max) = value.max_connections {
+            opts = opts.max_size(max);
+        }
+
+        opts.into()
+    }
+}
+
 impl Config {
     #[allow(unused)]
     pub async fn crate_pool(self) -> Result<AnyPool, AnyError> {
@@ -128,6 +158,13 @@ impl Config {
                 let pool = AnyConnector::create_pool(postgres_config.into()).await;
                 #[cfg(not(feature = "postgres"))]
                 let pool = Err(AnyError::Message("Postgres feature not enabled"));
+                pool
+            }
+            DatabaseConfig::Mysql(mysql_config) => {
+                #[cfg(feature = "mysql")]
+                let pool = AnyConnector::create_pool(mysql_config.into()).await;
+                #[cfg(not(feature = "mysql"))]
+                let pool = Err(AnyError::Message("Mysql feature not enabled"));
                 pool
             }
         }

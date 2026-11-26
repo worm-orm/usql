@@ -11,6 +11,7 @@ path = "src/main.rs"
 default = ["sqlite"]
 sqlite = ["usql-any/sqlite-vector", "usql-sqlite"]
 postgres = ["usql-any/postgres"]
+mysql = ["usql-any/mysql"]
 # libsql = ["usql-any/libsql"]
 
 [dependencies]

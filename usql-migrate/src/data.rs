@@ -19,7 +19,7 @@ use usql_builder::{
     schema::{Column, ColumnType, create_table},
     select::{FilterQuery, Order, QueryExt, SortQuery, select},
 };
-use usql_core::{ColumnIndex, Connector, DatabaseInfo, Executor, Row, util::next};
+use usql_core::{ColumnIndex, Connector, DatabaseInfo, Executor, Row, System, util::next};
 use usql_value::{JsonValue, Type};
 
 use crate::error::Error;
@@ -37,15 +37,17 @@ where
     E: Executor,
     <E::Connector as Connector>::Error: core::error::Error + Send + Sync + 'static,
 {
+    let system = executor.db_info().variant();
+    // MySQL can't use TEXT as a key
+    let name = match system {
+        System::Mysql => ColumnType::VarChar(255),
+        _ => ColumnType::Text,
+    };
     let sql = create_table(table)
-        .column(
-            Column::new("name", ColumnType::Text)
-                .required(true)
-                .primary_key(),
-        )
+        .column(Column::new("name", name).required(true).primary_key())
         .column(Column::new("date", ColumnType::DateTime).required(true))
         .column(Column::new("meta", ColumnType::Json))
-        .to_sql(executor.db_info().variant())?;
+        .to_sql(system)?;
 
     let mut stmt = executor.prepare(&sql.sql).await.unwrap();
 

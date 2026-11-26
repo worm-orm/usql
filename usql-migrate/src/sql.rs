@@ -8,7 +8,7 @@ use crate::{Exec, MigrationLoader, Runner};
 #[derive(Default)]
 pub struct SqlLoader;
 
-const EXTS: &'static [&'static str] = &["sql", "sqlite", "libsql", "postgres"];
+const EXTS: &'static [&'static str] = &["sql", "sqlite", "libsql", "postgres", "mysql"];
 
 impl<B> MigrationLoader<B> for SqlLoader
 where
@@ -53,6 +53,9 @@ where
                         "postgres" => {
                             up.scripts.insert(System::Postgres, content);
                         }
+                        "mysql" => {
+                            up.scripts.insert(System::Mysql, content);
+                        }
                         "sqlite" => {
                             up.scripts.insert(System::Sqlite, content);
                         }
@@ -70,6 +73,9 @@ where
                     match *ext {
                         "postgres" => {
                             down.scripts.insert(System::Postgres, content);
+                        }
+                        "mysql" => {
+                            down.scripts.insert(System::Mysql, content);
                         }
                         "sqlite" => {
                             down.scripts.insert(System::Sqlite, content);

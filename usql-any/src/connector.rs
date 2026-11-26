@@ -10,6 +10,11 @@ use usql_libsql::{
     Conn as LibSqlConn, Error as LibSqlError, LibSql, LibSqlInfo, Options as LibSqlOptions,
     Pool as LibSqlPool, Row as LibSqlRow, Stmt as LibSqlStatement, Trans as LibSqlTransaction,
 };
+#[cfg(feature = "mysql")]
+use usql_mysql::{
+    Mysql, MysqlConn, MysqlDatabaseInfo, MysqlError, MysqlOptions, MysqlPool, MysqlRow,
+    MysqlStatement, MysqlTransaction,
+};
 #[cfg(feature = "postgres")]
 use usql_postgres::{
     Postgres, PostgresConn, PostgresDatabaseInfo, PostgresError, PostgresOptions, PostgresPool,
@@ -24,7 +29,7 @@ use usql_value::{Type, ValueCow};
 
 macro_rules! missing_db {
     () => {
-        panic!("Enable at least one of the following features: sqlite, libsql, postgres")
+        panic!("Enable at least one of the following features: sqlite, libsql, postgres, mysql")
     };
 }
 
@@ -66,6 +71,11 @@ impl Connector for AnyConnector {
                     .await
                     .map(AnyPool::Postgres)
                     .map_err(AnyError::Postgres),
+                #[cfg(feature = "mysql")]
+                AnyOptions::Mysql(options) => Mysql::create_pool(options)
+                    .await
+                    .map(AnyPool::Mysql)
+                    .map_err(AnyError::Mysql),
                 _ => missing_db!(),
             }
         }
@@ -81,6 +91,8 @@ pub enum AnyOptions {
     Libsql(LibSqlOptions),
     #[cfg(feature = "postgres")]
     Postgres(PostgresOptions),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlOptions),
 }
 
 #[cfg(feature = "sqlite")]
@@ -103,6 +115,12 @@ impl From<PostgresOptions> for AnyOptions {
         Self::Postgres(value)
     }
 }
+#[cfg(feature = "mysql")]
+impl From<MysqlOptions> for AnyOptions {
+    fn from(value: MysqlOptions) -> Self {
+        Self::Mysql(value)
+    }
+}
 
 #[derive(Clone)]
 #[non_exhaustive]
@@ -113,6 +131,8 @@ pub enum AnyPool {
     Libsql(LibSqlPool),
     #[cfg(feature = "postgres")]
     Postgres(PostgresPool),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlPool),
 }
 
 impl Pool for AnyPool {
@@ -147,6 +167,12 @@ impl Pool for AnyPool {
                     .await
                     .map(AnyConn::Postgres)
                     .map_err(AnyError::Postgres),
+                #[cfg(feature = "mysql")]
+                AnyPool::Mysql(pool) => pool
+                    .get()
+                    .await
+                    .map(AnyConn::Mysql)
+                    .map_err(AnyError::Mysql),
                 _ => missing_db!(),
             }
         }
@@ -161,6 +187,8 @@ pub enum AnyInfo {
     Libsql(LibSqlInfo),
     #[cfg(feature = "postgres")]
     Postgres(PostgresDatabaseInfo),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlDatabaseInfo),
 }
 
 impl DatabaseInfo for AnyInfo {
@@ -173,6 +201,8 @@ impl DatabaseInfo for AnyInfo {
             AnyInfo::Libsql(_) => usql_core::System::LibSql,
             #[cfg(feature = "postgres")]
             AnyInfo::Postgres(_) => usql_core::System::Postgres,
+            #[cfg(feature = "mysql")]
+            AnyInfo::Mysql(_) => usql_core::System::Mysql,
             _ => missing_db!(),
         }
     }
@@ -186,6 +216,8 @@ pub enum AnyConn {
     Libsql(LibSqlConn),
     #[cfg(feature = "postgres")]
     Postgres(PostgresConn),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlConn),
 }
 
 impl Connection for AnyConn {
@@ -216,6 +248,12 @@ impl Connection for AnyConn {
                     .await
                     .map(AnyTransaction::Postgres)
                     .map_err(AnyError::Postgres),
+                #[cfg(feature = "mysql")]
+                Self::Mysql(conn) => conn
+                    .begin()
+                    .await
+                    .map(AnyTransaction::Mysql)
+                    .map_err(AnyError::Mysql),
                 _ => missing_db!(),
             }
         }
@@ -234,6 +272,8 @@ impl Executor for AnyConn {
             Self::Libsql(info) => AnyInfo::Libsql(info.db_info()),
             #[cfg(feature = "postgres")]
             Self::Postgres(info) => AnyInfo::Postgres(info.db_info()),
+            #[cfg(feature = "mysql")]
+            Self::Mysql(info) => AnyInfo::Mysql(info.db_info()),
             _ => missing_db!(),
         }
     }
@@ -270,6 +310,12 @@ impl Executor for AnyConn {
                     .await
                     .map(AnyStatement::Postgres)
                     .map_err(AnyError::Postgres),
+                #[cfg(feature = "mysql")]
+                Self::Mysql(conn) => conn
+                    .prepare(query)
+                    .await
+                    .map(AnyStatement::Mysql)
+                    .map_err(AnyError::Mysql),
                 _ => missing_db!(),
             }
         }
@@ -308,6 +354,15 @@ impl Executor for AnyConn {
                 };
                 Box::pin(AnyQueryStream::<Postgres> {
                     stream: <PostgresConn as Executor>::query(postgres, stmt, params),
+                })
+            }
+            #[cfg(feature = "mysql")]
+            Self::Mysql(mysql) => {
+                let AnyStatement::Mysql(stmt) = stmt else {
+                    panic!("Statement mismatch")
+                };
+                Box::pin(AnyQueryStream::<Mysql> {
+                    stream: <MysqlConn as Executor>::query(mysql, stmt, params),
                 })
             }
             _ => missing_db!(),
@@ -350,6 +405,15 @@ impl Executor for AnyConn {
                         .await
                         .map_err(Into::into)
                 }
+                #[cfg(feature = "mysql")]
+                Self::Mysql(mysql) => {
+                    let AnyStatement::Mysql(stmt) = stmt else {
+                        panic!("Statement mismatch")
+                    };
+                    <MysqlConn as Executor>::exec(mysql, stmt, params)
+                        .await
+                        .map_err(Into::into)
+                }
                 _ => missing_db!(),
             }
         }
@@ -375,6 +439,10 @@ impl Executor for AnyConn {
                 Self::Postgres(postgres) => <PostgresConn as Executor>::exec_batch(postgres, stmt)
                     .await
                     .map_err(Into::into),
+                #[cfg(feature = "mysql")]
+                Self::Mysql(mysql) => <MysqlConn as Executor>::exec_batch(mysql, stmt)
+                    .await
+                    .map_err(Into::into),
                 _ => missing_db!(),
             }
         }
@@ -389,6 +457,8 @@ pub enum AnyRow {
     Libsql(LibSqlRow),
     #[cfg(feature = "postgres")]
     Postgres(PostgresRow),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlRow),
 }
 
 #[allow(unused_variables, unreachable_patterns)]
@@ -408,6 +478,8 @@ impl Row for AnyRow {
             AnyRow::Postgres(row) => {
                 <PostgresRow as Row>::get(row, index).map_err(AnyError::Postgres)
             }
+            #[cfg(feature = "mysql")]
+            AnyRow::Mysql(row) => <MysqlRow as Row>::get(row, index).map_err(AnyError::Mysql),
             _ => missing_db!(),
         }
     }
@@ -430,6 +502,10 @@ impl Row for AnyRow {
             AnyRow::Postgres(row) => {
                 <PostgresRow as Row>::get_typed(row, index, ty).map_err(AnyError::Postgres)
             }
+            #[cfg(feature = "mysql")]
+            AnyRow::Mysql(row) => {
+                <MysqlRow as Row>::get_typed(row, index, ty).map_err(AnyError::Mysql)
+            }
             _ => missing_db!(),
         }
     }
@@ -443,6 +519,8 @@ impl Row for AnyRow {
             AnyRow::Libsql(row) => row.len(),
             #[cfg(feature = "postgres")]
             AnyRow::Postgres(row) => row.len(),
+            #[cfg(feature = "mysql")]
+            AnyRow::Mysql(row) => row.len(),
             _ => missing_db!(),
         }
     }
@@ -457,6 +535,8 @@ impl Row for AnyRow {
             AnyRow::Libsql(row) => <LibSqlRow as Row>::column_name(row, idx),
             #[cfg(feature = "postgres")]
             AnyRow::Postgres(row) => <PostgresRow as Row>::column_name(row, idx),
+            #[cfg(feature = "mysql")]
+            AnyRow::Mysql(row) => <MysqlRow as Row>::column_name(row, idx),
             _ => missing_db!(),
         }
     }
@@ -482,6 +562,12 @@ impl From<PostgresRow> for AnyRow {
         Self::Postgres(value)
     }
 }
+#[cfg(feature = "mysql")]
+impl From<MysqlRow> for AnyRow {
+    fn from(value: MysqlRow) -> Self {
+        Self::Mysql(value)
+    }
+}
 
 #[non_exhaustive]
 pub enum AnyStatement {
@@ -491,6 +577,8 @@ pub enum AnyStatement {
     LibSql(LibSqlStatement),
     #[cfg(feature = "postgres")]
     Postgres(PostgresStatement),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlStatement),
 }
 
 impl Statement for AnyStatement {
@@ -505,6 +593,8 @@ impl Statement for AnyStatement {
             Self::LibSql(stmt) => stmt.finalize().map_err(AnyError::LibSql),
             #[cfg(feature = "postgres")]
             Self::Postgres(stmt) => stmt.finalize().map_err(AnyError::Postgres),
+            #[cfg(feature = "mysql")]
+            Self::Mysql(stmt) => stmt.finalize().map_err(AnyError::Mysql),
             _ => missing_db!(),
         }
     }
@@ -518,7 +608,9 @@ pub enum AnyTransaction<'conn> {
     LibSql(LibSqlTransaction),
     #[cfg(feature = "postgres")]
     Postgres(PostgresTransaction<'conn>),
-    #[cfg(not(any(feature = "sqlite", feature = "postgres")))]
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlTransaction<'conn>),
+    #[cfg(not(any(feature = "sqlite", feature = "postgres", feature = "mysql")))]
     Invariant(core::marker::PhantomData<&'conn ()>),
 }
 
@@ -539,6 +631,10 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                     .map_err(Into::into),
                 #[cfg(feature = "postgres")]
                 Self::Postgres(tx) => <PostgresTransaction as Transaction>::commit(tx)
+                    .await
+                    .map_err(Into::into),
+                #[cfg(feature = "mysql")]
+                Self::Mysql(tx) => <MysqlTransaction as Transaction>::commit(tx)
                     .await
                     .map_err(Into::into),
                 _ => missing_db!(),
@@ -564,6 +660,10 @@ impl<'conn> Transaction<'conn> for AnyTransaction<'conn> {
                 Self::Postgres(tx) => <PostgresTransaction as Transaction>::rollback(tx)
                     .await
                     .map_err(Into::into),
+                #[cfg(feature = "mysql")]
+                Self::Mysql(tx) => <MysqlTransaction as Transaction>::rollback(tx)
+                    .await
+                    .map_err(Into::into),
                 _ => missing_db!(),
             }
         }
@@ -582,6 +682,8 @@ impl Executor for AnyTransaction<'_> {
             Self::LibSql(info) => AnyInfo::Libsql(info.db_info()),
             #[cfg(feature = "postgres")]
             Self::Postgres(info) => AnyInfo::Postgres(info.db_info()),
+            #[cfg(feature = "mysql")]
+            Self::Mysql(info) => AnyInfo::Mysql(info.db_info()),
             _ => missing_db!(),
         }
     }
@@ -616,6 +718,12 @@ impl Executor for AnyTransaction<'_> {
                     .await
                     .map(AnyStatement::Postgres)
                     .map_err(AnyError::Postgres),
+                #[cfg(feature = "mysql")]
+                Self::Mysql(conn) => conn
+                    .prepare(query)
+                    .await
+                    .map(AnyStatement::Mysql)
+                    .map_err(AnyError::Mysql),
                 _ => missing_db!(),
             }
         }
@@ -652,6 +760,15 @@ impl Executor for AnyTransaction<'_> {
                 };
                 Box::pin(AnyQueryStream::<Postgres> {
                     stream: <PostgresTransaction as Executor>::query(postgres, stmt, params),
+                })
+            }
+            #[cfg(feature = "mysql")]
+            Self::Mysql(mysql) => {
+                let AnyStatement::Mysql(stmt) = stmt else {
+                    panic!("Statement mismatch")
+                };
+                Box::pin(AnyQueryStream::<Mysql> {
+                    stream: <MysqlTransaction as Executor>::query(mysql, stmt, params),
                 })
             }
             _ => missing_db!(),
@@ -693,6 +810,15 @@ impl Executor for AnyTransaction<'_> {
                         .await
                         .map_err(Into::into)
                 }
+                #[cfg(feature = "mysql")]
+                Self::Mysql(mysql) => {
+                    let AnyStatement::Mysql(stmt) = stmt else {
+                        panic!("Statement mismatch")
+                    };
+                    <MysqlTransaction as Executor>::exec(mysql, stmt, params)
+                        .await
+                        .map_err(Into::into)
+                }
                 _ => missing_db!(),
             }
         }
@@ -719,6 +845,10 @@ impl Executor for AnyTransaction<'_> {
                         .await
                         .map_err(Into::into)
                 }
+                #[cfg(feature = "mysql")]
+                Self::Mysql(mysql) => <MysqlTransaction as Executor>::exec_batch(mysql, stmt)
+                    .await
+                    .map_err(Into::into),
                 _ => missing_db!(),
             }
         }
@@ -734,6 +864,8 @@ pub enum AnyError {
     LibSql(LibSqlError),
     #[cfg(feature = "postgres")]
     Postgres(PostgresError),
+    #[cfg(feature = "mysql")]
+    Mysql(MysqlError),
     Message(&'static str),
 }
 
@@ -748,6 +880,8 @@ impl core::fmt::Display for AnyError {
             AnyError::LibSql(err) => write!(f, "{}", err),
             #[cfg(feature = "postgres")]
             AnyError::Postgres(err) => write!(f, "{}", err),
+            #[cfg(feature = "mysql")]
+            AnyError::Mysql(err) => write!(f, "{}", err),
             AnyError::Message(msg) => msg.fmt(f),
             _ => missing_db!(),
         }
@@ -764,6 +898,8 @@ impl core::error::Error for AnyError {
             AnyError::LibSql(err) => Some(err),
             #[cfg(feature = "postgres")]
             AnyError::Postgres(err) => Some(err),
+            #[cfg(feature = "mysql")]
+            AnyError::Mysql(err) => Some(err),
             _ => None,
         }
     }
@@ -787,6 +923,12 @@ impl From<LibSqlError> for AnyError {
 impl From<PostgresError> for AnyError {
     fn from(value: PostgresError) -> Self {
         Self::Postgres(value)
+    }
+}
+#[cfg(feature = "mysql")]
+impl From<MysqlError> for AnyError {
+    fn from(value: MysqlError) -> Self {
+        Self::Mysql(value)
     }
 }
 

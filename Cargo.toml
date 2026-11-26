@@ -12,6 +12,7 @@ members = [
     "usql-sqlite",
     # "usql-libsql",
     "usql-postgres",
+    "usql-mysql",
     "usql-any",
     "usql-value",
     "usql-util",

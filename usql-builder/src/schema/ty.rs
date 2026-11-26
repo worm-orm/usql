@@ -63,8 +63,26 @@ fn sqlite(kind: &ColumnType<'_>, out: &mut dyn Write) -> fmt::Result {
     }
 }
 
-fn mysql(_kind: &ColumnType<'_>, _out: &mut dyn Write) -> fmt::Result {
-    todo!()
+fn mysql(kind: &ColumnType<'_>, out: &mut dyn Write) -> fmt::Result {
+    match kind {
+        ColumnType::Bool => out.write_str("BOOLEAN"),
+        ColumnType::SmallInt => out.write_str("SMALLINT"),
+        ColumnType::Int => out.write_str("INT"),
+        ColumnType::BigInt => out.write_str("BIGINT"),
+        ColumnType::Char(size) => write!(out, "CHAR({size})"),
+        ColumnType::VarChar(size) => write!(out, "VARCHAR({size})"),
+        // TEXT and BLOB only hold 64KiB
+        ColumnType::Text => out.write_str("LONGTEXT"),
+        ColumnType::Float => out.write_str("FLOAT"),
+        ColumnType::Double => out.write_str("DOUBLE"),
+        ColumnType::Date => out.write_str("DATE"),
+        ColumnType::DateTime => out.write_str("DATETIME(6)"),
+        ColumnType::Time => out.write_str("TIME(6)"),
+        ColumnType::Blob => out.write_str("LONGBLOB"),
+        ColumnType::Uuid => out.write_str("BINARY(16)"),
+        ColumnType::Json => out.write_str("JSON"),
+        ColumnType::Other(other) => out.write_str(other),
+    }
 }
 
 pub fn write_sql_type(

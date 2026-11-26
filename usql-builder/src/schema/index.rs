@@ -1,6 +1,7 @@
 use alloc::{borrow::Cow, vec::Vec};
 
 use crate::{Context, Error, statement::Statement};
+use usql_core::System;
 
 use core::fmt::Write as _;
 
@@ -39,7 +40,12 @@ impl<'a> Statement<'a> for CreateIndex<'a> {
             ctx.write_str("UNIQUE ")?;
         }
 
-        ctx.write_str("INDEX IF NOT EXISTS ")?;
+        // MySQL has no IF NOT EXISTS for indexes
+        if ctx.dialect() == System::Mysql {
+            ctx.write_str("INDEX ")?;
+        } else {
+            ctx.write_str("INDEX IF NOT EXISTS ")?;
+        }
 
         ctx.push_identifier(&self.name)?;
 
@@ -65,13 +71,21 @@ impl<'a> Statement<'a> for CreateIndex<'a> {
 
 pub struct DropIndex<'a> {
     index: Cow<'a, str>,
+    table: Option<Cow<'a, str>>,
 }
 
 impl<'a> DropIndex<'a> {
     pub fn new(index: impl Into<Cow<'a, str>>) -> DropIndex<'a> {
         DropIndex {
             index: index.into(),
+            table: None,
         }
+    }
+
+    /// The table of the index, which MySQL requires
+    pub fn table(mut self, table: impl Into<Cow<'a, str>>) -> Self {
+        self.table = Some(table.into());
+        self
     }
 }
 
@@ -80,6 +94,14 @@ impl<'a> Statement<'a> for DropIndex<'a> {
         ctx.write_str("DROP INDEX ")?;
 
         ctx.push_identifier(&self.index)?;
+
+        if ctx.dialect() == System::Mysql {
+            let table = self
+                .table
+                .ok_or(Error::Unsupported("DROP INDEX without a table on MySQL"))?;
+            ctx.write_str(" ON ")?;
+            ctx.push_identifier(&table)?;
+        }
 
         Ok(())
     }

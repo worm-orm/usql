@@ -16,6 +16,7 @@ serde = { version = "1", features = ["derive"], optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
-usql-any = { path = "../usql-any", features = ["sqlite", "postgres"] }
+usql-any = { path = "../usql-any", features = ["sqlite", "postgres", "mysql"] }
 usql-postgres = { path = "../usql-postgres" }
+usql-mysql = { path = "../usql-mysql" }
 usql-sqlite = { path = "../usql-sqlite", features = ["bundled"] }

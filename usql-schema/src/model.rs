@@ -68,6 +68,8 @@ model! {
         pub default: Option<String>,
         pub auto: Option<Auto>,
         pub generated: Option<Generated>,
+        /// An SQL expression that is set on update, as `CURRENT_TIMESTAMP`. Only on MySQL
+        pub on_update: Option<String>,
         pub comment: Option<String>,
     }
 

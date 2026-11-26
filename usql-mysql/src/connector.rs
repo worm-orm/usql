@@ -1,0 +1,36 @@
+use usql_core::{Connector, DatabaseInfo, System};
+
+use crate::{conn::Conn, error::Error, options::Options, pool::Pool, row::Row, stmt::Statement};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Mysql;
+
+impl Connector for Mysql {
+    type Connection = Conn;
+
+    type Statement = Statement;
+
+    type Row = Row;
+
+    type Info = Info;
+
+    type Pool = Pool;
+
+    type Error = Error;
+
+    type Options = Options;
+
+    fn create_pool(
+        options: Self::Options,
+    ) -> impl Future<Output = Result<Self::Pool, Self::Error>> + Send {
+        async move { options.create_pool() }
+    }
+}
+
+pub struct Info;
+
+impl DatabaseInfo for Info {
+    fn variant(&self) -> usql_core::System {
+        System::Mysql
+    }
+}

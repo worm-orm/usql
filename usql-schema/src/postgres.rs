@@ -211,6 +211,7 @@ async fn columns<E: Executor>(
                 default,
                 auto,
                 generated,
+                on_update: None,
                 comment: row.opt("comment")?,
             });
     }

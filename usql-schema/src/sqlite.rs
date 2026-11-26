@@ -230,6 +230,7 @@ async fn columns<E: Executor>(
                 expression: None,
                 stored: hidden == 3,
             }),
+            on_update: None,
             comment: None,
         });
     }

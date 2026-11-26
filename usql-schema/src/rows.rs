@@ -51,8 +51,21 @@ impl<B: Connector> Row<B> {
     }
 
     pub fn bool(&self, name: &'static str) -> Result<bool, Error<B>> {
+        self.opt_bool(name)?.ok_or(Error::Value(name))
+    }
+
+    pub fn opt_bool(&self, name: &'static str) -> Result<Option<bool>, Error<B>> {
         match self.typed(name, Type::Bool)? {
-            Value::Bool(b) => Ok(b),
+            Value::Null => Ok(None),
+            Value::Bool(b) => Ok(Some(b)),
+            _ => Err(Error::Value(name)),
+        }
+    }
+
+    pub fn opt_int(&self, name: &'static str) -> Result<Option<i32>, Error<B>> {
+        match self.typed(name, Type::Int)? {
+            Value::Null => Ok(None),
+            Value::Int(i) => Ok(Some(i)),
             _ => Err(Error::Value(name)),
         }
     }

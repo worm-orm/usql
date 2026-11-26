@@ -95,8 +95,11 @@ impl Table {
                 } else if fk.ref_schema != self.schema {
                     omit.add(&fk_name(fk), "foreign key to another schema");
                 } else if let [ref_column] = fk.ref_columns.as_slice() {
-                    let default = format!("{}_{}_fkey", self.name, column.name);
-                    if fk.name.as_ref().is_some_and(|name| *name != default) {
+                    if fk
+                        .name
+                        .as_ref()
+                        .is_some_and(|name| !self.is_default_fk_name(name, &column.name))
+                    {
                         omit.add(&fk_name(fk), "name of foreign key");
                     }
                     output = output.foreign_key(
@@ -142,6 +145,18 @@ impl Table {
             table,
             indexes,
             omitted: omit.0,
+        }
+    }
+
+    /// As given by the database, when the foreign key has no name
+    fn is_default_fk_name(&self, name: &str, column: &str) -> bool {
+        match self.system {
+            // As `post_ibfk_1`
+            System::Mysql => name
+                .strip_prefix(self.name.as_str())
+                .and_then(|m| m.strip_prefix("_ibfk_"))
+                .is_some_and(|m| !m.is_empty() && m.bytes().all(|b| b.is_ascii_digit())),
+            _ => name == format!("{}_{}_fkey", self.name, column),
         }
     }
 
@@ -207,7 +222,8 @@ fn convert_column(
     if column.auto == Some(Auto::Identity) {
         omit.add(&column.name, "identity");
     }
-    if auto && is_sqlite(system) && !primary {
+    // MySQL also needs a key, and the builder only has primary keys
+    if auto && (is_sqlite(system) || system == System::Mysql) && !primary {
         omit.add(&column.name, "auto increment");
         auto = false;
     }
@@ -220,7 +236,22 @@ fn convert_column(
         auto = false;
     }
 
-    let kind = if auto && system == System::Postgres {
+    // The builder only makes these from the integer types
+    if auto && same && system == System::Mysql {
+        // MariaDB adds the display width, as `bigint(20)`
+        let name = column.type_name.as_str();
+        let name = name
+            .strip_suffix(')')
+            .and_then(|m| m.rsplit_once('('))
+            .filter(|(_, width)| !width.is_empty() && width.bytes().all(|b| b.is_ascii_digit()))
+            .map_or(name, |(name, _)| name);
+        let plain = ["smallint", "int", "bigint"].contains(&name);
+        if !plain {
+            omit.add(&column.name, "type of auto increment column");
+        }
+    }
+
+    let kind = if auto && matches!(system, System::Postgres | System::Mysql) {
         mapped
     } else if same {
         Some(ColumnType::Other(column.type_name.clone().into()))
@@ -244,6 +275,9 @@ fn convert_column(
         } else {
             omit.add(&column.name, "default");
         }
+    }
+    if column.on_update.is_some() {
+        omit.add(&column.name, "on update");
     }
     if column.comment.is_some() {
         omit.add(&column.name, "comment");
@@ -270,15 +304,145 @@ fn column_type(ty: &Type) -> Option<ColumnType<'static>> {
     })
 }
 
-/// Means the same everywhere
+/// Means the same everywhere. MySQL reads a backslash in a string as an escape
 fn is_literal(sql: &str) -> bool {
     let string = sql
         .strip_prefix('\'')
         .and_then(|m| m.strip_suffix('\''))
-        .is_some_and(|m| !m.replace("''", "").contains('\''));
+        .is_some_and(|m| !m.replace("''", "").contains('\'') && !m.contains('\\'));
     let digits = sql.strip_prefix('-').unwrap_or(sql);
     let number = digits.starts_with(|m: char| m.is_ascii_digit())
         && digits.bytes().all(|m| m.is_ascii_digit() || m == b'.')
         && digits.parse::<f64>().is_ok();
     string || number
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::Key;
+    use usql_builder::StatementExt;
+
+    fn column(name: &str, type_name: &str, ty: Type, auto: bool) -> Column {
+        Column {
+            name: name.to_string(),
+            position: 1,
+            type_name: type_name.to_string(),
+            ty: Some(ty),
+            nullable: !auto,
+            default: None,
+            auto: auto.then_some(Auto::AutoIncrement),
+            generated: None,
+            on_update: None,
+            comment: None,
+        }
+    }
+
+    fn table(columns: Vec<Column>, foreign_keys: Vec<ForeignKey>) -> Table {
+        Table {
+            system: System::Mysql,
+            schema: "db".to_string(),
+            name: "t".to_string(),
+            kind: TableKind::Ordinary,
+            comment: None,
+            partition_of: None,
+            strict: false,
+            without_rowid: false,
+            primary_key: Some(Key {
+                name: None,
+                columns: vec![columns[0].name.clone()],
+            }),
+            columns,
+            foreign_keys,
+            uniques: Vec::new(),
+            indexes: Vec::new(),
+            triggers: Vec::new(),
+        }
+    }
+
+    fn omitted(table: &Table, system: System) -> Vec<(String, &'static str)> {
+        table
+            .to_builder(system)
+            .omitted
+            .into_iter()
+            .map(|m| (m.name, m.reason))
+            .collect()
+    }
+
+    #[test]
+    fn mysql_auto_increment() {
+        for (type_name, ty, plain) in [
+            ("bigint", Type::BigInt, true),
+            ("bigint(20)", Type::BigInt, true),
+            ("int unsigned", Type::BigInt, false),
+            ("int(10) unsigned", Type::BigInt, false),
+            ("tinyint", Type::SmallInt, false),
+        ] {
+            let t = table(vec![column("id", type_name, ty, true)], Vec::new());
+            let expected = match plain {
+                true => vec![],
+                false => vec![("id".to_string(), "type of auto increment column")],
+            };
+            assert_eq!(omitted(&t, System::Mysql), expected, "{type_name}");
+            let sql = t
+                .to_builder(System::Mysql)
+                .table
+                .to_sql(System::Mysql)
+                .unwrap();
+            assert!(sql.sql.contains("AUTO_INCREMENT"), "{}", sql.sql);
+        }
+
+        // Only a primary key can be auto increment
+        let mut t = table(
+            vec![
+                column("a", "int", Type::Int, false),
+                column("b", "int", Type::Int, true),
+            ],
+            Vec::new(),
+        );
+        t.columns[0].nullable = false;
+        assert_eq!(
+            omitted(&t, System::Mysql),
+            [("b".to_string(), "auto increment")]
+        );
+    }
+
+    #[test]
+    fn mysql_foreign_key_names() {
+        for (name, omit) in [
+            ("t_ibfk_1", false),
+            ("t_ibfk_12", false),
+            ("t_ibfk_", true),
+            ("fk", true),
+        ] {
+            let fk = ForeignKey {
+                name: Some(name.to_string()),
+                columns: vec!["p".to_string()],
+                ref_schema: "db".to_string(),
+                ref_table: "p".to_string(),
+                ref_columns: vec!["id".to_string()],
+                on_update: usql_builder::schema::ReferentialAction::NoAction,
+                on_delete: usql_builder::schema::ReferentialAction::NoAction,
+            };
+            let t = table(
+                vec![
+                    column("id", "int", Type::Int, false),
+                    column("p", "int", Type::Int, false),
+                ],
+                vec![fk],
+            );
+            let expected = match omit {
+                true => vec![(name.to_string(), "name of foreign key")],
+                false => vec![],
+            };
+            assert_eq!(omitted(&t, System::Mysql), expected, "{name}");
+        }
+    }
+
+    #[test]
+    fn literals() {
+        assert!(is_literal("'it''s'") && is_literal("-1.5"));
+        // A backslash is an escape on MySQL only
+        assert!(!is_literal("'a\\b'"));
+    }
 }

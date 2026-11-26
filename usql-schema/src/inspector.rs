@@ -3,7 +3,7 @@ use usql_core::{Connector, DatabaseInfo, Executor, System};
 use crate::{
     error::Error,
     model::{Enum, Schema, Table, TableName, View},
-    postgres, sqlite,
+    mysql, postgres, sqlite,
 };
 
 /// Uses several queries, so run it in a transaction for a consistent result
@@ -20,7 +20,7 @@ macro_rules! dispatch {
                 sqlite::$func($self.executor, &schema, $($arg),*).await
             }
             System::Postgres => postgres::$func($self.executor, &schema, $($arg),*).await,
-            system => Err(Error::Unsupported(system)),
+            System::Mysql => mysql::$func($self.executor, &schema, $($arg),*).await,
         }
     }};
 }
@@ -35,7 +35,8 @@ impl<'a, E: Executor> Inspector<'a, E> {
         }
     }
 
-    /// Defaults to `main` on SQLite and the current schema on Postgres
+    /// Defaults to `main` on SQLite, the current schema on Postgres and the current
+    /// database on MySQL
     pub fn schema(mut self, name: impl Into<String>) -> Self {
         self.schema = Some(name.into());
         self
@@ -51,7 +52,7 @@ impl<'a, E: Executor> Inspector<'a, E> {
             (Some(name), _) => Ok(name.clone()),
             (None, System::Sqlite | System::LibSql) => Ok("main".to_string()),
             (None, System::Postgres) => postgres::current_schema(self.executor).await,
-            (None, system) => Err(Error::Unsupported(system)),
+            (None, System::Mysql) => mysql::current_schema(self.executor).await,
         }
     }
 
@@ -59,7 +60,7 @@ impl<'a, E: Executor> Inspector<'a, E> {
         match self.system() {
             System::Sqlite | System::LibSql => sqlite::schemas(self.executor).await,
             System::Postgres => postgres::schemas(self.executor).await,
-            system => Err(Error::Unsupported(system)),
+            System::Mysql => mysql::schemas(self.executor).await,
         }
     }
 
@@ -77,12 +78,11 @@ impl<'a, E: Executor> Inspector<'a, E> {
         dispatch!(self, views())
     }
 
-    /// Always empty on SQLite
+    /// Always empty on SQLite and MySQL, where an enum is part of the column type
     pub async fn enums(&self) -> Result<Vec<Enum>, E> {
         match self.system() {
-            System::Sqlite | System::LibSql => Ok(Vec::new()),
+            System::Sqlite | System::LibSql | System::Mysql => Ok(Vec::new()),
             System::Postgres => postgres::enums(self.executor, &self.schema_name().await?).await,
-            system => Err(Error::Unsupported(system)),
         }
     }
 

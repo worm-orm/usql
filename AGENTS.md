@@ -22,7 +22,7 @@ toolkit with a query builder, value types, migrations and row projection.
 | `usql-project` | Row projection into nested results; `serde` and `bycat` features. |
 | `usql-util` | Utilities, including another projection implementation. |
 | `usql-quick` | QuickJS bindings (rquickjs, klaver). Types in `usql.d.ts`. |
-| `usql-schema` | Reads metadata (tables, keys, indexes, views, triggers, enums) with `Inspector`, and converts tables to builder statements. Feature: `serde`. |
+| `usql-schema` | Reads metadata (tables, keys, indexes, views, triggers, enums) from SQLite, Postgres and MySQL with `Inspector`, and converts tables to builder statements. Feature: `serde`. |
 | `usql-cli` | The `usql` binary. |
 | `usql-libsql` | libSQL driver. **Not a workspace member**, so it is not compiled. |
 
@@ -49,9 +49,10 @@ cargo fmt -p <crate>
 - The Postgres tests in `usql-postgres` and `usql-schema` skip themselves (and pass) unless
   `USQL_POSTGRES_URL` points at a disposable database with PostGIS. The TLS test
   also needs `--features rustls` and `USQL_POSTGRES_CA`, the path of a PEM certificate.
-- The MySQL tests in `usql-mysql` skip themselves unless `USQL_MYSQL_URL` points at a
-  disposable database, e.g. `docker run --rm -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=pw
-  -e MYSQL_DATABASE=usql mysql:8` with `USQL_MYSQL_URL=mysql://root:pw@localhost:3306/usql`.
+- The MySQL tests in `usql-mysql` and `usql-schema` skip themselves unless `USQL_MYSQL_URL`
+  points at a disposable server where the user can create databases, e.g.
+  `docker run --rm -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=pw -e MYSQL_DATABASE=usql mysql:8`
+  with `USQL_MYSQL_URL=mysql://root:pw@localhost:3306/usql`.
 
 ## Conventions
 
@@ -72,7 +73,9 @@ cargo fmt -p <crate>
   What `to_builder` can't express must be added to `omitted`.
 - MySQL `DECIMAL` is read as text, and `BINARY(16)` (the builder's `Uuid`) as bytes unless
   read as `Type::Uuid`. The driver checks the parameter count itself, because mysql_async
-  closes the connection on client-side errors.
+  closes the connection on client-side errors. A MySQL statement keeps the default database
+  of when it was prepared, so `exec_batch` with a `USE` makes later prepares miss the
+  statement cache (`usql-mysql/src/conn.rs`).
 - Branch on `Context::dialect()` where SQL differs between systems.
 - The SQLite connection lives on a dedicated thread (`usql-sqlite/src/worker.rs`)
   and is driven by messages. New operations need a `Request` variant, and a
@@ -100,4 +103,3 @@ Remove entries here as they are fixed.
   formatting changes in your diffs.
 - MySQL has no `RETURNING` (MariaDB 10.5+ does); the builder still emits it.
 - `usql-mysql` can't send `Array` or `Geometry` parameters, and reads geometry as raw bytes.
-- `usql-schema` has no MySQL module; `Inspector` returns `Unsupported` on MySQL.
